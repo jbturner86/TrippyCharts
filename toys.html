@@ -15,14 +15,15 @@
     .lead { padding:0 18px 14px; color:#cbb6ff; max-width:720px; }
     h2 { padding:8px 18px 6px; font-family:"Baloo 2", sans-serif; font-size:1.15rem; letter-spacing:.04em; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; padding:10px 16px 18px; }
-    .card { background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.16), rgba(18,8,28,.92)); border:1px solid rgba(255,180,255,.28); border-radius:18px; padding:10px; text-align:center; box-shadow:0 0 18px rgba(196,75,255,.18); }
+    .card { background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.16), rgba(18,8,28,.55)); border:none; border-radius:18px; padding:10px; text-align:center; box-shadow:0 0 22px rgba(196,75,255,.16); }
     .card.locked canvas { filter:grayscale(.45) brightness(.85); }
     canvas { width:140px; height:140px; display:block; margin:0 auto 8px; }
     .name { font-family:"Baloo 2", sans-serif; font-size:1.05rem; }
     .tag { display:block; margin:4px 0 8px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#b9a6dd; }
     .card button, .card label { width:100%; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.07); color:#efe6ff; padding:7px 8px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
     .card button.buy { background:#b7ffd2; color:#04140a; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.9rem; }
-    .card label { display:flex; gap:6px; align-items:center; justify-content:center; }
+    .card label { display:flex; gap:6px; align-items:center; justify-content:center; background:transparent; border:none; }
+    .card input[type="checkbox"], .card input[type="radio"] { width:22px; height:22px; accent-color:#c44bff; }
     .note { padding:0 18px 24px; color:#9e8cc4; font-size:.75rem; }
   </style>
 </head>
@@ -161,7 +162,7 @@ function paint(){
     const own = canUse(id);
     const on = own && (player.equippedToyIds||[]).includes(id);
     const action = own
-      ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}> rain this</label>`
+      ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}></label>`
       : `<button class="buy" data-buy="${id}">Unlock $1</button>`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
@@ -225,7 +226,7 @@ function paintCursors(){
     const own = ownsCursor(id);
     const on = player.equippedCursor === id;
     const action = own
-      ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}> use this</label>`
+      ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>`
       : `<button class="buy" data-buycur="${id}">Unlock $3</button>`;
     const kind = id === "squid" ? "sparkles" : id;
     return `<article class="card${own?"":" locked"}">
