@@ -31,8 +31,8 @@
     button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
     .density-box { position:fixed; top:12px; left:12px; z-index:6; width:228px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
-    .sound-row { display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:8px; }
-    #soundBtn { padding:4px 9px; font-size:.62rem; letter-spacing:.06em; }
+    .sound-row { display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:6px; }
+    #soundBtn, #musicBtn { padding:4px 9px; font-size:.62rem; letter-spacing:.06em; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
@@ -118,8 +118,10 @@
       <label for="density">toy density <span id="densityVal">70</span></label>
       <input type="range" id="density" min="10" max="400" value="70">
       <div class="sound-row">
-        <span style="font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd39a">sound</span>
+        <span style="font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd39a">sfx</span>
         <button type="button" id="soundBtn">on</button>
+        <span style="font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd39a">music</span>
+        <button type="button" id="musicBtn">on</button>
       </div>
     </div>
     <div class="actions">
@@ -182,56 +184,66 @@ const SUGGESTS = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","M
 
 const SAVE_KEY = "trippy_player_v1";
 const SOUND_KEY = "trippy_sound_on";
+const MUSIC_KEY = "trippy_music_on";
 let soundOn = localStorage.getItem(SOUND_KEY) !== "0";
-let audioCtx = null, musicTimer = 0, lastEatSfx = 0;
+let musicOn = localStorage.getItem(MUSIC_KEY) !== "0";
+let audioCtx = null, musicTimer = -1, lastEatSfx = 0;
 function ensureAudio(){
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === "suspended") audioCtx.resume();
   return audioCtx;
 }
-function beep(freq, dur, type, vol, slide){
-  if (!soundOn) return;
+function tone(freq, dur, type, vol, slide){
+  if (!freq) return;
   const ctx = ensureAudio();
   const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = type || "square";
+  o.type = type || "triangle";
   o.frequency.setValueAtTime(freq, ctx.currentTime);
   if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), ctx.currentTime + dur);
-  g.gain.setValueAtTime(vol || 0.08, ctx.currentTime);
+  g.gain.setValueAtTime(vol || 0.03, ctx.currentTime);
   g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
   o.connect(g); g.connect(ctx.destination);
   o.start(); o.stop(ctx.currentTime + dur + 0.02);
+}
+function beep(freq, dur, type, vol, slide){
+  if (!soundOn) return;
+  tone(freq, dur, type, vol, slide);
 }
 function sfx(kind){
   if (!soundOn) return;
   const now = performance.now();
   if (kind === "eat"){
-    if (now - lastEatSfx < 80) return;
+    if (now - lastEatSfx < 140) return;
     lastEatSfx = now;
-    beep(520 + Math.random()*80, 0.07, "square", 0.05, 880);
+    beep(640, 0.05, "triangle", 0.018, 820);
     return;
   }
-  if (kind === "spit") beep(240, 0.09, "square", 0.05, 120);
-  if (kind === "hit") { beep(180, 0.08, "square", 0.07); beep(320, 0.05, "square", 0.04); }
-  if (kind === "hurt") beep(90, 0.22, "sawtooth", 0.08, 40);
-  if (kind === "nova") { beep(120, 0.5, "sawtooth", 0.07, 40); beep(880, 0.35, "square", 0.05, 180); }
-  if (kind === "boss") beep(140, 0.16, "square", 0.07, 70);
-  if (kind === "die") beep(220, 0.4, "sawtooth", 0.08, 50);
+  if (kind === "spit") beep(280, 0.06, "triangle", 0.016, 160);
+  if (kind === "hit") beep(210, 0.05, "triangle", 0.02);
+  if (kind === "hurt") beep(110, 0.14, "sine", 0.03, 70);
+  if (kind === "nova") beep(180, 0.18, "triangle", 0.025, 90);
+  if (kind === "boss") beep(160, 0.12, "triangle", 0.022, 90);
+  if (kind === "die") beep(150, 0.22, "sine", 0.03, 60);
 }
-const ARCADE = [
-  440,330,440,523, 494,392,330,220,
-  440,0,523,0, 659,523,440,330,
-  392,330,294,330, 392,440,494,392,
-  440,330,262,220, 196,220,262,330
+const OVERWORLD = [
+  392,523,659,784, 659,523,392,330,
+  349,392,523,659, 587,523,392,0,
+  440,523,659,698, 659,523,440,392,
+  349,330,294,330, 349,392,523,392
+];
+const BASS = [
+  196,196,165,165, 175,175,196,196,
+  220,220,196,196, 175,165,147,196
 ];
 function tickMusic(){
-  if (!soundOn || !document.fullscreenElement || !audioCtx) return;
-  const step = Math.floor((audioCtx.currentTime * 6) % ARCADE.length);
+  if (!musicOn || !audioCtx) return;
+  const step = Math.floor((audioCtx.currentTime * 3.2) % OVERWORLD.length);
   if (step === musicTimer) return;
   musicTimer = step;
-  const n = ARCADE[step];
-  if (!n) return;
-  beep(n, 0.12, "square", 0.045);
-  if (step % 4 === 0) beep(n/2, 0.18, "triangle", 0.03);
+  const n = OVERWORLD[step];
+  if (n) tone(n, 0.22, "triangle", 0.028);
+  const b = BASS[step % BASS.length];
+  if (step % 2 === 0 && b) tone(b, 0.28, "sine", 0.016);
 }
 function startMusic(){ ensureAudio(); musicTimer = -1; }
 function stopMusic(){ musicTimer = -1; }
@@ -795,24 +807,27 @@ document.getElementById("density").addEventListener("input", e => {
   savePlayer();
 });
 function paintSound(){
-  const b = document.getElementById("soundBtn");
-  if (!b) return;
-  b.textContent = soundOn ? "on" : "off";
-  b.classList.toggle("on", soundOn);
+  const s = document.getElementById("soundBtn");
+  const m = document.getElementById("musicBtn");
+  if (s){ s.textContent = soundOn ? "on" : "off"; s.classList.toggle("on", soundOn); }
+  if (m){ m.textContent = musicOn ? "on" : "off"; m.classList.toggle("on", musicOn); }
 }
 paintSound();
 document.getElementById("soundBtn").addEventListener("click", () => {
   soundOn = !soundOn;
   localStorage.setItem(SOUND_KEY, soundOn ? "1" : "0");
   paintSound();
-  if (soundOn) { ensureAudio(); if (document.fullscreenElement) startMusic(); }
+  ensureAudio();
+});
+document.getElementById("musicBtn").addEventListener("click", () => {
+  musicOn = !musicOn;
+  localStorage.setItem(MUSIC_KEY, musicOn ? "1" : "0");
+  paintSound();
+  if (musicOn) startMusic();
   else stopMusic();
 });
-addEventListener("fullscreenchange", () => {
-  sizeCanvases();
-  if (document.fullscreenElement && soundOn) startMusic();
-  else stopMusic();
-});
+document.addEventListener("pointerdown", () => { if (musicOn) startMusic(); }, { once:true });
+addEventListener("fullscreenchange", () => { sizeCanvases(); });
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
   if(!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen();
