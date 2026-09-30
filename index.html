@@ -281,8 +281,6 @@ function tfMs(id){
 function endpoints(symbol, interval, range){
   return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`];
 }
-  throw new Error("no feed");
-}
 function applyLive(slot, price){
   if (!price || !slot.allBars.length) return;
   const last = slot.allBars.at(-1);
