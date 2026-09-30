@@ -141,8 +141,8 @@ const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHe
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
 let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0;
-const SQUID_START = 0.65, SQUID_MAX = 1.15, ARM_N = 16, SEG = 16;
-const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.4, 6.5 - i*0.28) })));
+const SQUID_START = 0.65, SQUID_MAX = 1.15, WORM_N = 28;
+const worm = Array.from({length: WORM_N}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(2.2, 16 - i*0.42) }));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
 function nova(){ for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); } eaten=0; squidScale=SQUID_START; }
@@ -196,25 +196,68 @@ function drawToy(c,b){
 }
 function drawSquid(){
   step++;
-  const radius=(17+6*Math.sin(step/10))*squidScale;
-  jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
-  if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
+  const sc = squidScale;
+  const hx = mouse.x, hy = mouse.y;
+  const vx = mouse.x - mouse.px, vy = mouse.y - mouse.py;
+  jetAng = Math.atan2(vy, vx);
+  if (!isFinite(jetAng) || Math.hypot(vx,vy) < 1) jetAng = step * 0.04;
+  const head = worm[0];
+  head.x += (hx - head.x) * 0.45;
+  head.y += (hy - head.y) * 0.45;
+  for (let i=1;i<worm.length;i++){
+    const prev = worm[i-1], p = worm[i];
+    const wriggle = Math.sin(step*0.18 + i*0.55) * (7*sc);
+    const cork = Math.cos(step*0.12 + i*0.4) * (5*sc);
+    const ang = Math.atan2(prev.y - p.y, prev.x - p.x) + 0.08*Math.sin(step*0.1 + i);
+    const gap = (p.r + prev.r) * 0.55 * sc;
+    p.x = prev.x - Math.cos(ang)*gap + Math.cos(ang+1.57)*wriggle*0.15;
+    p.y = prev.y - Math.sin(ang)*gap + Math.sin(ang+1.57)*wriggle*0.15 + cork*0.08;
+  }
   ctx.save();
-  squid.forEach((arm,ai)=>{
-    const ang=2*Math.PI*ai/ARM_N+step*0.004;
-    let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
-    arm.forEach((p)=>{
-      const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=5.4*squidScale;
-      p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35;
-      ctx.strokeStyle="#000"; ctx.lineWidth=Math.max(3.2,p.r*0.9*squidScale);
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke();
-      ctx.strokeStyle=`hsla(${170+ai*12},100%,65%,.4)`; ctx.lineWidth=Math.max(1.4,p.r*0.42*squidScale);
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke();
-      ctx.strokeStyle="#fff"; ctx.lineWidth=Math.max(1.6,p.r*0.5*squidScale);
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale*0.72,0,7); ctx.stroke();
-      tx=p.x; ty=p.y;
-    });
-  });
+  for (let i=worm.length-1;i>=1;i--){
+    const p = worm[i], pulse = 1 + 0.08*Math.sin(step*0.2 + i);
+    const rr = p.r * sc * pulse;
+    ctx.beginPath(); ctx.arc(p.x, p.y, rr+2.2, 0, 7);
+    ctx.fillStyle = "#111"; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, 7);
+    ctx.fillStyle = i%2 ? "#f4f0e6" : "#d9c9a3"; ctx.fill();
+    ctx.strokeStyle = `hsla(${160+i*8},100%,60%,.35)`; ctx.lineWidth = 1.6;
+    ctx.stroke();
+    ctx.beginPath(); ctx.arc(p.x - rr*0.18, p.y - rr*0.2, rr*0.35, 0, 7);
+    ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fill();
+  }
+  const hr = 18 * sc * (1 + 0.06*Math.sin(step*0.25));
+  const spin = step * 0.16;
+  ctx.translate(head.x, head.y);
+  ctx.rotate(jetAng + 0.15*Math.sin(step*0.12));
+  ctx.beginPath(); ctx.arc(0,0,hr+3,0,7); ctx.fillStyle="#000"; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,hr,0,7); ctx.fillStyle="#efe6d4"; ctx.fill();
+  ctx.strokeStyle="hsla(160,100%,65%,.45)"; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,hr*0.62,0,7); ctx.fillStyle="#1a0a10"; ctx.fill();
+  const teeth = 14;
+  for (let t=0;t<teeth;t++){
+    const a = spin + t*(Math.PI*2/teeth);
+    const inner = hr*0.28, outer = hr*0.58;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a-0.09)*inner, Math.sin(a-0.09)*inner);
+    ctx.lineTo(Math.cos(a)*outer, Math.sin(a)*outer);
+    ctx.lineTo(Math.cos(a+0.09)*inner, Math.sin(a+0.09)*inner);
+    ctx.closePath();
+    ctx.fillStyle = "#fff"; ctx.fill();
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 1; ctx.stroke();
+  }
+  ctx.beginPath(); ctx.arc(0,0,hr*0.16,0,7); ctx.fillStyle="#4a1020"; ctx.fill();
+  const eyeY = -hr*0.72, eyeS = hr*0.28;
+  function eye(ex, wobble){
+    ctx.beginPath(); ctx.ellipse(ex, eyeY, eyeS*1.15, eyeS, 0, 0, 7);
+    ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle="#000"; ctx.lineWidth=2; ctx.stroke();
+    const px = ex + Math.cos(step*0.2+wobble)*eyeS*0.25;
+    const py = eyeY + Math.sin(step*0.17+wobble)*eyeS*0.18;
+    ctx.beginPath(); ctx.arc(px, py, eyeS*0.42, 0, 7); ctx.fillStyle="#111"; ctx.fill();
+    ctx.beginPath(); ctx.arc(px-eyeS*0.12, py-eyeS*0.12, eyeS*0.12, 0, 7); ctx.fillStyle="#fff"; ctx.fill();
+  }
+  eye(-hr*0.42, 0.6);
+  eye(hr*0.48, 1.8);
   ctx.restore();
 }
 function tickBits(){
