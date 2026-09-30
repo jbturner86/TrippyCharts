@@ -30,9 +30,9 @@
     .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
-    .density-box { position:fixed; top:12px; left:12px; z-index:6; width:228px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
-    .sound-row { display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:6px; }
-    #soundBtn, #musicBtn { padding:4px 9px; font-size:.62rem; letter-spacing:.06em; }
+    .density-box { position:fixed; top:12px; left:12px; z-index:6; width:248px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
+    .sound-row { display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:4px; flex-wrap:wrap; }
+    #soundBtn, #musicBtn, #cursorBtn { padding:4px 8px; font-size:.58rem; letter-spacing:.06em; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
@@ -117,12 +117,14 @@
     <header><h1>TrippyCharts</h1><p class="status" id="status"></p></header>
     <div class="density-box">
       <label for="density">toy density <span id="densityVal">70</span></label>
-      <input type="range" id="density" min="10" max="400" value="70">
+      <input type="range" id="density" min="0" max="400" value="70">
       <div class="sound-row">
-        <span style="font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd39a">sfx</span>
+        <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">sfx</span>
         <button type="button" id="soundBtn">on</button>
-        <span style="font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd39a">music</span>
+        <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">music</span>
         <button type="button" id="musicBtn">on</button>
+        <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">cursor</span>
+        <button type="button" id="cursorBtn">on</button>
       </div>
     </div>
     <div class="actions">
@@ -186,8 +188,10 @@ const SUGGESTS = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","M
 const SAVE_KEY = "trippy_player_v1";
 const SOUND_KEY = "trippy_sound_on";
 const MUSIC_KEY = "trippy_music_on";
+const CURSOR_KEY = "trippy_cursor_on";
 let soundOn = localStorage.getItem(SOUND_KEY) !== "0";
 let musicOn = localStorage.getItem(MUSIC_KEY) !== "0";
+let cursorOn = localStorage.getItem(CURSOR_KEY) !== "0";
 let audioCtx = null, musicTimer = -1, lastEatSfx = 0;
 function ensureAudio(){
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -417,8 +421,8 @@ const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.5, zenMode = false, boss = null, blobT = 0, playerHp = 100, hurtCool = 0;
-const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.72, zenMode = false, boss = null, blobT = 0, playerHp = 100, hurtCool = 0;
+const SQUID_START = 0.72, SQUID_MAX = 1.55, ARM_N = 16, SEG = 16;
 const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
@@ -442,7 +446,7 @@ function growFromEat(){
   savePlayer();
   sfx("eat");
   if (blobT > 0) return;
-  squidScale = Math.min(SQUID_MAX, squidScale + (SQUID_MAX - SQUID_START) / 40);
+  squidScale = Math.min(SQUID_MAX, squidScale + (SQUID_MAX - SQUID_START) / 18);
   if (squidScale >= SQUID_MAX - 0.001) nova();
 }
 function spawnBoss(){
@@ -575,12 +579,13 @@ function drawToy(c,b){
   c.restore();
 }
 function drawSquid(){
+  if (!cursorOn) return;
   step++;
   if (blobT > 0) {
     blobT = Math.max(0, blobT - 0.012);
     if (blobT === 0) squidScale = SQUID_START;
   }
-  const jig = blobT > 0 ? (1 + 0.7*blobT + 0.18*Math.sin(step*0.55)*blobT) : 1;
+  const jig = blobT > 0 ? (1 + 1.15*blobT + 0.28*Math.sin(step*0.7)*blobT) : 1;
   const sc = squidScale * jig;
   const skin = player.equippedCursor || "squid";
   const spin = skin === "nebula" || skin === "aurora" ? 0.018 : skin === "lotus" || skin === "candy" ? 0.012 : skin === "prism" || skin === "plasma" ? 0.02 : skin === "ember" ? 0.01 : 0.004;
@@ -658,8 +663,10 @@ function drawSquid(){
   ctx.restore();
 }
 function tickBits(){
-  const dens = +(document.getElementById("density")||{}).value || 70;
-  if (activeToys().length) {
+  const densEl = document.getElementById("density");
+  const dens = densEl ? Number(densEl.value) : 70;
+  if (dens <= 0) { bits = []; }
+  else if (activeToys().length) {
     const need = dens - bits.length;
     const burstN = Math.min(40, Math.max(0, need));
     for (let i=0;i<burstN;i++) spawnBit();
@@ -669,7 +676,7 @@ function tickBits(){
     const dx=b.x-mouse.x, dy=b.y-mouse.y, dist=Math.hypot(dx,dy);
     if(b.state==="fall"){
       b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
-      if(dist<capture) b.state="suck";
+      if(cursorOn && dist<capture) b.state="suck";
     } else if(b.state==="suck"){
       b.x += (mouse.x - b.x) * 0.28;
       b.y += (mouse.y - b.y) * 0.28;
@@ -936,8 +943,10 @@ document.getElementById("density").addEventListener("input", e => {
 function paintSound(){
   const s = document.getElementById("soundBtn");
   const m = document.getElementById("musicBtn");
+  const k = document.getElementById("cursorBtn");
   if (s){ s.textContent = soundOn ? "on" : "off"; s.classList.toggle("on", soundOn); }
   if (m){ m.textContent = musicOn ? "on" : "off"; m.classList.toggle("on", musicOn); }
+  if (k){ k.textContent = cursorOn ? "on" : "off"; k.classList.toggle("on", cursorOn); }
 }
 paintSound();
 document.getElementById("soundBtn").addEventListener("click", () => {
@@ -952,6 +961,11 @@ document.getElementById("musicBtn").addEventListener("click", () => {
   paintSound();
   if (musicOn) startMusic();
   else stopMusic();
+});
+document.getElementById("cursorBtn").addEventListener("click", () => {
+  cursorOn = !cursorOn;
+  localStorage.setItem(CURSOR_KEY, cursorOn ? "1" : "0");
+  paintSound();
 });
 document.addEventListener("pointerdown", () => { if (musicOn) startMusic(); }, { once:true });
 addEventListener("fullscreenchange", () => { sizeCanvases(); });
