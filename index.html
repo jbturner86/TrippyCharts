@@ -106,10 +106,24 @@ const TFS = [
   {id:"1d",interval:"1d",range:"6mo"},{id:"1w",interval:"1wk",range:"2y"}
 ];
 const GROUPS = [
-  {title:"Magnificent 7 / Mega-cap Tech", names:[["NVDA","Nvidia"],["AAPL","Apple"],["MSFT","Microsoft"],["AMZN","Amazon"],["GOOGL","Alphabet"],["META","Meta"],["TSLA","Tesla"]]},
-  {title:"Semis & AI Infrastructure", names:[["AVGO","Broadcom"],["AMD","AMD"],["MU","Micron"],["INTC","Intel"],["PLTR","Palantir"],["TSM","TSMC"],["AMAT","Applied Materials"]]},
-  {title:"Financials", names:[["JPM","JPMorgan"],["BAC","Bank of America"],["V","Visa"],["MA","Mastercard"],["WFC","Wells Fargo"],["GS","Goldman Sachs"],["MS","Morgan Stanley"],["BLK","BlackRock"],["SCHW","Charles Schwab"],["C","Citigroup"]]},
-  {title:"Healthcare", names:[["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"]]}
+  {title:"Magnificent 7 / Mega-cap Tech", names:[
+    ["NVDA","Nvidia"],["AAPL","Apple"],["MSFT","Microsoft"],["AMZN","Amazon"],["GOOGL","Alphabet"],["META","Meta"],["TSLA","Tesla"],
+    ["SPY","S&P 500 ETF"],["QQQ","Nasdaq 100 ETF"],["DIA","Dow ETF"],["IWM","Russell 2000 ETF"],["VTI","Total Market ETF"],["VOO","Vanguard S&P 500"]
+  ]},
+  {title:"Semis & AI Infrastructure", names:[
+    ["AVGO","Broadcom"],["AMD","AMD"],["MU","Micron"],["INTC","Intel"],["PLTR","Palantir"],["TSM","TSMC"],["AMAT","Applied Materials"],
+    ["ASML","ASML"],["ARM","Arm"],["SMCI","Super Micro"],["NVDA","Nvidia"],["SOXX","Semis ETF"],["SMH","VanEck Semis ETF"],["BOTZ","Robotics AI ETF"]
+  ]},
+  {title:"Financials", names:[
+    ["JPM","JPMorgan"],["BAC","Bank of America"],["V","Visa"],["MA","Mastercard"],["WFC","Wells Fargo"],["GS","Goldman Sachs"],["MS","Morgan Stanley"],
+    ["BLK","BlackRock"],["SCHW","Charles Schwab"],["C","Citigroup"],["AXP","American Express"],["BRK-B","Berkshire Hathaway"],
+    ["XLF","Financials ETF"],["KRE","Regional Banks ETF"]
+  ]},
+  {title:"Healthcare", names:[
+    ["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],
+    ["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"],["NVO","Novo Nordisk"],["MRNA","Moderna"],
+    ["XLV","Healthcare ETF"],["IBB","Biotech ETF"]
+  ]}
 ];
 let unlocked = Math.max(1, Math.min(TOYS.length, +(localStorage.getItem("tc_unlocked")||1)));
 let xp = Math.max(0, Math.min(99, +(localStorage.getItem("tc_xp")||0)));
@@ -143,6 +157,28 @@ const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHe
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
 let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0, showWorm = true;
+const audio = { ctx:null };
+function audioCtx(){
+  if (!audio.ctx) audio.ctx = new (window.AudioContext||window.webkitAudioContext)();
+  if (audio.ctx.state === "suspended") audio.ctx.resume();
+  return audio.ctx;
+}
+function beep(type, freq, dur, vol){
+  if (!zenMode) return;
+  try{
+    const a = audioCtx(), t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(80, freq*0.35), t+dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t+dur);
+  }catch(e){}
+}
+function laserSound(){ beep("sawtooth", 880+Math.random()*420, 0.12, 0.07); }
+function hitSound(){ beep("square", 220+Math.random()*80, 0.16, 0.09); }
+function boomSound(){ beep("triangle", 90, 0.45, 0.12); }
 const SQUID_START = 0.65, SQUID_MAX = 1.15, WORM_N = 28;
 const worm = Array.from({length: WORM_N}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(2.2, 16 - i*0.42) }));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
@@ -154,11 +190,11 @@ function spawnBoss(phase){
   fightStarted = performance.now();
 }
 function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; }
-function startSuperNova(x,y){ novaFX=1; for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); } setTimeout(endZenAfterNova,1700); }
+function startSuperNova(x,y){ boomSound(); novaFX=1; for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); } setTimeout(endZenAfterNova,1700); }
 function hitBoss(b){
   if(!boss) return false;
   if(Math.hypot(b.x-boss.x,b.y-boss.y)>=boss.s*0.48) return false;
-  boss.hp=Math.max(0,boss.hp-2); boss.hurt=8;
+  boss.hp=Math.max(0,boss.hp-2); boss.hurt=8; hitSound();
   burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8});
   if(boss.hp<=0){
     const bx=boss.x, by=boss.y, phase=boss.phase, fast=(performance.now()-fightStarted)<4000;
@@ -267,6 +303,7 @@ function tickBits(){
       b.ang+=0.085; const nd=Math.max(0,dist-0.55); b.x=mouse.x+Math.cos(b.ang)*nd; b.y=mouse.y+Math.sin(b.ang)*nd; b.s=Math.max(6,b.s*0.995); b.rot+=0.08;
       if(nd<8*squidScale){
         growFromEat(); b.state="eject";
+        if (zenMode) laserSound();
         if(zenMode&&boss){ const ang=Math.atan2(boss.y-mouse.y,boss.x-mouse.x); const power=20+Math.random()*8; b.vx=Math.cos(ang)*power; b.vy=Math.sin(ang)*power; b.s=12; }
         else { const side=Math.random()<0.5?0:Math.PI, spd=11+Math.random()*7; b.vx=Math.cos(jetAng+side)*spd; b.vy=Math.sin(jetAng+side)*spd; b.s=8; }
       }
@@ -310,7 +347,7 @@ document.getElementById("grid").innerHTML = slots.map(s=>`
     </div>
   </section>`).join("");
 function isChartFs(id){ return document.fullscreenElement && document.fullscreenElement.id==="card-"+id; }
-function visibleBars(slot){ const src=slot.allBars||[]; const n=isChartFs(slot.id)?slot.view:Math.min(70,src.length); return src.slice(-Math.max(12,Math.min(src.length||12,n))); }
+function visibleBars(slot){ const src=slot.allBars||[]; const n=Math.max(12, Math.min(src.length||12, slot.view||70)); return src.slice(-n); }
 function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id), r=c.getBoundingClientRect();
   const w=Math.max(240,Math.floor(r.width*devicePixelRatio)), h=Math.max(140,Math.floor(r.height*devicePixelRatio));
   if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } }); }
@@ -384,6 +421,10 @@ function paintMeta(slot){
   document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • live last candle`: `${slot.tf} • no live feed`;
 }
 function clock(){ document.getElementById("status").textContent = `${new Date().toLocaleTimeString()}   eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%`; }
+function zoomSlot(i,dir){
+  const slot=slots[i], max=Math.max(12,slot.allBars.length);
+  slot.view = dir>0 ? Math.max(12, Math.round((slot.view||70)*0.78)) : Math.min(max, Math.round((slot.view||70)/0.78));
+}
 async function loadSlot(i, forceReset=false){
   const symbol=document.getElementById("in-"+i).value, tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
@@ -402,6 +443,12 @@ slots.forEach((_,i)=>{
     const card=document.getElementById("card-"+i);
     if(document.fullscreenElement===card) await document.exitFullscreen(); else await card.requestFullscreen();
   });
+  const canvas=document.getElementById("cv-"+i);
+  canvas.addEventListener("wheel", e=>{
+    if (document.body.classList.contains("corner")) return;
+    e.preventDefault();
+    zoomSlot(i, e.deltaY<0 ? 1 : -1);
+  }, {passive:false});
 });
 document.getElementById("density").addEventListener("input", e => { document.getElementById("densityVal").textContent = e.target.value; });
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
@@ -418,6 +465,7 @@ document.getElementById("wormBtn").addEventListener("click", ()=>{
   document.getElementById("wormBtn").textContent = showWorm ? "no worm" : "show worm";
 });
 document.getElementById("zen").addEventListener("click", ()=>{
+  audioCtx();
   zenMode = !zenMode;
   document.body.classList.toggle("zen", zenMode);
   document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
