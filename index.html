@@ -37,10 +37,11 @@
     .toys-left { align-items:flex-end; } .toys-right { align-items:flex-start; }
     body.zen header, body.zen .stage { display:none !important; }
     body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
-    body.corner .stage { position:fixed; right:8px; bottom:8px; width:min(420px,46vw); height:min(280px,34vh); z-index:4; gap:6px; }
-    body.corner .card canvas { min-height:70px; }
-    body.corner .group-name { font-size:.7rem; }
-    body.corner .pickers { display:none; }
+    body.corner .stage { position:fixed; right:10px; bottom:10px; width:auto; height:auto; z-index:4; gap:8px; grid-template-columns:1fr; grid-template-rows:none; }
+    body.corner .card { width:210px; background:rgba(10,6,20,.82); }
+    body.corner .card canvas, body.corner .group-name, body.corner .pickers { display:none !important; }
+    body.corner .meta { padding:8px 10px; }
+    body.corner .px { font-size:1rem; }
     .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
     .chip.locked { color:transparent; border:0; background:linear-gradient(135deg,#7cff3a,#3ae8ff,#c44bff,#ff5d8f,#ffe14a,#7cff3a); background-size:220% 220%; animation:lockPulse 2.4s linear infinite; box-shadow:0 0 12px rgba(196,75,255,.55); }
     .chip.locked span { visibility:hidden; }
@@ -81,7 +82,8 @@
     </div>
     <div class="actions">
       <button type="button" id="fullscreen">page full screen</button>
-      <button type="button" id="corner">charts corner</button>
+      <button type="button" id="corner">corner charts</button>
+      <button type="button" id="wormBtn">no worm</button>
       <button type="button" id="zen">hide everything</button>
     </div>
     <div class="board center" id="board">
@@ -140,7 +142,7 @@ document.getElementById("board").addEventListener("change", () => { const kinds 
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0;
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0, showWorm = true;
 const SQUID_START = 0.65, SQUID_MAX = 1.15, WORM_N = 28;
 const worm = Array.from({length: WORM_N}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(2.2, 16 - i*0.42) }));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
@@ -196,14 +198,13 @@ function drawToy(c,b){
 }
 function drawSquid(){
   step++;
+  jetAng = Math.atan2(mouse.y - mouse.py, mouse.x - mouse.px);
+  if (!isFinite(jetAng) || Math.hypot(mouse.x-mouse.px, mouse.y-mouse.py) < 1) jetAng = step * 0.04;
+  if (!showWorm) return;
   const sc = squidScale;
-  const hx = mouse.x, hy = mouse.y;
-  const vx = mouse.x - mouse.px, vy = mouse.y - mouse.py;
-  jetAng = Math.atan2(vy, vx);
-  if (!isFinite(jetAng) || Math.hypot(vx,vy) < 1) jetAng = step * 0.04;
   const head = worm[0];
-  head.x += (hx - head.x) * 0.45;
-  head.y += (hy - head.y) * 0.45;
+  head.x += (mouse.x - head.x) * 0.45;
+  head.y += (mouse.y - head.y) * 0.45;
   for (let i=1;i<worm.length;i++){
     const prev = worm[i-1], p = worm[i];
     const wriggle = Math.sin(step*0.18 + i*0.55) * (7*sc);
@@ -217,14 +218,9 @@ function drawSquid(){
   for (let i=worm.length-1;i>=1;i--){
     const p = worm[i], pulse = 1 + 0.08*Math.sin(step*0.2 + i);
     const rr = p.r * sc * pulse;
-    ctx.beginPath(); ctx.arc(p.x, p.y, rr+2.2, 0, 7);
-    ctx.fillStyle = "#111"; ctx.fill();
-    ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, 7);
-    ctx.fillStyle = i%2 ? "#f4f0e6" : "#d9c9a3"; ctx.fill();
-    ctx.strokeStyle = `hsla(${160+i*8},100%,60%,.35)`; ctx.lineWidth = 1.6;
-    ctx.stroke();
-    ctx.beginPath(); ctx.arc(p.x - rr*0.18, p.y - rr*0.2, rr*0.35, 0, 7);
-    ctx.fillStyle = "rgba(255,255,255,.18)"; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, rr+2.2, 0, 7); ctx.fillStyle = "#111"; ctx.fill();
+    ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, 7); ctx.fillStyle = i%2 ? "#f4f0e6" : "#d9c9a3"; ctx.fill();
+    ctx.strokeStyle = `hsla(${160+i*8},100%,60%,.35)`; ctx.lineWidth = 1.6; ctx.stroke();
   }
   const hr = 18 * sc * (1 + 0.06*Math.sin(step*0.25));
   const spin = step * 0.16;
@@ -234,17 +230,13 @@ function drawSquid(){
   ctx.beginPath(); ctx.arc(0,0,hr,0,7); ctx.fillStyle="#efe6d4"; ctx.fill();
   ctx.strokeStyle="hsla(160,100%,65%,.45)"; ctx.lineWidth=2; ctx.stroke();
   ctx.beginPath(); ctx.arc(0,0,hr*0.62,0,7); ctx.fillStyle="#1a0a10"; ctx.fill();
-  const teeth = 14;
-  for (let t=0;t<teeth;t++){
-    const a = spin + t*(Math.PI*2/teeth);
-    const inner = hr*0.28, outer = hr*0.58;
+  for (let t=0;t<14;t++){
+    const a = spin + t*(Math.PI*2/14);
     ctx.beginPath();
-    ctx.moveTo(Math.cos(a-0.09)*inner, Math.sin(a-0.09)*inner);
-    ctx.lineTo(Math.cos(a)*outer, Math.sin(a)*outer);
-    ctx.lineTo(Math.cos(a+0.09)*inner, Math.sin(a+0.09)*inner);
-    ctx.closePath();
-    ctx.fillStyle = "#fff"; ctx.fill();
-    ctx.strokeStyle = "#000"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.moveTo(Math.cos(a-0.09)*hr*0.28, Math.sin(a-0.09)*hr*0.28);
+    ctx.lineTo(Math.cos(a)*hr*0.58, Math.sin(a)*hr*0.58);
+    ctx.lineTo(Math.cos(a+0.09)*hr*0.28, Math.sin(a+0.09)*hr*0.28);
+    ctx.closePath(); ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle="#000"; ctx.lineWidth=1; ctx.stroke();
   }
   ctx.beginPath(); ctx.arc(0,0,hr*0.16,0,7); ctx.fillStyle="#4a1020"; ctx.fill();
   const eyeY = -hr*0.72, eyeS = hr*0.28;
@@ -256,8 +248,7 @@ function drawSquid(){
     ctx.beginPath(); ctx.arc(px, py, eyeS*0.42, 0, 7); ctx.fillStyle="#111"; ctx.fill();
     ctx.beginPath(); ctx.arc(px-eyeS*0.12, py-eyeS*0.12, eyeS*0.12, 0, 7); ctx.fillStyle="#fff"; ctx.fill();
   }
-  eye(-hr*0.42, 0.6);
-  eye(hr*0.48, 1.8);
+  eye(-hr*0.42, 0.6); eye(hr*0.48, 1.8);
   ctx.restore();
 }
 function tickBits(){
@@ -357,6 +348,7 @@ function applyLive(slot, price){
 function drawChart(slot){
   const canvas=document.getElementById("cv-"+slot.id), c=canvas.getContext("2d");
   const w=canvas.width,h=canvas.height; c.clearRect(0,0,w,h);
+  if (document.body.classList.contains("corner")) return;
   const bars=visibleBars(slot); if(!bars.length) return;
   if (slot.showPx && slot.price) slot.showPx += (slot.price - slot.showPx) * 0.18;
   const liveBars = bars.map((b,i) => i===bars.length-1 && slot.showPx ? {...b, close:slot.showPx, high:Math.max(b.high,slot.showPx), low:Math.min(b.low,slot.showPx)} : b);
@@ -418,8 +410,12 @@ document.getElementById("fullscreen").addEventListener("click", async()=>{
 });
 document.getElementById("corner").addEventListener("click", ()=>{
   document.body.classList.toggle("corner");
-  document.getElementById("corner").textContent = document.body.classList.contains("corner") ? "charts full" : "charts corner";
+  document.getElementById("corner").textContent = document.body.classList.contains("corner") ? "show charts" : "corner charts";
   sizeCanvases();
+});
+document.getElementById("wormBtn").addEventListener("click", ()=>{
+  showWorm = !showWorm;
+  document.getElementById("wormBtn").textContent = showWorm ? "no worm" : "show worm";
 });
 document.getElementById("zen").addEventListener("click", ()=>{
   zenMode = !zenMode;
