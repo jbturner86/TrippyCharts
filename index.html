@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>TrippyCharts</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,14 +59,24 @@
     .px { font-variant-numeric:tabular-nums; font-size:.92rem; }
     .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
     .note { font-size:.62rem; color:#b9a6dd; }
+    .joystick { display:none; position:fixed; left:16px; bottom:16px; width:128px; height:128px; z-index:30; touch-action:none; }
+    body.phone.zen .joystick { display:block; }
+    .joy-base { width:100%; height:100%; border-radius:50%; background:rgba(18,8,28,.55); border:2px solid rgba(255,255,255,.35); }
+    .joy-knob { position:absolute; width:52px; height:52px; border-radius:50%; left:50%; top:50%; transform:translate(-50%,-50%); background:radial-gradient(circle at 30% 30%,#fff,#c44bff 55%,#7cff3a); border:2px solid #fff; box-shadow:0 0 16px rgba(196,75,255,.7); }
     @media (max-width:900px) {
       html,body { overflow:auto; cursor:auto; }
       .wrap { height:auto; min-height:100dvh; overflow:visible; }
-      .board { display:flex; flex-direction:column; height:auto; }
-      .toys-col { flex-direction:row; flex-wrap:wrap; justify-content:center; }
-      .stage { grid-template-columns:1fr; height:auto; }
-      .card canvas { height:230px; flex:none; }
-      .density-box, .xp-box { position:static; width:min(220px,90%); margin:8px auto 0; }
+      header { padding:8px 8px 4px; }
+      h1 { font-size:1.2rem; flex-wrap:wrap; justify-content:center; }
+      .actions { padding:6px 8px 10px; }
+      .board { display:flex; flex-direction:column; height:auto; padding:0 8px 16px; }
+      .toys-col { flex-direction:row; flex-wrap:wrap; justify-content:center; width:100%; align-items:center; }
+      .stage { display:flex; flex-direction:column; height:auto; gap:10px; }
+      .card { min-height:0; }
+      .card canvas { height:220px; flex:none; }
+      .density-box, .xp-box { position:static; width:min(260px,92%); margin:8px auto 0; }
+      body.zen { overflow:hidden; }
+      body.zen .wrap { height:100dvh; overflow:hidden; }
     }
   </style>
 </head>
@@ -94,6 +104,7 @@
       <div class="toys-col toys-right" id="toysRight"></div>
     </div>
   </div>
+  <div class="joystick" id="joystick"><div class="joy-base"></div><div class="joy-knob" id="joyKnob"></div></div>
 <script>
 const TOYS = [
   ["mushrooms","Mushrooms"],["stars","Stars"],["moons","Moons"],["turtles","Turtles"],
@@ -127,6 +138,9 @@ const GROUPS = [
     ["XLV","Healthcare ETF"],["IBB","Biotech ETF"]
   ]}
 ];
+function isPhone(){ return matchMedia("(max-width:900px)").matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+function syncPhone(){ document.body.classList.toggle("phone", isPhone()); }
+syncPhone(); addEventListener("resize", syncPhone);
 let unlocked = Math.max(1, Math.min(TOYS.length, +(localStorage.getItem("tc_unlocked")||1)));
 let xp = Math.max(0, Math.min(99, +(localStorage.getItem("tc_xp")||0)));
 function saveProg(){ localStorage.setItem("tc_unlocked", unlocked); localStorage.setItem("tc_xp", xp); }
@@ -156,9 +170,40 @@ function activeToys(){ return [...document.querySelectorAll("[data-toy]:checked"
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 document.getElementById("board").addEventListener("change", () => { const kinds = activeToys(); bits.forEach(b => { if (kinds.length) b.kind = pick(kinds); }); });
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
-addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
+addEventListener("mousemove", e => { if (isPhone() && zenMode) return; mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
+addEventListener("touchmove", e => {
+  if (!isPhone() || zenMode) return;
+  const t = e.touches[0]; if (!t) return;
+  mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = t.clientX; mouse.y = t.clientY;
+}, {passive:true});
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0, showWorm = true;
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0, showWorm = !isPhone();
+const joy = { active:false, x:0, y:0 };
+const joyEl = document.getElementById("joystick"), knob = document.getElementById("joyKnob");
+function setJoy(cx, cy){
+  const r = joyEl.getBoundingClientRect();
+  const midX = r.left + r.width/2, midY = r.top + r.height/2;
+  let dx = cx - midX, dy = cy - midY;
+  const max = r.width * 0.34, dist = Math.hypot(dx, dy) || 1;
+  if (dist > max) { dx *= max/dist; dy *= max/dist; }
+  joy.x = dx / max; joy.y = dy / max;
+  knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+}
+function resetJoy(){ joy.active=false; joy.x=0; joy.y=0; knob.style.transform="translate(-50%,-50%)"; }
+function bindJoy(ev, fn){ joyEl.addEventListener(ev, e => { e.preventDefault(); fn(e); }, {passive:false}); }
+bindJoy("touchstart", e => { joy.active=true; setJoy(e.touches[0].clientX, e.touches[0].clientY); });
+bindJoy("touchmove", e => { if (joy.active) setJoy(e.touches[0].clientX, e.touches[0].clientY); });
+bindJoy("touchend", resetJoy); bindJoy("touchcancel", resetJoy);
+bindJoy("mousedown", e => { joy.active=true; setJoy(e.clientX, e.clientY); });
+addEventListener("mousemove", e => { if (joy.active) setJoy(e.clientX, e.clientY); });
+addEventListener("mouseup", resetJoy);
+function driveFromJoystick(){
+  if (!(isPhone() && zenMode)) return;
+  const speed = 8.5;
+  mouse.px = mouse.x; mouse.py = mouse.y;
+  mouse.x = Math.max(16, Math.min(innerWidth-16, mouse.x + joy.x * speed));
+  mouse.y = Math.max(16, Math.min(innerHeight-16, mouse.y + joy.y * speed));
+}
 const audio = { ctx:null };
 function audioCtx(){
   if (!audio.ctx) audio.ctx = new (window.AudioContext||window.webkitAudioContext)();
@@ -191,7 +236,7 @@ function spawnBoss(phase){
   boss = { kind:"mushrooms", phase, nasty:phase>=2, x:innerWidth*0.5, y:innerHeight*0.38, s:phase===1?170:phase===2?260:320, hp:100, maxHp:100, rot:0, spin:phase===1?.02:.08, hue:phase===1?120:phase===2?12:280, hurt:0 };
   fightStarted = performance.now();
 }
-function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; }
+function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; if (isPhone()) showWorm=false; resetJoy(); }
 function startSuperNova(x,y){ boomSound(); novaFX=1; for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); } setTimeout(endZenAfterNova,1700); }
 function hitBoss(b){
   if(!boss) return false;
@@ -290,11 +335,13 @@ function drawSquid(){
   ctx.restore();
 }
 function tickBits(){
-  const dens = +(document.getElementById("density")||{}).value || 0;
+  const phone = isPhone();
+  let dens = +(document.getElementById("density")||{}).value || 0;
+  if (phone) dens = Math.min(dens, zenMode ? 90 : 40);
   if (dens <= 0) bits = bits.filter(b => b.state !== "fall");
   else if (activeToys().length) {
     const need = dens - bits.length;
-    const burstN = Math.min(18, Math.max(0, need));
+    const burstN = Math.min(phone ? 4 : 18, Math.max(0, need));
     for (let i=0;i<burstN;i++) spawnBit();
   }
   const capture=40+20*squidScale;
@@ -321,6 +368,7 @@ function tickBits(){
   burst.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vx*=0.98; p.vy*=0.98; p.life-=0.012; });
 }
 (function loopSky(){
+  driveFromJoystick();
   ctx.clearRect(0,0,bg.width,bg.height); tickBits(); bits.forEach(b=>drawToy(ctx,b));
   burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
   if(zenMode&&boss){ boss.rot+=boss.spin; if(boss.hurt>0) boss.hurt--; drawToy(ctx,boss); ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-60, boss.y-boss.s*0.62, 120, 8); ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-60, boss.y-boss.s*0.62, 120*(boss.hp/boss.maxHp), 8); }
@@ -463,6 +511,7 @@ document.getElementById("corner").addEventListener("click", ()=>{
   sizeCanvases();
 });
 document.getElementById("wormBtn").addEventListener("click", ()=>{
+  if (isPhone() && !zenMode) { showWorm = false; document.getElementById("wormBtn").textContent = "show worm"; return; }
   showWorm = !showWorm;
   document.getElementById("wormBtn").textContent = showWorm ? "no worm" : "show worm";
 });
@@ -471,8 +520,17 @@ document.getElementById("zen").addEventListener("click", ()=>{
   zenMode = !zenMode;
   document.body.classList.toggle("zen", zenMode);
   document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
-  if (zenMode) spawnBoss(1); else boss = null;
+  if (zenMode) {
+    spawnBoss(1);
+    showWorm = true;
+    mouse.x = innerWidth/2; mouse.y = innerHeight/2;
+  } else {
+    boss = null;
+    if (isPhone()) showWorm = false;
+    resetJoy();
+  }
 });
+if (isPhone()) { showWorm = false; document.getElementById("wormBtn").textContent = "show worm"; }
 boot(true); loop(); clock();
 setInterval(clock,1000);
 setInterval(tickLive, 4000);
