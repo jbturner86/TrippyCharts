@@ -281,18 +281,6 @@ function tfMs(id){
 function endpoints(symbol, interval, range){
   return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`];
 }
-async function fetchBars(symbol,tfId){
-  const tf=TFS.find(t=>t.id===tfId)||TFS[4];
-  for(const url of endpoints(symbol,tf.interval,tf.range)){
-    try{ const res=await fetch(url,{cache:"no-store"}); if(!res.ok) continue; const json=await res.json();
-      const r=json.chart&&json.chart.result&&json.chart.result[0]; if(!r) continue;
-      const q=r.indicators.quote[0], bars=[];
-      for(let i=0;i<r.timestamp.length;i++){ if([q.open[i],q.close[i],q.high[i],q.low[i]].some(v=>v==null)) continue;
-        bars.push({t:r.timestamp[i]*1000, open:q.open[i], high:q.high[i], low:q.low[i], close:q.close[i]}); }
-      if(bars.length<6) continue; const used=tf.group?aggregate(bars,tf.group):bars;
-      return { bars:used, price:r.meta.regularMarketPrice??used.at(-1).close, prev:r.meta.chartPreviousClose??used.at(-2)?.close??used[0].open };
-    }catch{}
-  }
   throw new Error("no feed");
 }
 function applyLive(slot, price){
