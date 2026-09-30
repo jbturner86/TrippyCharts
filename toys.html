@@ -24,7 +24,6 @@
     .card button.buy { background:#b7ffd2; color:#04140a; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.9rem; }
     .card label { display:flex; gap:6px; align-items:center; justify-content:center; background:transparent; border:none; }
     .card input[type="checkbox"], .card input[type="radio"] { width:22px; height:22px; accent-color:#c44bff; }
-    .note { padding:0 18px 24px; color:#9e8cc4; font-size:.75rem; }
   </style>
 </head>
 <body>
@@ -32,7 +31,7 @@
     <h1>Toy Store</h1>
     <a class="back" href="index.html">← back to charts</a>
   </header>
-  <p class="lead">Pick what rains on the charts. Mushrooms are free. Pass unlocks 5 this month. Anything else is $1 to unlock forever. Cursors are $3 — right now Squid is the free one.</p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. October pass drop is a new set: jellyfish, robots, lightning, ghosts, eyes. Anything else is $1 forever.</p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
@@ -44,12 +43,13 @@ const TOYS = [
   ["mushrooms","Mushrooms"],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
   ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
-  ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"]
+  ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"],
+  ["jellyfish","Jellyfish"],["robots","Robots"],["lightning","Lightning"],["ghosts","Ghosts"],["eyes","Eyes"]
 ];
 const FREE_TOYS = ["mushrooms"];
 const PASS_BY_MONTH = {
   "2026-09": ["stars","moons","leaves","flowers","hearts"],
-  "2026-10": ["skulls","aliens","butterflies","crystals","frogs"],
+  "2026-10": ["jellyfish","robots","lightning","ghosts","eyes"],
   "2026-11": ["cats","planets","clouds","dice","peace"]
 };
 const SAVE_KEY = "trippy_player_v1";
@@ -189,6 +189,23 @@ function drawToy(c,b){
     c.fillStyle="rgba(255,255,255,.45)"; c.beginPath(); c.moveTo(0,-s*.48); c.lineTo(s*.08,-s*.04); c.lineTo(0,s*.1); c.closePath(); c.fill();
   } else if(k==="clouds"){
     c.fillStyle="#efe6ff"; c.beginPath(); c.arc(-s*.16,0,s*.16,0,7); c.arc(0,-s*.08,s*.2,0,7); c.arc(s*.16,0,s*.16,0,7); c.fill(); stroke();
+  } else if(k==="jellyfish"){
+    c.fillStyle="#7ad7ff"; c.beginPath(); c.ellipse(0,-s*.08,s*.3,s*.22,0,Math.PI,0,true); c.fill(); stroke();
+    c.strokeStyle="#b7ffd2"; c.lineWidth=Math.max(1,s*0.05);
+    for(let i=-2;i<=2;i++){ c.beginPath(); c.moveTo(i*s*.1,s*.02); c.quadraticCurveTo(i*s*.12,s*.22,i*s*.06,s*.4); c.stroke(); }
+  } else if(k==="robots"){
+    c.fillStyle="#9aa4c2"; c.beginPath(); c.roundRect(-s*.22,-s*.18,s*.44,s*.4,s*.06); c.fill(); stroke();
+    c.fillStyle="#7cff3a"; c.beginPath(); c.arc(-s*.08,-s*.02,s*.06,0,7); c.fill(); c.beginPath(); c.arc(s*.08,-s*.02,s*.06,0,7); c.fill();
+    c.fillStyle="#c46bff"; c.fillRect(-s*.08,s*.12,s*.16,s*.06);
+  } else if(k==="lightning"){
+    c.fillStyle="#ffe566"; c.beginPath(); c.moveTo(s*.06,-s*.42); c.lineTo(-s*.16,s*.02); c.lineTo(s*.02,s*.02); c.lineTo(-s*.08,s*.42); c.lineTo(s*.22,-s*.06); c.lineTo(s*.02,-s*.06); c.closePath(); c.fill(); stroke();
+  } else if(k==="ghosts"){
+    c.fillStyle="#f4f0ff"; c.beginPath(); c.arc(0,-s*.08,s*.26,Math.PI,0); c.lineTo(s*.26,s*.28); c.lineTo(s*.13,s*.16); c.lineTo(0,s*.28); c.lineTo(-s*.13,s*.16); c.lineTo(-s*.26,s*.28); c.closePath(); c.fill(); stroke();
+    c.fillStyle="#2a2040"; c.beginPath(); c.arc(-s*.08,-s*.08,s*.05,0,7); c.fill(); c.beginPath(); c.arc(s*.08,-s*.08,s*.05,0,7); c.fill();
+  } else if(k==="eyes"){
+    c.fillStyle="#fff"; c.beginPath(); c.ellipse(0,0,s*.36,s*.22,0,0,7); c.fill(); stroke();
+    c.fillStyle="#5aa0ff"; c.beginPath(); c.arc(s*.06,0,s*.12,0,7); c.fill();
+    c.fillStyle="#1b1430"; c.beginPath(); c.arc(s*.08,0,s*.06,0,7); c.fill();
   }
   c.restore();
 }
@@ -248,6 +265,8 @@ async function pullCloud(){
     player.passExpiresAt = row.pass_expires_at;
     try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
     try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
+    player.equippedToyIds = (player.equippedToyIds||[]).slice(0,5);
+    if (!player.equippedToyIds.length) player.equippedToyIds = ["mushrooms"];
     if ((player.ownedToyIds || []).length === TOYS.length) player.ownedToyIds = ["mushrooms"];
     if (!player.ownedCursorIds) player.ownedCursorIds = ["squid"];
     if (!player.equippedCursor) player.equippedCursor = "squid";
@@ -260,9 +279,12 @@ document.getElementById("grid").addEventListener("change", e => {
   const id = e.target.dataset.eq;
   if (!id) return;
   const set = new Set(player.equippedToyIds || []);
-  if (e.target.checked) set.add(id); else set.delete(id);
+  if (e.target.checked) {
+    if (set.size >= 5) { e.target.checked = false; alert("Max 5 toys raining at once."); return; }
+    set.add(id);
+  } else set.delete(id);
   if (!set.size) set.add("mushrooms");
-  player.equippedToyIds = [...set];
+  player.equippedToyIds = [...set].slice(0,5);
   savePlayer();
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
