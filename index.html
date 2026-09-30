@@ -14,33 +14,30 @@
     #sky canvas { width:100%; height:100%; display:block; }
     .wrap { position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
     header { text-align:center; padding:10px 12px 6px; }
-    h1 { font-size:clamp(1.25rem,3vw,2.15rem); letter-spacing:.16em; text-transform:uppercase;
-      font-weight:900; font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
+    h1 { font-size:clamp(1.25rem,3vw,2.15rem); letter-spacing:.16em; text-transform:uppercase; font-weight:900;
+      font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
       background:linear-gradient(90deg,#7cff3a,#fff,#c44bff,#ff5d8f); background-size:220% auto;
       -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 7s linear infinite;
-      -webkit-text-stroke:1.4px rgba(255,255,255,.28); paint-order:stroke fill;
-      filter:drop-shadow(0 0 8px rgba(196,75,255,.55)); }
+      -webkit-text-stroke:1.4px rgba(255,255,255,.28); filter:drop-shadow(0 0 8px rgba(196,75,255,.55)); }
     @keyframes sheen { to { background-position:220% center; } }
     .status { margin-top:4px; color:#cbb6ff; font-size:.8rem; }
     .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
     .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-    button { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px;
-      padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; }
+    button { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
-    .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: auto minmax(0,1fr) auto; align-items:stretch; gap:6px; padding:0 4px 8px; }
+    .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: auto minmax(0,1fr) auto; gap:6px; padding:0 4px 8px; }
     .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
-    .toys-left { align-items:flex-end; padding-right:2px; }
-    .toys-right { align-items:flex-start; padding-left:2px; }
+    .toys-left { align-items:flex-end; }
+    .toys-right { align-items:flex-start; }
     body.zen header, body.zen .dock-btns, body.zen .stage { display:none !important; }
-    body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; padding:0; }
+    body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
     .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
     .chip input { width:15px; height:15px; accent-color:#c44bff; }
     .stage { min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:12px; width:100%; height:100%; }
     .stage.hide { display:none; }
     .board.left { grid-template-columns: 0 minmax(0,1fr) auto; }
     .board.right { grid-template-columns: auto minmax(0,1fr) 0; }
-    .board.left .toys-left, .board.right .toys-right { visibility:hidden; }
-    .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(3px); overflow:hidden; display:flex; flex-direction:column; }
+    .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; }
     .card canvas { display:block; width:100%; flex:1 1 auto; min-height:0; }
     .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:7px 9px 9px; }
     .group-name { font-size:1rem; letter-spacing:.08em; text-transform:uppercase; color:#efe6ff; margin-bottom:5px; font-weight:700; }
@@ -49,13 +46,12 @@
     .px { font-variant-numeric:tabular-nums; font-size:.92rem; }
     .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
     .note { font-size:.62rem; color:#b9a6dd; }
-    .zoom { display:none; gap:5px; }
-    .card:fullscreen .zoom, .card:-webkit-full-screen .zoom { display:flex; }
+    .zoom { display:none; }
     @media (max-width:900px) {
       html,body { overflow:auto; cursor:auto; }
       .wrap { height:auto; min-height:100dvh; overflow:visible; }
-      .board, .board.left, .board.right { display:flex; flex-direction:column; height:auto; }
-      .toys-col, .toys-left, .toys-right { flex-direction:row; flex-wrap:wrap; justify-content:center; align-items:center; visibility:visible; }
+      .board { display:flex; flex-direction:column; height:auto; }
+      .toys-col { flex-direction:row; flex-wrap:wrap; justify-content:center; }
       .stage { grid-template-columns:1fr; height:auto; }
       .card canvas { height:230px; flex:none; }
     }
@@ -64,10 +60,7 @@
 <body>
   <div id="sky"><canvas id="bg"></canvas></div>
   <div class="wrap">
-    <header>
-      <h1>TrippyCharts</h1>
-      <p class="status" id="status"></p>
-    </header>
+    <header><h1>TrippyCharts</h1><p class="status" id="status"></p></header>
     <div class="actions">
       <span class="dock-btns">
         <button type="button" id="fullscreen">page full screen</button>
@@ -85,7 +78,7 @@
     </div>
   </div>
 <script>
-const TOYS = [
+  const TOYS = [
   ["mushrooms","Mushrooms",true],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
   ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
@@ -104,46 +97,27 @@ const GROUPS = [
   {title:"Healthcare", names:[["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"]]}
 ];
 const mid = Math.ceil(TOYS.length/2);
-document.getElementById("toysLeft").innerHTML = TOYS.slice(0,mid).map(([id,label,on]) =>
-  `<label class="chip"><input type="checkbox" data-toy="${id}" ${on?"checked":""}>${label}</label>`).join("");
-document.getElementById("toysRight").innerHTML = TOYS.slice(mid).map(([id,label,on]) =>
-  `<label class="chip"><input type="checkbox" data-toy="${id}" ${on?"checked":""}>${label}</label>`).join("");
+document.getElementById("toysLeft").innerHTML = TOYS.slice(0,mid).map(([id,label,on]) => `<label class="chip"><input type="checkbox" data-toy="${id}" ${on?"checked":""}>${label}</label>`).join("");
+document.getElementById("toysRight").innerHTML = TOYS.slice(mid).map(([id,label,on]) => `<label class="chip"><input type="checkbox" data-toy="${id}" ${on?"checked":""}>${label}</label>`).join("");
 function activeToys(){ return [...document.querySelectorAll("[data-toy]:checked")].map(el => el.dataset.toy); }
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-document.getElementById("board").addEventListener("change", () => {
-  const kinds = activeToys();
-  bits.forEach(b => { if (kinds.length) b.kind = pick(kinds); });
-});
+document.getElementById("board").addEventListener("change", () => { const kinds = activeToys(); bits.forEach(b => { if (kinds.length) b.kind = pick(kinds); }); });
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.5, zenMode = false, boss = null;
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.5, zenMode = false, boss = null, novaFX = 0;
 const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
 const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
-function nova(){
-  for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); }
-  eaten = 0; squidScale = SQUID_START;
-}
+function nova(){ for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); } eaten=0; squidScale=SQUID_START; }
 function growFromEat(){ eaten++; if (eaten>0 && eaten%15===0){ squidScale=Math.min(SQUID_MAX, squidScale*1.05); if (squidScale>=SQUID_MAX) nova(); } }
-function spawnBoss(){
-  const kinds = activeToys().length ? activeToys() : TOYS.map(t=>t[0]);
-  boss = { kind:pick(kinds), x:innerWidth*0.5+(Math.random()-0.5)*innerWidth*0.35, y:innerHeight*0.38+Math.random()*innerHeight*0.2, s:170, hp:14, maxHp:14, rot:0, spin:(Math.random()-0.5)*.02, hue:Math.random()*360, hurt:0 };
-}
-function hitBoss(b){
-  if (!boss) return false;
-  if (Math.hypot(b.x-boss.x, b.y-boss.y) >= boss.s*0.48) return false;
-  boss.hp -= 1; boss.hurt = 8;
-  burst.push({ x:b.x, y:b.y, vx:(b.x-boss.x)*.08, vy:(b.y-boss.y)*.08, life:1, hue:boss.hue, r:6+Math.random()*8 });
-  if (boss.hp <= 0) spawnBoss();
-  return true;
-}
-function newBit(x, y, state){
-  const kinds = activeToys(); if (!kinds.length && state!=="eject") return null;
-  return { kind: kinds.length ? pick(kinds) : "sparkles", x: x ?? Math.random()*bg.width, y: y ?? -30, v:.45+Math.random()*.7, drift:(Math.random()-.5)*.25, vx:0, vy:0, s:14+Math.random()*18, rot:Math.random()*6.28, spin:(Math.random()-.5)*.03, hue:Math.random()*360, state: state || "fall", ang:0 };
-}
-function spawnBit(){ const b = newBit(); if (b) bits.push(b); }
+function spawnBoss(){ const kinds = activeToys().length ? activeToys() : TOYS.map(t=>t[0]); boss = { kind:pick(kinds), x:innerWidth*0.5+(Math.random()-0.5)*innerWidth*0.35, y:innerHeight*0.38+Math.random()*innerHeight*0.2, s:170, hp:100, maxHp:100, rot:0, spin:(Math.random()-0.5)*.02, hue:Math.random()*360, hurt:0 }; }
+function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; document.getElementById("grid").classList.remove("hide"); document.getElementById("toggleCharts").textContent="hide charts"; }
+function startSuperNova(x,y){ novaFX=1; for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); } setTimeout(endZenAfterNova,1700); }
+function hitBoss(b){ if(!boss) return false; if(Math.hypot(b.x-boss.x,b.y-boss.y)>=boss.s*0.48) return false; boss.hp=Math.max(0,boss.hp-10); boss.hurt=8; burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8}); if(boss.hp<=0){ const bx=boss.x,by=boss.y; boss=null; startSuperNova(bx,by);} return true; }
+function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*bg.width,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:14+Math.random()*18,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
+function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot);
   const s=b.s; c.fillStyle=`hsl(${b.hue},85%,65%)`; c.strokeStyle=`hsl(${b.hue},90%,80%)`; c.lineWidth=1.4;
@@ -163,84 +137,54 @@ function drawToy(c,b){
   else if(b.kind==="clouds"){ c.beginPath(); c.arc(-s*.16,0,s*.16,0,7); c.arc(0,-s*.08,s*.2,0,7); c.arc(s*.16,0,s*.16,0,7); c.fill(); }
   else if(b.kind==="dice"){ c.fillRect(-s*.22,-s*.22,s*.44,s*.44); c.fillStyle="#111"; c.beginPath(); c.arc(0,0,s*.05,0,7); c.fill(); }
   else if(b.kind==="peace"){ c.beginPath(); c.arc(0,0,s*.32,0,7); c.stroke(); c.beginPath(); c.moveTo(0,-s*.32); c.lineTo(0,s*.32); c.moveTo(0,0); c.lineTo(-s*.22,s*.2); c.moveTo(0,0); c.lineTo(s*.22,s*.2); c.stroke(); }
-  else if(b.kind==="sparkles"){ c.beginPath(); c.moveTo(0,-s*.4); c.lineTo(s*.08,-s*.08); c.lineTo(s*.4,0); c.lineTo(s*.08,s*.08); c.lineTo(0,s*.4); c.lineTo(-s*.08,s*.08); c.lineTo(-s*.4,0); c.lineTo(-s*.08,-s*.08); c.closePath(); c.fill(); }
-  else { c.beginPath(); c.arc(0,0,s*.25,0,7); c.fill(); }
+  else { c.beginPath(); c.moveTo(0,-s*.4); c.lineTo(s*.08,-s*.08); c.lineTo(s*.4,0); c.lineTo(s*.08,s*.08); c.lineTo(0,s*.4); c.lineTo(-s*.08,s*.08); c.lineTo(-s*.4,0); c.lineTo(-s*.08,-s*.08); c.closePath(); c.fill(); }
   c.restore();
 }
 function drawSquid(){
   step++;
-  const radius = (13 + 5*Math.sin(step/10)) * squidScale;
-  jetAng = Math.atan2(mouse.y - mouse.py, mouse.x - mouse.px);
-  if (!isFinite(jetAng) || Math.hypot(mouse.x-mouse.px, mouse.y-mouse.py) < 1) jetAng = step * 0.03;
-  ctx.save(); ctx.globalCompositeOperation = "lighter";
-  squid.forEach((arm, ai) => {
-    const ang = 2*Math.PI*ai/ARM_N + step*0.004;
-    let tx = mouse.x + radius*Math.cos(ang), ty = mouse.y + radius*Math.sin(ang);
-    arm.forEach((p) => {
-      const dx = p.x - tx, dy = p.y - ty, d = Math.hypot(dx, dy) || 1, stick = 4.5 * squidScale;
-      p.x = tx + dx / d * stick; p.y = ty + dy / d * stick + 0.35;
-      ctx.strokeStyle = `hsla(${190+ai*8}, 100%, 58%, .5)`;
-      ctx.lineWidth = Math.max(1, p.r * 0.35 * squidScale);
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * squidScale, 0, 7); ctx.stroke();
-      tx = p.x; ty = p.y;
-    });
+  const radius=(13+5*Math.sin(step/10))*squidScale;
+  jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
+  if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
+  ctx.save(); ctx.globalCompositeOperation="lighter";
+  squid.forEach((arm,ai)=>{
+    const ang=2*Math.PI*ai/ARM_N+step*0.004;
+    let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
+    arm.forEach((p)=>{ const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*squidScale; p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35; ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; ctx.lineWidth=Math.max(1,p.r*0.35*squidScale); ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke(); tx=p.x; ty=p.y; });
   });
   ctx.restore();
 }
 function tickBits(){
-  if (bits.length < 70 && activeToys().length) spawnBit();
-  const capture = 40 + 20 * squidScale;
-  bits.forEach(b => {
-    const dx = b.x - mouse.x, dy = b.y - mouse.y, dist = Math.hypot(dx, dy);
-    if (b.state === "fall") {
-      b.y += b.v; b.x += b.drift; b.rot += b.spin;
-      if (dist < capture) { b.state = "suck"; b.ang = Math.atan2(dy, dx); }
-    } else if (b.state === "suck") {
-      b.ang += 0.085;
-      const nd = Math.max(0, dist - 0.55);
-      b.x = mouse.x + Math.cos(b.ang) * nd; b.y = mouse.y + Math.sin(b.ang) * nd;
-      b.s = Math.max(6, b.s * 0.995); b.rot += 0.08;
-      if (nd < 8 * squidScale) {
-        growFromEat();
-        const side = Math.random() < 0.5 ? 0 : Math.PI, spd = 11 + Math.random() * 7;
-        b.state = "eject";
-        const shoot = zenMode ? (jetAng || 0) : (jetAng + side);
-        const power = zenMode ? (18 + Math.random()*8) : spd;
-        b.vx = Math.cos(shoot) * power; b.vy = Math.sin(shoot) * power; b.s = zenMode ? 12 : 8;
+  if(bits.length<70 && activeToys().length) spawnBit();
+  const capture=40+20*squidScale;
+  bits.forEach(b=>{
+    const dx=b.x-mouse.x, dy=b.y-mouse.y, dist=Math.hypot(dx,dy);
+    if(b.state==="fall"){ b.y+=b.v; b.x+=b.drift; b.rot+=b.spin; if(dist<capture){ b.state="suck"; b.ang=Math.atan2(dy,dx);} }
+    else if(b.state==="suck"){
+      b.ang+=0.085; const nd=Math.max(0,dist-0.55); b.x=mouse.x+Math.cos(b.ang)*nd; b.y=mouse.y+Math.sin(b.ang)*nd; b.s=Math.max(6,b.s*0.995); b.rot+=0.08;
+      if(nd<8*squidScale){
+        growFromEat(); b.state="eject";
+        if(zenMode&&boss){ const ang=Math.atan2(boss.y-mouse.y,boss.x-mouse.x); const power=20+Math.random()*8; b.vx=Math.cos(ang)*power; b.vy=Math.sin(ang)*power; b.s=12; }
+        else { const side=Math.random()<0.5?0:Math.PI, spd=11+Math.random()*7; b.vx=Math.cos(jetAng+side)*spd; b.vy=Math.sin(jetAng+side)*spd; b.s=8; }
       }
-    } else if (b.state === "eject") {
-      if (zenMode) { b.vx *= 1.015; b.vy *= 1.015; }
-      b.x += b.vx; b.y += b.vy;
-      b.vx *= zenMode ? 0.999 : 0.992; b.vy *= zenMode ? 0.999 : 0.992;
-      b.s = Math.min(22, b.s * 1.03); b.rot += 0.12;
-      if (zenMode && hitBoss(b)) { Object.assign(b, newBit(Math.random()*bg.width, -30, "fall")||b); }
-      else if (dist > (zenMode? 420 : 170)) { b.state = "fall"; b.v = .5 + Math.random()*.4; b.drift = b.vx * 0.08; }
+    } else if(b.state==="eject"){
+      if(zenMode){ b.vx*=1.015; b.vy*=1.015; }
+      b.x+=b.vx; b.y+=b.vy; b.vx*=zenMode?0.999:0.992; b.vy*=zenMode?0.999:0.992; b.s=Math.min(22,b.s*1.03); b.rot+=0.12;
+      if(zenMode&&hitBoss(b)) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall")||b);
+      else if(dist>(zenMode?420:170)){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.08; }
     }
-    if (b.y > bg.height + 50 || b.x < -60 || b.x > bg.width + 60) Object.assign(b, newBit(Math.random()*bg.width, -30, "fall"));
+    if(b.y>bg.height+50||b.x<-60||b.x>bg.width+60) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall"));
   });
-  burst = burst.filter(p => p.life > 0);
-  burst.forEach(p => { p.x += p.vx; p.y += p.vy; p.vx *= 0.98; p.vy *= 0.98; p.life -= 0.012; });
+  burst=burst.filter(p=>p.life>0);
+  burst.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vx*=0.98; p.vy*=0.98; p.life-=0.012; });
 }
 (function loopSky(){
-  ctx.clearRect(0,0,bg.width,bg.height);
-  tickBits();
-  bits.forEach(b => drawToy(ctx,b));
-  burst.forEach(p => {
-    ctx.globalCompositeOperation = "lighter";
-    ctx.fillStyle = `hsla(${p.hue},100%,60%,${p.life})`;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill();
-    ctx.globalCompositeOperation = "source-over";
-  });
-  if (zenMode && boss) {
-    boss.rot += boss.spin; if (boss.hurt>0) boss.hurt--;
-    drawToy(ctx, boss);
-    ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45, boss.y-boss.s*0.62, 90, 8);
-    ctx.fillStyle = boss.hurt ? "#ff5d8f" : "#7cff3a"; ctx.fillRect(boss.x-45, boss.y-boss.s*0.62, 90*(boss.hp/boss.maxHp), 8);
-  }
-  drawSquid();
-  requestAnimationFrame(loopSky);
+  ctx.clearRect(0,0,bg.width,bg.height); tickBits(); bits.forEach(b=>drawToy(ctx,b));
+  burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
+  if(zenMode&&boss){ boss.rot+=boss.spin; if(boss.hurt>0) boss.hurt--; drawToy(ctx,boss); ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90,8); ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90*(boss.hp/boss.maxHp),8); }
+  if(novaFX>0){ novaFX=Math.min(1.2,novaFX+0.035); const g=ctx.createRadialGradient(innerWidth/2,innerHeight/2,10,innerWidth/2,innerHeight/2,Math.max(innerWidth,innerHeight)*novaFX); g.addColorStop(0,`hsla(${(step*8)%360},100%,70%,.85)`); g.addColorStop(.35,`hsla(${(step*8+80)%360},100%,60%,.55)`); g.addColorStop(.7,`hsla(${(step*8+160)%360},100%,50%,.28)`); g.addColorStop(1,"rgba(0,0,0,0)"); ctx.globalCompositeOperation="lighter"; ctx.fillStyle=g; ctx.fillRect(0,0,bg.width,bg.height); ctx.globalCompositeOperation="source-over"; if(novaFX>1.15) novaFX=0; }
+  drawSquid(); requestAnimationFrame(loopSky);
 })();
-const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
+  const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
 function fmtAxisTime(t, tf){
   const d = new Date(t);
   if (tf==="1d" || tf==="1w") return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
@@ -257,7 +201,7 @@ document.getElementById("grid").innerHTML = slots.map(s=>`
         <select id="in-${s.id}">${s.names.map(([sym,name])=>`<option value="${sym}">${sym} — ${name}</option>`).join("")}</select>
         <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id==="30m"?"selected":""}>${t.id}</option>`).join("")}</select>
         <button type="button" data-fs="${s.id}">full screen</button>
-        <span class="zoom"><button type="button" data-z="${s.id}" data-d="-1">−</button><button type="button" data-z="${s.id}" data-d="1">+</button></span>
+        <span class="zoom"><button type="button" data-z="${s.id}" data-d="-1">-</button><button type="button" data-z="${s.id}" data-d="1">+</button></span>
       </div></div>
       <div><div class="px" id="px-${s.id}">${s.symbol}</div><div class="chg flat" id="chg-${s.id}"></div><div class="note" id="note-${s.id}"></div></div>
     </div>
@@ -326,16 +270,6 @@ function drawChart(slot){
     c.fillText(fmtAxisTime(b.t, slot.tf), padL+idx*gap+gap/2, h-8*devicePixelRatio);
   }
   c.textAlign="left";
-  if(slot.hover!=null && liveBars[slot.hover]){
-    const b=liveBars[slot.hover], x=padL+slot.hover*gap+gap/2;
-    c.strokeStyle="rgba(255,255,255,.35)"; c.setLineDash([4*devicePixelRatio,4*devicePixelRatio]);
-    c.beginPath(); c.moveTo(x,padT); c.lineTo(x,h-padB); c.stroke(); c.setLineDash([]);
-    const boxW=160*devicePixelRatio, boxH=88*devicePixelRatio; let bx=x+8*devicePixelRatio; if(bx+boxW>w) bx=x-boxW-8*devicePixelRatio;
-    c.fillStyle="rgba(12,6,24,.9)"; c.fillRect(bx,padT+6*devicePixelRatio,boxW,boxH);
-    c.fillStyle="#efe6ff"; c.font=`${11*devicePixelRatio}px Trebuchet MS`;
-    [`${b.t?new Date(b.t).toLocaleString():slot.tf}`,`O ${b.open.toFixed(2)}  H ${b.high.toFixed(2)}`,`L ${b.low.toFixed(2)}  C ${b.close.toFixed(2)}`]
-      .forEach((ln,i)=>c.fillText(ln,bx+8*devicePixelRatio, padT+26*devicePixelRatio+i*20*devicePixelRatio));
-  }
 }
 function paintMeta(slot){
   const change=slot.price-slot.prev, pct=slot.prev?(change/slot.prev)*100:0;
@@ -369,7 +303,7 @@ slots.forEach((_,i)=>{
   canvas.addEventListener("mousemove", e=>{
     const slot=slots[i], L=slot.layout, bars=visibleBars(slot); if(!L||!bars.length) return;
     const rect=canvas.getBoundingClientRect(), x=(e.clientX-rect.left)/rect.width*canvas.width;
-    slot.hover = (()=>{ const idx=Math.floor((x-L.padL)/L.gap); return (idx>=0&&idx<bars.length)?idx:null; })();
+    const idx=Math.floor((x-L.padL)/L.gap); slot.hover=(idx>=0&&idx<bars.length)?idx:null;
   });
   canvas.addEventListener("mouseleave",()=>{ slots[i].hover=null; });
   canvas.addEventListener("wheel", e=>{ if(!isChartFs(i)) return; e.preventDefault(); zoomSlot(i,e.deltaY<0?1:-1); }, {passive:false});
@@ -405,3 +339,4 @@ setInterval(tickLive, 4000);
 </script>
 </body>
 </html>
+  
