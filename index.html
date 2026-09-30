@@ -42,7 +42,7 @@
     .toys-left { align-items:flex-end; }
     .toys-right { align-items:flex-start; }
     #legalBtn { background:rgba(12,6,22,.82); }
-    body.zen header, body.zen .dock-btns, body.zen .stage, body.zen .toys-col, body.zen .density-box, body.zen #store, body.zen #legal, body.zen #buyPass, body.zen #legalBtn { display:none !important; }
+    body.zen header, body.zen .dock-btns, body.zen .stage, body.zen .toys-col, body.zen .density-box, body.zen #store, body.zen #legal, body.zen #buyPass, body.zen #legalBtn, body.zen #cancelBtn { display:none !important; }
     body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
     .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
     .chip input { width:15px; height:15px; accent-color:#c44bff; }
@@ -141,6 +141,7 @@
       <button type="button" id="fullscreen">full screen</button>
       <button type="button" id="zen">hide everything</button>
       <button type="button" id="legalBtn">disclaimer</button>
+      <button type="button" id="cancelBtn">cancel subscription</button>
     </div>
     <aside id="legal">
       <h2>Disclaimer</h2>
@@ -152,7 +153,7 @@
       <h3>Outages and changes</h3>
       <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
       <h3>Pass and store</h3>
-      <p>Payments are for cosmetic toys, drops, and save slots — not market data. Subscriptions renew until you cancel in Stripe. Test charges in sandbox are not real. Refunds follow Stripe and applicable law. Monthly toy lineups can change.</p>
+      <p>Payments are for cosmetic toys, drops, and save slots — not market data. Subscriptions renew until you cancel. Cancel anytime; access stays through the paid period. No prorated refunds. Test charges in sandbox are not real. Monthly toy lineups can change.</p>
       <h3>As-is</h3>
       <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
       <h3>You agree</h3>
@@ -174,7 +175,8 @@ const TOYS = [
   ["mushrooms","Mushrooms",true],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
   ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
-  ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"]
+  ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"],
+  ["jellyfish","Jellyfish"],["robots","Robots"],["lightning","Lightning"],["ghosts","Ghosts"],["eyes","Eyes"]
 ];
 const TFS = [
   {id:"1m",interval:"1m",range:"1d"},{id:"5m",interval:"5m",range:"5d"},{id:"10m",interval:"5m",range:"5d",group:2},
@@ -270,6 +272,7 @@ function loadPlayer(){
     if (!raw) return defaultPlayer();
     const p = { ...defaultPlayer(), ...JSON.parse(raw) };
     if ((p.ownedToyIds || []).length === TOYS.length) p.ownedToyIds = ["mushrooms"];
+    if ((p.equippedToyIds || []).length > 5) p.equippedToyIds = p.equippedToyIds.slice(0,5);
     return p;
   } catch(e){ return defaultPlayer(); }
 }
@@ -351,7 +354,7 @@ const mid = Math.ceil(TOYS.length/2);
 const FREE_TOYS = ["mushrooms"];
 const PASS_BY_MONTH = {
   "2026-09": ["stars","moons","leaves","flowers","hearts"],
-  "2026-10": ["skulls","aliens","butterflies","crystals","frogs"],
+  "2026-10": ["jellyfish","robots","lightning","ghosts","eyes"],
   "2026-11": ["cats","planets","clouds","dice","peace"]
 };
 function currentMonth(){
@@ -414,7 +417,7 @@ document.getElementById("density").value = player.toyDensity || 70;
 document.getElementById("densityVal").textContent = document.getElementById("density").value;
 
 function activeToys(){
-  const eq = (player.equippedToyIds || []).filter(canUse);
+  const eq = (player.equippedToyIds || []).filter(canUse).slice(0,5);
   return eq.length ? eq : ["mushrooms"];
 }
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
@@ -575,6 +578,23 @@ function drawToy(c,b){
     c.fillStyle="rgba(255,255,255,.45)"; c.beginPath(); c.moveTo(0,-s*.48); c.lineTo(s*.08,-s*.04); c.lineTo(0,s*.1); c.closePath(); c.fill();
   } else if(k==="clouds"){
     c.fillStyle="#efe6ff"; c.beginPath(); c.arc(-s*.16,0,s*.16,0,7); c.arc(0,-s*.08,s*.2,0,7); c.arc(s*.16,0,s*.16,0,7); c.fill(); stroke();
+  } else if(k==="jellyfish"){
+    c.fillStyle="#7ad7ff"; c.beginPath(); c.ellipse(0,-s*.08,s*.3,s*.22,0,Math.PI,0,true); c.fill(); stroke();
+    c.strokeStyle="#b7ffd2"; c.lineWidth=Math.max(1,s*0.05);
+    for(let i=-2;i<=2;i++){ c.beginPath(); c.moveTo(i*s*.1,s*.02); c.quadraticCurveTo(i*s*.12,s*.22,i*s*.06,s*.4); c.stroke(); }
+  } else if(k==="robots"){
+    c.fillStyle="#9aa4c2"; c.beginPath(); c.roundRect(-s*.22,-s*.18,s*.44,s*.4,s*.06); c.fill(); stroke();
+    c.fillStyle="#7cff3a"; c.beginPath(); c.arc(-s*.08,-s*.02,s*.06,0,7); c.fill(); c.beginPath(); c.arc(s*.08,-s*.02,s*.06,0,7); c.fill();
+    c.fillStyle="#c46bff"; c.fillRect(-s*.08,s*.12,s*.16,s*.06);
+  } else if(k==="lightning"){
+    c.fillStyle="#ffe566"; c.beginPath(); c.moveTo(s*.06,-s*.42); c.lineTo(-s*.16,s*.02); c.lineTo(s*.02,s*.02); c.lineTo(-s*.08,s*.42); c.lineTo(s*.22,-s*.06); c.lineTo(s*.02,-s*.06); c.closePath(); c.fill(); stroke();
+  } else if(k==="ghosts"){
+    c.fillStyle="#f4f0ff"; c.beginPath(); c.arc(0,-s*.08,s*.26,Math.PI,0); c.lineTo(s*.26,s*.28); c.lineTo(s*.13,s*.16); c.lineTo(0,s*.28); c.lineTo(-s*.13,s*.16); c.lineTo(-s*.26,s*.28); c.closePath(); c.fill(); stroke();
+    c.fillStyle="#2a2040"; c.beginPath(); c.arc(-s*.08,-s*.08,s*.05,0,7); c.fill(); c.beginPath(); c.arc(s*.08,-s*.08,s*.05,0,7); c.fill();
+  } else if(k==="eyes"){
+    c.fillStyle="#fff"; c.beginPath(); c.ellipse(0,0,s*.36,s*.22,0,0,7); c.fill(); stroke();
+    c.fillStyle="#5aa0ff"; c.beginPath(); c.arc(s*.06,0,s*.12,0,7); c.fill();
+    c.fillStyle="#1b1430"; c.beginPath(); c.arc(s*.08,0,s*.06,0,7); c.fill();
   }
   c.restore();
 }
@@ -987,6 +1007,20 @@ document.getElementById("legalBtn").addEventListener("click", () => {
 });
 document.getElementById("legalClose").addEventListener("click", () => {
   document.getElementById("legal").classList.remove("open");
+});
+document.getElementById("cancelBtn").addEventListener("click", async () => {
+  const ok = confirm("Cancel Trippy Pass? It stays on through the period you already paid. No prorated refunds.");
+  if (!ok) return;
+  try {
+    const r = await fetch(API + "/portal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
+      body: JSON.stringify({ playerId: PLAYER_ID, action: "cancel" })
+    });
+    const data = await r.json().catch(()=>({}));
+    if (data.url) location.href = data.url;
+    else alert(data.error || "Open Stripe → Billing to cancel. No prorated refunds. Or add a /portal route on the Worker.");
+  } catch(e){ alert("Open Stripe billing to cancel. No prorated refunds."); }
 });
 document.getElementById("buyPass").addEventListener("click", async () => {
   const ok = confirm("Trippy Pass is $5/mo for 5 new falling trinkets while you watch the charts. Charts stay free and are not 100% accurate — not financial advice. OK = I agree to the Disclaimer.");
