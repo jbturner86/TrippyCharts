@@ -72,6 +72,7 @@
       <span class="dock-btns">
         <button type="button" id="fullscreen">page full screen</button>
         <button type="button" id="toggleCharts">hide charts</button>
+        <button type="button" id="buyPass">buy pass $5</button>
       </span>
       <button type="button" id="zen">hide everything</button>
     </div>
@@ -124,6 +125,7 @@ function savePlayer(){
 }
 function levelFromXp(xp){ return Math.floor((xp || 0) / 100) + 1; }
 let player = loadPlayer();
+
 function getPlayerId(){
   let id = localStorage.getItem("trippy_id");
   if (!id) {
@@ -161,23 +163,19 @@ async function pullCloud(){
     });
   } catch(e){}
 }
-
 async function pushCloud(){
   try {
     await fetch(API + "/save", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Player-Id": PLAYER_ID
-      },
+      headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
       body: JSON.stringify(player)
     });
   } catch(e){}
 }
-
 window.addEventListener("visibilitychange", () => {
   if (document.hidden) pushCloud();
 });
+
 const mid = Math.ceil(TOYS.length/2);
 function toyChecked(id){
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
@@ -426,6 +424,18 @@ document.getElementById("zen").addEventListener("click", ()=>{
   document.body.classList.toggle("zen", zenMode);
   document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
   if (zenMode) spawnBoss(); else boss = null;
+});
+document.getElementById("buyPass").addEventListener("click", async () => {
+  try {
+    const r = await fetch(API + "/buy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
+      body: JSON.stringify({ playerId: PLAYER_ID })
+    });
+    const data = await r.json();
+    if (data.url) location.href = data.url;
+    else alert(data.error || "checkout failed");
+  } catch(e){ alert("checkout failed"); }
 });
 boot(true); loop(); clock();
 pullCloud();
