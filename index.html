@@ -124,7 +124,60 @@ function savePlayer(){
 }
 function levelFromXp(xp){ return Math.floor((xp || 0) / 100) + 1; }
 let player = loadPlayer();
+function getPlayerId(){
+  let id = localStorage.getItem("trippy_id");
+  if (!id) {
+    id = "p_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem("trippy_id", id);
+  }
+  return id;
+}
+const PLAYER_ID = getPlayerId();
+const API = "https://trippy-quote.j-bradturner.workers.dev";
 
+async function pullCloud(){
+  try {
+    const r = await fetch(API + "/me?player=" + encodeURIComponent(PLAYER_ID));
+    if (!r.ok) return;
+    const row = await r.json();
+    if (!row || !row.id) return;
+    player.xp = row.xp || 0;
+    player.eaten = row.eaten || 0;
+    player.eatenCycle = row.eaten_cycle || 0;
+    player.toyDensity = row.toy_density || player.toyDensity;
+    try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
+    try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
+    player.passActive = !!row.pass_active;
+    player.passExpiresAt = row.pass_expires_at;
+    savePlayer();
+    const dens = document.getElementById("density");
+    if (dens) {
+      dens.value = player.toyDensity;
+      const label = document.getElementById("densityVal");
+      if (label) label.textContent = dens.value;
+    }
+    document.querySelectorAll("[data-toy]").forEach(el => {
+      el.checked = (player.equippedToyIds || []).includes(el.dataset.toy);
+    });
+  } catch(e){}
+}
+
+async function pushCloud(){
+  try {
+    await fetch(API + "/save", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Player-Id": PLAYER_ID
+      },
+      body: JSON.stringify(player)
+    });
+  } catch(e){}
+}
+
+window.addEventListener("visibilitychange", () => {
+  if (document.hidden) pushCloud();
+});
 const mid = Math.ceil(TOYS.length/2);
 function toyChecked(id){
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
@@ -375,8 +428,10 @@ document.getElementById("zen").addEventListener("click", ()=>{
   if (zenMode) spawnBoss(); else boss = null;
 });
 boot(true); loop(); clock();
+pullCloud();
 setInterval(clock,1000);
 setInterval(tickLive, 4000);
+setInterval(pushCloud, 30000);
 </script>
 </body>
 </html>
