@@ -66,8 +66,12 @@
     .stage.layout-1x3 { grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr; }
     .stage.hide { display:none; }
     .card.off { display:none; }
-    .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; }
+    .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.55); border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; }
     .card canvas { display:block; width:100%; flex:1 1 auto; min-height:0; }
+    .chart-head { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:7px 10px 0; }
+    .ohlc { font-variant-numeric:tabular-nums; font-size:.72rem; color:#d7c7ff; letter-spacing:.02em; }
+    .ohlc b { font-weight:700; margin-right:10px; }
+    .ohlc .up { color:#00c805; } .ohlc .down { color:#ff5000; }
     .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:7px 9px 9px; }
     .group-name { font-size:1rem; letter-spacing:.08em; text-transform:uppercase; color:#efe6ff; margin-bottom:5px; font-weight:700; }
     .pickers { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
@@ -484,8 +488,9 @@ function hurtPlayer(){
 function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*bg.width,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
 function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
 function drawToy(c,b){
-  c.save(); c.translate(b.x,b.y); c.rotate(b.rot||0);
-  const s=b.s, k=b.kind;
+  if(!b || !c) return;
+  c.save(); c.translate(b.x||0,b.y||0); c.rotate(b.rot||0);
+  const s=Math.max(4, b.s||16), k=b.kind;
   c.lineJoin="round"; c.lineCap="round";
   const stroke=()=>{ c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1.2,s*0.06); c.stroke(); };
   if(k==="mushrooms"){
@@ -656,7 +661,7 @@ function tickBits(){
   const dens = +(document.getElementById("density")||{}).value || 70;
   if (activeToys().length) {
     const need = dens - bits.length;
-    const burstN = Math.min(18, Math.max(0, need));
+    const burstN = Math.min(40, Math.max(0, need));
     for (let i=0;i<burstN;i++) spawnBit();
   }
   const capture=48+18*squidScale;
@@ -686,32 +691,38 @@ function tickBits(){
       if(zenMode&&hitBoss(b)) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall")||b);
       else if(dist>(zenMode?380:150)){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
     }
-    if(b.y>bg.height+50||b.x<-60||b.x>bg.width+60) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall"));
+    if(b.y>innerHeight+50||b.x<-60||b.x>innerWidth+60) Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b);
   });
   burst=burst.filter(p=>p.life>0);
   burst.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vx*=0.98; p.vy*=0.98; p.life-=0.012; });
 }
 (function loopSky(){
-  ctx.clearRect(0,0,bg.width,bg.height); tickBits(); tickMusic(); bits.forEach(b=>drawToy(ctx,b));
-  burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=p.white?`rgba(255,255,255,${p.life})`:`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
-  if(zenMode&&boss){
-    boss.x += boss.vx; boss.y += boss.vy; boss.rot += boss.spin;
-    const m = boss.s*0.45;
-    if(boss.x<m || boss.x>bg.width-m){ boss.vx*=-1; boss.x=Math.max(m,Math.min(bg.width-m,boss.x)); }
-    if(boss.y<m || boss.y>bg.height-m){ boss.vy*=-1; boss.y=Math.max(m,Math.min(bg.height-m,boss.y)); }
-    if(boss.hurt>0) boss.hurt--;
-    if(hurtCool>0) hurtCool--;
-    if(Math.hypot(boss.x-mouse.x, boss.y-mouse.y) < boss.s*0.42 + 18) hurtPlayer();
-    drawToy(ctx,boss);
-    ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90,8);
-    ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90*(boss.hp/boss.maxHp),8);
-  }
-  if(zenMode){
-    ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(mouse.x-28, mouse.y-36, 56, 7);
-    ctx.fillStyle="#ff3b4e"; ctx.fillRect(mouse.x-28, mouse.y-36, 56*(playerHp/100), 7);
-    ctx.strokeStyle="rgba(255,255,255,.4)"; ctx.strokeRect(mouse.x-28, mouse.y-36, 56, 7);
-  }
-  drawSquid();
+  try {
+    if (!bg.width || !bg.height) resizeBg();
+    ctx.clearRect(0,0,bg.width,bg.height);
+    tickBits();
+    tickMusic();
+    bits.forEach(b=>{ try{ drawToy(ctx,b); }catch(e){} });
+    burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=p.white?`rgba(255,255,255,${p.life})`:`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
+    if(zenMode&&boss){
+      boss.x += boss.vx; boss.y += boss.vy; boss.rot += boss.spin;
+      const m = boss.s*0.45;
+      if(boss.x<m || boss.x>bg.width-m){ boss.vx*=-1; boss.x=Math.max(m,Math.min(bg.width-m,boss.x)); }
+      if(boss.y<m || boss.y>bg.height-m){ boss.vy*=-1; boss.y=Math.max(m,Math.min(bg.height-m,boss.y)); }
+      if(boss.hurt>0) boss.hurt--;
+      if(hurtCool>0) hurtCool--;
+      if(Math.hypot(boss.x-mouse.x, boss.y-mouse.y) < boss.s*0.42 + 18) hurtPlayer();
+      try{ drawToy(ctx,boss); }catch(e){}
+      ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90,8);
+      ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90*(boss.hp/boss.maxHp),8);
+    }
+    if(zenMode){
+      ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(mouse.x-28, mouse.y-36, 56, 7);
+      ctx.fillStyle="#ff3b4e"; ctx.fillRect(mouse.x-28, mouse.y-36, 56*(playerHp/100), 7);
+      ctx.strokeStyle="rgba(255,255,255,.4)"; ctx.strokeRect(mouse.x-28, mouse.y-36, 56, 7);
+    }
+    drawSquid();
+  } catch(e) {}
   requestAnimationFrame(loopSky);
 })();
 const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
@@ -724,13 +735,16 @@ function fmtAxisTime(t, tf){
 const slots = STARTERS.map((symbol,id) => ({id, symbol, tf:"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0}));
 document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
   <section class="card" id="card-${s.id}">
-    <canvas id="cv-${s.id}"></canvas>
-    <div class="meta"><div>
+    <div class="chart-head">
       <div class="pickers">
         <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
         <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id==="30m"?"selected":""}>${t.id}</option>`).join("")}</select>
         <button type="button" data-fs="${s.id}">full screen</button>
-      </div></div>
+      </div>
+      <div class="ohlc" id="ohlc-${s.id}"></div>
+    </div>
+    <canvas id="cv-${s.id}"></canvas>
+    <div class="meta"><div></div>
       <div><div class="px" id="px-${s.id}">${s.symbol}</div><div class="chg flat" id="chg-${s.id}"></div><div class="note" id="note-${s.id}"></div></div>
     </div>
   </section>`).join("");
@@ -745,7 +759,7 @@ function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-
   if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } }); }
 addEventListener("resize", sizeCanvases); addEventListener("fullscreenchange", sizeCanvases);
 function aggregate(bars,n){ const out=[]; for(let i=0;i<bars.length;i+=n){ const ch=bars.slice(i,i+n); if(!ch.length) continue;
-  out.push({t:ch[0].t, open:ch[0].open, close:ch.at(-1).close, high:Math.max(...ch.map(b=>b.high)), low:Math.min(...ch.map(b=>b.low))}); } return out; }
+  out.push({t:ch[0].t, open:ch[0].open, close:ch.at(-1).close, high:Math.max(...ch.map(b=>b.high)), low:Math.min(...ch.map(b=>b.low)), vol:ch.reduce((s,b)=>s+(b.vol||0),0)}); } return out; }
 function mergeBars(oldB,newB){ if(!oldB.length) return newB; const map=new Map(oldB.map(b=>[b.t,{...b}])); newB.forEach(b=>map.set(b.t,b)); return [...map.values()].sort((a,c)=>a.t-c.t); }
 function tfMs(id){ return ({ "1m":6e4,"5m":3e5,"10m":6e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"1d":864e5,"1w":6048e5 })[id] || 18e5; }
 function endpoints(symbol, interval, range){ return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`]; }
@@ -758,7 +772,7 @@ async function fetchBars(symbol,tfId){
       const q=r.indicators.quote[0], bars=[];
       for(let i=0;i<r.timestamp.length;i++){
         if([q.open[i],q.close[i],q.high[i],q.low[i]].some(v=>v==null)) continue;
-        bars.push({t:r.timestamp[i]*1000, open:q.open[i], high:q.high[i], low:q.low[i], close:q.close[i]});
+        bars.push({t:r.timestamp[i]*1000, open:q.open[i], high:q.high[i], low:q.low[i], close:q.close[i], vol:q.volume?q.volume[i]:0});
       }
       if(bars.length<6) continue;
       const used=tf.group?aggregate(bars,tf.group):bars;
@@ -770,9 +784,16 @@ async function fetchBars(symbol,tfId){
 function applyLive(slot, price){
   if (!price || !slot.allBars.length) return;
   const last = slot.allBars.at(-1), bucket = tfMs(slot.tf), now = Date.now();
-  if (now - last.t >= bucket * 0.98) slot.allBars.push({ t: last.t + bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price });
+  if (now - last.t >= bucket * 0.98) slot.allBars.push({ t: last.t + bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price, vol: last.vol||0 });
   else { last.close = price; last.high = Math.max(last.high, price); last.low = Math.min(last.low, price); }
   slot.price = price; if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
+}
+function fmtPx(n){ return (n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtVol(n){
+  n = n||0;
+  if (n>=1e6) return (n/1e6).toFixed(2)+"M";
+  if (n>=1e3) return (n/1e3).toFixed(2)+"K";
+  return String(Math.round(n));
 }
 function drawChart(slot){
   const canvas=document.getElementById("cv-"+slot.id), c=canvas.getContext("2d");
@@ -780,28 +801,72 @@ function drawChart(slot){
   const bars=visibleBars(slot); if(!bars.length) return;
   if (slot.showPx && slot.price) slot.showPx += (slot.price - slot.showPx) * 0.18;
   const liveBars = bars.map((b,i) => i===bars.length-1 && slot.showPx ? {...b, close:slot.showPx, high:Math.max(b.high,slot.showPx), low:Math.min(b.low,slot.showPx)} : b);
-  const padL=64*devicePixelRatio,padR=12*devicePixelRatio,padT=16*devicePixelRatio,padB=30*devicePixelRatio;
+  const dpr=devicePixelRatio||1;
+  const padL=10*dpr, padR=58*dpr, padT=8*dpr, padB=22*dpr, volH=Math.max(22*dpr, h*0.16);
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
-  const span=max-min, plotH=h-padT-padB, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(3,gap*.62);
-  const yOf=px=>padT+(max-px)/span*plotH; slot.layout={padL,gap};
-  c.strokeStyle="rgba(180,140,255,.16)"; c.lineWidth=devicePixelRatio;
-  for(let i=0;i<5;i++){ const y=padT+(plotH/4)*i; c.beginPath(); c.moveTo(padL,y); c.lineTo(w-padR,y); c.stroke();
-    c.fillStyle="rgba(220,200,255,.75)"; c.font=`${11*devicePixelRatio}px Trebuchet MS`; c.fillText((max-span/4*i).toFixed(2),6*devicePixelRatio,y+4); }
+  const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
+  const yOf=px=>padT+(max-px)/span*plotH;
+  slot.layout={padL,padR,gap,plotH,padT,volH};
+  const last=liveBars.at(-1), lastUp=last.close>=last.open;
+  const upCol="#00c805", dnCol="#ff5000";
+  c.strokeStyle="rgba(255,255,255,.08)"; c.lineWidth=dpr;
+  for(let i=0;i<5;i++){
+    const px=max-span/4*i, y=yOf(px);
+    c.beginPath(); c.moveTo(padL,y); c.lineTo(w-padR,y); c.stroke();
+    c.fillStyle="rgba(210,210,220,.7)"; c.font=`${10*dpr}px Trebuchet MS`; c.textAlign="left";
+    c.fillText(fmtPx(px), w-padR+6*dpr, y+3*dpr);
+  }
+  const maxVol=Math.max(1,...liveBars.map(b=>b.vol||0));
   liveBars.forEach((b,i)=>{
-    const x=padL+i*gap+gap/2, up=b.close>=b.open, col=up?"#7cff9a":"#ff5d9a";
-    c.strokeStyle=col; c.shadowColor=up?"rgba(80,255,160,.3)":"rgba(255,70,160,.3)"; c.shadowBlur=((i===liveBars.length-1)?12:7)*devicePixelRatio;
+    const x=padL+i*gap+gap/2, up=b.close>=b.open, col=up?upCol:dnCol;
+    c.strokeStyle=col; c.lineWidth=Math.max(1,dpr);
     c.beginPath(); c.moveTo(x,yOf(b.high)); c.lineTo(x,yOf(b.low)); c.stroke();
     const top=yOf(Math.max(b.open,b.close)), bot=yOf(Math.min(b.open,b.close));
-    c.fillStyle=col; c.fillRect(x-bodyW/2,top,bodyW,Math.max(2,bot-top)); c.shadowBlur=0;
+    c.fillStyle=col; c.fillRect(x-bodyW/2,top,bodyW,Math.max(2*dpr,bot-top));
+    const vh=((b.vol||0)/maxVol)*volH*0.86;
+    c.globalAlpha=0.55; c.fillRect(x-bodyW/2, h-padB-vh, bodyW, Math.max(1,vh)); c.globalAlpha=1;
   });
+  const lastY=yOf(last.close);
+  c.setLineDash([4*dpr,4*dpr]); c.strokeStyle=lastUp?upCol:dnCol; c.lineWidth=dpr;
+  c.beginPath(); c.moveTo(padL,lastY); c.lineTo(w-padR,lastY); c.stroke(); c.setLineDash([]);
+  const pillW=52*dpr, pillH=16*dpr, pillX=w-padR+3*dpr, pillY=lastY-pillH/2;
+  c.fillStyle=lastUp?upCol:dnCol; c.beginPath();
+  if (c.roundRect) c.roundRect(pillX,pillY,pillW,pillH,4*dpr); else c.rect(pillX,pillY,pillW,pillH);
+  c.fill();
+  c.fillStyle="#111"; c.font=`700 ${10*dpr}px Trebuchet MS`; c.textAlign="center";
+  c.fillText(fmtPx(last.close), pillX+pillW/2, lastY+3.5*dpr);
   const ticks = Math.min(5, liveBars.length);
-  c.fillStyle="rgba(220,200,255,.82)"; c.font=`${10*devicePixelRatio}px Trebuchet MS`; c.textAlign="center";
+  c.fillStyle="rgba(200,200,210,.75)"; c.font=`${9*dpr}px Trebuchet MS`; c.textAlign="center";
   for(let i=0;i<ticks;i++){
     const idx = ticks===1 ? 0 : Math.round(i*(liveBars.length-1)/(ticks-1));
     const b = liveBars[idx]; if(!b||!b.t) continue;
-    c.fillText(fmtAxisTime(b.t, slot.tf), padL+idx*gap+gap/2, h-8*devicePixelRatio);
+    c.fillText(fmtAxisTime(b.t, slot.tf), padL+idx*gap+gap/2, h-7*dpr);
   }
+  if (slot.hover){
+    const hx=slot.hover.x, hy=slot.hover.y;
+    const idx=Math.max(0,Math.min(liveBars.length-1, Math.floor((hx-padL)/gap)));
+    const b=liveBars[idx];
+    if (b){
+      const bx=padL+idx*gap+gap/2;
+      const hoverPx = min + (1-(hy-padT)/plotH)*span;
+      const px = (hy>padT && hy<padT+plotH) ? hoverPx : b.close;
+      c.setLineDash([3*dpr,3*dpr]); c.strokeStyle="rgba(255,255,255,.35)"; c.lineWidth=dpr;
+      c.beginPath(); c.moveTo(bx,padT); c.lineTo(bx,h-padB); c.stroke();
+      c.beginPath(); c.moveTo(padL,yOf(px)); c.lineTo(w-padR,yOf(px)); c.stroke(); c.setLineDash([]);
+      c.fillStyle="#fff"; c.beginPath(); c.arc(bx, yOf(b.close), 3.2*dpr, 0, 7); c.fill();
+      const tagY=yOf(px)-8*dpr;
+      c.fillStyle="rgba(20,20,24,.92)"; c.fillRect(w-padR+3*dpr, tagY, 52*dpr, 16*dpr);
+      c.fillStyle="#fff"; c.font=`700 ${10*dpr}px Trebuchet MS`; c.textAlign="center";
+      c.fillText(fmtPx(px), w-padR+29*dpr, tagY+12*dpr);
+      paintOhlc(slot, b);
+    }
+  } else paintOhlc(slot, last);
   c.textAlign="left";
+}
+function paintOhlc(slot, b){
+  const el=document.getElementById("ohlc-"+slot.id); if(!el||!b) return;
+  const up=b.close>=b.open;
+  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b><span>Vol ${fmtVol(b.vol||0)}</span>`;
 }
 function paintMeta(slot){
   const change=slot.price-slot.prev, pct=slot.prev?(change/slot.prev)*100:0;
@@ -855,6 +920,11 @@ slots.forEach((_,i)=>{
   });
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
+  cv.addEventListener("mousemove", e => {
+    const r=cv.getBoundingClientRect(), dpr=devicePixelRatio||1;
+    slots[i].hover={ x:(e.clientX-r.left)*dpr, y:(e.clientY-r.top)*dpr };
+  });
+  cv.addEventListener("mouseleave", () => { slots[i].hover=null; });
 });
 document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
 // hide-charts removed
