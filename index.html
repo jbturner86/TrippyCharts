@@ -30,15 +30,19 @@
     .density-box label { color:#ffd39a; } .xp-box label { color:#b8ffd4; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
     .xp-track { height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; }
-    .xp-fill { height:100%; width:0%; background:linear-gradient(90deg,#7cff3a,#3affc8,#c44bff); transition:width .25s; }
+    .xp-fill { height:100%; width:0%; background:linear-gradient(90deg,#7cff3a,#3affc8,#c44bff); }
     body.zen .density-box { display:none; }
     .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: auto minmax(0,1fr) auto; gap:6px; padding:0 4px 8px; }
     .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
     .toys-left { align-items:flex-end; } .toys-right { align-items:flex-start; }
     body.zen header, body.zen .stage { display:none !important; }
     body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
+    body.corner .stage { position:fixed; right:8px; bottom:8px; width:min(420px,46vw); height:min(280px,34vh); z-index:4; gap:6px; }
+    body.corner .card canvas { min-height:70px; }
+    body.corner .group-name { font-size:.7rem; }
+    body.corner .pickers { display:none; }
     .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
-    .chip.locked { color:transparent; border:0; font-weight:800; background:linear-gradient(135deg,#7cff3a,#3ae8ff,#c44bff,#ff5d8f,#ffe14a,#7cff3a); background-size:220% 220%; animation:lockPulse 2.4s linear infinite; box-shadow:0 0 12px rgba(196,75,255,.55); }
+    .chip.locked { color:transparent; border:0; background:linear-gradient(135deg,#7cff3a,#3ae8ff,#c44bff,#ff5d8f,#ffe14a,#7cff3a); background-size:220% 220%; animation:lockPulse 2.4s linear infinite; box-shadow:0 0 12px rgba(196,75,255,.55); }
     .chip.locked span { visibility:hidden; }
     @keyframes lockPulse { to { background-position:220% 0; } }
     .chip input { width:15px; height:15px; accent-color:#c44bff; }
@@ -77,6 +81,7 @@
     </div>
     <div class="actions">
       <button type="button" id="fullscreen">page full screen</button>
+      <button type="button" id="corner">charts corner</button>
       <button type="button" id="zen">hide everything</button>
     </div>
     <div class="board center" id="board">
@@ -105,19 +110,23 @@ const GROUPS = [
   {title:"Healthcare", names:[["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"]]}
 ];
 let unlocked = Math.max(1, Math.min(TOYS.length, +(localStorage.getItem("tc_unlocked")||1)));
-let xp = Math.max(0, Math.min(100, +(localStorage.getItem("tc_xp")||0)));
-let fightStarted = 0, phase2 = false;
+let xp = Math.max(0, Math.min(99, +(localStorage.getItem("tc_xp")||0)));
 function saveProg(){ localStorage.setItem("tc_unlocked", unlocked); localStorage.setItem("tc_xp", xp); }
 function paintXP(){
   document.getElementById("xpVal").textContent = xp;
   document.getElementById("lvlVal").textContent = unlocked;
   document.getElementById("xpFill").style.width = xp + "%";
 }
+function gainXP(n){
+  xp += n;
+  while (xp >= 100) { xp -= 100; if (unlocked < TOYS.length) { unlocked += 1; renderToys(); } }
+  saveProg(); paintXP();
+}
 function renderToys(){
   const mid = Math.ceil(TOYS.length/2);
   const html = (slice, start) => slice.map(([id,label], i) => {
-    const idx = start + i, on = idx < unlocked;
-    if (!on) return `<span class="chip locked" title="locked"><span>${label}</span></span>`;
+    const idx = start + i;
+    if (idx >= unlocked) return `<span class="chip locked" title="locked"><span>${label}</span></span>`;
     const checked = id==="mushrooms" || document.querySelector(`[data-toy="${id}"]:checked`);
     return `<label class="chip"><input type="checkbox" data-toy="${id}" ${checked?"checked":""}>${label}</label>`;
   }).join("");
@@ -131,45 +140,30 @@ document.getElementById("board").addEventListener("change", () => { const kinds 
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.5, zenMode = false, boss = null, novaFX = 0;
-const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
-const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0;
+const SQUID_START = 0.65, SQUID_MAX = 1.15, ARM_N = 16, SEG = 16;
+const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.4, 6.5 - i*0.28) })));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
 function nova(){ for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); } eaten=0; squidScale=SQUID_START; }
 function growFromEat(){ eaten++; if (eaten>0 && eaten%15===0){ squidScale=Math.min(SQUID_MAX, squidScale*1.05); if (squidScale>=SQUID_MAX) nova(); } }
-function spawnBoss(nasty){
-  phase2 = !!nasty;
-  boss = { kind:"mushrooms", nasty:phase2, x:innerWidth*0.5+(Math.random()-0.5)*innerWidth*0.25, y:innerHeight*0.36+Math.random()*innerHeight*0.16, s:phase2?280:170, hp:100, maxHp:100, rot:0, spin:phase2?0.06:(Math.random()-0.5)*.02, hue:phase2?12:Math.random()*360, hurt:0 };
+function spawnBoss(phase){
+  boss = { kind:"mushrooms", phase, nasty:phase>=2, x:innerWidth*0.5, y:innerHeight*0.38, s:phase===1?170:phase===2?260:320, hp:100, maxHp:100, rot:0, spin:phase===1?.02:.08, hue:phase===1?120:phase===2?12:280, hurt:0 };
+  fightStarted = performance.now();
 }
-function gainXP(){
-  xp += 5;
-  if (xp >= 100) {
-    xp = 0;
-    if (unlocked < TOYS.length) { unlocked += 1; renderToys(); }
-  }
-  saveProg(); paintXP();
-}
-function endZenAfterNova(){
-  zenMode=false; boss=null; novaFX=0; phase2=false;
-  document.body.classList.remove("zen");
-  document.getElementById("zen").textContent="hide everything";
-}
-function startSuperNova(x,y){
-  novaFX=1;
-  for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); }
-  setTimeout(endZenAfterNova,1700);
-}
+function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; }
+function startSuperNova(x,y){ novaFX=1; for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); } setTimeout(endZenAfterNova,1700); }
 function hitBoss(b){
   if(!boss) return false;
   if(Math.hypot(b.x-boss.x,b.y-boss.y)>=boss.s*0.48) return false;
   boss.hp=Math.max(0,boss.hp-2); boss.hurt=8;
   burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8});
   if(boss.hp<=0){
-    const bx=boss.x, by=boss.y, wasNasty=boss.nasty, fast = (performance.now()-fightStarted) < 4000;
-    boss=null; gainXP();
-    if(!wasNasty && fast) spawnBoss(true);
-    else startSuperNova(bx,by);
+    const bx=boss.x, by=boss.y, phase=boss.phase, fast=(performance.now()-fightStarted)<4000;
+    boss=null;
+    if(phase===1){ gainXP(5); if(fast) spawnBoss(2); else startSuperNova(bx,by); }
+    else if(phase===2){ gainXP(5); if(fast) spawnBoss(3); else startSuperNova(bx,by); }
+    else { gainXP(15); if(fast) gainXP(5); startSuperNova(bx,by); }
   }
   return true;
 }
@@ -181,7 +175,7 @@ function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot);
   const s=b.s; c.fillStyle=`hsl(${b.hue},85%,65%)`; c.strokeStyle=`hsl(${b.hue},90%,80%)`; c.lineWidth=1.4;
-  if(b.kind==="mushrooms"){ c.fillStyle=b.nasty?"#3a1020":"#f3e2b8"; c.fillRect(-s*.1,0,s*.2,s*.55); c.fillStyle=b.nasty?"#ff2a4a":`hsl(${b.hue},80%,58%)`; c.beginPath(); c.ellipse(0,0,s*.42,s*.26,0,0,7); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.12,-s*.04,s*.07,0,7); c.fill(); if(b.nasty){ c.fillStyle="#111"; c.beginPath(); c.arc(-s*.1,-s*.02,s*.05,0,7); c.fill(); c.beginPath(); c.arc(s*.1,-s*.02,s*.05,0,7); c.fill(); } }
+  if(b.kind==="mushrooms"){ c.fillStyle=b.nasty?"#3a1020":"#f3e2b8"; c.fillRect(-s*.1,0,s*.2,s*.55); c.fillStyle=b.nasty?(b.phase===3?"#c44bff":"#ff2a4a"):`hsl(${b.hue},80%,58%)`; c.beginPath(); c.ellipse(0,0,s*.42,s*.26,0,0,7); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.12,-s*.04,s*.07,0,7); c.fill(); if(b.nasty){ c.fillStyle="#111"; c.beginPath(); c.arc(-s*.1,-s*.02,s*.05,0,7); c.fill(); c.beginPath(); c.arc(s*.1,-s*.02,s*.05,0,7); c.fill(); } }
   else if(b.kind==="stars"){ c.beginPath(); for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566; c.lineTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5); c.lineTo(Math.cos(a+.628)*s*.2,Math.sin(a+.628)*s*.2);} c.closePath(); c.fill(); }
   else if(b.kind==="moons"){ c.beginPath(); c.arc(0,0,s*.38,0,7); c.fill(); c.globalCompositeOperation="destination-out"; c.beginPath(); c.arc(s*.16,-s*.08,s*.3,0,7); c.fill(); c.globalCompositeOperation="source-over"; }
   else if(b.kind==="turtles"){ c.fillStyle=`hsl(${b.hue},70%,42%)`; c.beginPath(); c.ellipse(0,0,s*.34,s*.26,0,0,7); c.fill(); c.fillStyle=`hsl(${b.hue},80%,58%)`; c.beginPath(); c.arc(-s*.28,-s*.02,s*.12,0,7); c.fill(); for(let i=-1;i<=1;i+=2){ c.beginPath(); c.ellipse(i*s*.2,s*.18,s*.1,s*.07,0,0,7); c.fill(); } c.fillStyle="#111"; c.beginPath(); c.arc(-s*.32,-s*.04,s*.03,0,7); c.fill(); }
@@ -202,22 +196,31 @@ function drawToy(c,b){
 }
 function drawSquid(){
   step++;
-  const radius=(13+5*Math.sin(step/10))*squidScale;
+  const radius=(17+6*Math.sin(step/10))*squidScale;
   jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
   if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
-  ctx.save(); ctx.globalCompositeOperation="lighter";
+  ctx.save();
   squid.forEach((arm,ai)=>{
     const ang=2*Math.PI*ai/ARM_N+step*0.004;
     let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
-    arm.forEach((p)=>{ const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*squidScale; p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35; ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; ctx.lineWidth=Math.max(1,p.r*0.35*squidScale); ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke(); tx=p.x; ty=p.y; });
+    arm.forEach((p)=>{
+      const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=5.4*squidScale;
+      p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35;
+      ctx.strokeStyle="#000"; ctx.lineWidth=Math.max(3.2,p.r*0.9*squidScale);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke();
+      ctx.strokeStyle=`hsla(${170+ai*12},100%,65%,.4)`; ctx.lineWidth=Math.max(1.4,p.r*0.42*squidScale);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke();
+      ctx.strokeStyle="#fff"; ctx.lineWidth=Math.max(1.6,p.r*0.5*squidScale);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale*0.72,0,7); ctx.stroke();
+      tx=p.x; ty=p.y;
+    });
   });
   ctx.restore();
 }
 function tickBits(){
   const dens = +(document.getElementById("density")||{}).value || 0;
-  if (dens <= 0) {
-    bits = bits.filter(b => b.state !== "fall");
-  } else if (activeToys().length) {
+  if (dens <= 0) bits = bits.filter(b => b.state !== "fall");
+  else if (activeToys().length) {
     const need = dens - bits.length;
     const burstN = Math.min(18, Math.max(0, need));
     for (let i=0;i<burstN;i++) spawnBit();
@@ -365,19 +368,21 @@ slots.forEach((_,i)=>{
     if(document.fullscreenElement===card) await document.exitFullscreen(); else await card.requestFullscreen();
   });
 });
-document.getElementById("density").addEventListener("input", e => {
-  document.getElementById("densityVal").textContent = e.target.value;
-});
+document.getElementById("density").addEventListener("input", e => { document.getElementById("densityVal").textContent = e.target.value; });
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
   if(!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen();
+});
+document.getElementById("corner").addEventListener("click", ()=>{
+  document.body.classList.toggle("corner");
+  document.getElementById("corner").textContent = document.body.classList.contains("corner") ? "charts full" : "charts corner";
+  sizeCanvases();
 });
 document.getElementById("zen").addEventListener("click", ()=>{
   zenMode = !zenMode;
   document.body.classList.toggle("zen", zenMode);
   document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
-  if (zenMode) { fightStarted = performance.now(); phase2=false; spawnBoss(false); }
-  else boss = null;
+  if (zenMode) spawnBoss(1); else boss = null;
 });
 boot(true); loop(); clock();
 setInterval(clock,1000);
