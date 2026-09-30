@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TrippyCharts</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,38 +18,27 @@
       font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
       background:linear-gradient(90deg,#7cff3a,#fff,#c44bff,#ff5d8f); background-size:220% auto;
       -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 7s linear infinite;
-      -webkit-text-stroke:1.4px rgba(255,255,255,.28); filter:drop-shadow(0 0 8px rgba(196,75,255,.55));
-      display:inline-flex; align-items:baseline; gap:.35em; }
-    .byline { font-family:Georgia,"Palatino Linotype","Book Antiqua",serif; font-style:italic; font-weight:500; letter-spacing:.04em; text-transform:none; font-size:.42em; -webkit-text-stroke:0; filter:none; }
+      -webkit-text-stroke:1.4px rgba(255,255,255,.28); filter:drop-shadow(0 0 8px rgba(196,75,255,.55)); }
     @keyframes sheen { to { background-position:220% center; } }
     .status { margin-top:4px; color:#cbb6ff; font-size:.8rem; }
     .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
+    .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     button { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; }
-    .density-box, .xp-box { position:fixed; top:10px; z-index:6; width:220px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); }
-    .density-box { left:12px; border:1px solid rgba(255,160,60,.55); }
-    .xp-box { right:12px; border:1px solid rgba(120,255,180,.55); }
-    .density-box label, .xp-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }
-    .density-box label { color:#ffd39a; } .xp-box label { color:#b8ffd4; }
+    button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
+    .density-box { position:fixed; top:10px; left:12px; z-index:6; width:220px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
+    .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
-    .xp-track { height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; }
-    .xp-fill { height:100%; width:0%; background:linear-gradient(90deg,#7cff3a,#3affc8,#c44bff); }
     body.zen .density-box { display:none; }
     .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: auto minmax(0,1fr) auto; gap:6px; padding:0 4px 8px; }
     .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
-    .toys-left { align-items:flex-end; } .toys-right { align-items:flex-start; }
-    body.zen header, body.zen .stage { display:none !important; }
+    .toys-left { align-items:flex-end; }
+    .toys-right { align-items:flex-start; }
+    body.zen header, body.zen .dock-btns, body.zen .stage { display:none !important; }
     body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
-    body.corner .stage { position:fixed; right:10px; bottom:10px; width:auto; height:auto; z-index:4; gap:8px; grid-template-columns:1fr; grid-template-rows:none; }
-    body.corner .card { width:210px; background:rgba(10,6,20,.82); }
-    body.corner .card canvas, body.corner .group-name, body.corner .pickers { display:none !important; }
-    body.corner .meta { padding:8px 10px; }
-    body.corner .px { font-size:1rem; }
     .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
-    .chip.locked { color:transparent; border:0; background:linear-gradient(135deg,#7cff3a,#3ae8ff,#c44bff,#ff5d8f,#ffe14a,#7cff3a); background-size:220% 220%; animation:lockPulse 2.4s linear infinite; box-shadow:0 0 12px rgba(196,75,255,.55); }
-    .chip.locked span { visibility:hidden; }
-    @keyframes lockPulse { to { background-position:220% 0; } }
     .chip input { width:15px; height:15px; accent-color:#c44bff; }
     .stage { min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:12px; width:100%; height:100%; }
+    .stage.hide { display:none; }
     .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; }
     .card canvas { display:block; width:100%; flex:1 1 auto; min-height:0; }
     .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:7px 9px 9px; }
@@ -59,43 +48,31 @@
     .px { font-variant-numeric:tabular-nums; font-size:.92rem; }
     .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
     .note { font-size:.62rem; color:#b9a6dd; }
-    .joystick { display:none; position:fixed; left:16px; bottom:16px; width:128px; height:128px; z-index:30; touch-action:none; }
-    body.phone.zen .joystick { display:block; }
-    .joy-base { width:100%; height:100%; border-radius:50%; background:rgba(18,8,28,.55); border:2px solid rgba(255,255,255,.35); }
-    .joy-knob { position:absolute; width:52px; height:52px; border-radius:50%; left:50%; top:50%; transform:translate(-50%,-50%); background:radial-gradient(circle at 30% 30%,#fff,#c44bff 55%,#7cff3a); border:2px solid #fff; box-shadow:0 0 16px rgba(196,75,255,.7); }
+    .zoom { display:none; }
     @media (max-width:900px) {
       html,body { overflow:auto; cursor:auto; }
       .wrap { height:auto; min-height:100dvh; overflow:visible; }
-      header { padding:8px 8px 4px; }
-      h1 { font-size:1.2rem; flex-wrap:wrap; justify-content:center; }
-      .actions { padding:6px 8px 10px; }
-      .board { display:flex; flex-direction:column; height:auto; padding:0 8px 16px; }
-      .toys-col { flex-direction:row; flex-wrap:wrap; justify-content:center; width:100%; align-items:center; }
-      .stage { display:flex; flex-direction:column; height:auto; gap:10px; }
-      .card { min-height:0; }
-      .card canvas { height:220px; flex:none; }
-      .density-box, .xp-box { position:static; width:min(260px,92%); margin:8px auto 0; }
-      body.zen { overflow:hidden; }
-      body.zen .wrap { height:100dvh; overflow:hidden; }
+      .board { display:flex; flex-direction:column; height:auto; }
+      .toys-col { flex-direction:row; flex-wrap:wrap; justify-content:center; }
+      .stage { grid-template-columns:1fr; height:auto; }
+      .card canvas { height:230px; flex:none; }
+      .density-box { position:static; width:min(220px,90%); margin:8px auto 0; }
     }
   </style>
 </head>
 <body>
   <div id="sky"><canvas id="bg"></canvas></div>
   <div class="wrap">
-    <header><h1>TrippyCharts <span class="byline">by james bradly</span></h1><p class="status" id="status"></p></header>
+    <header><h1>TrippyCharts</h1><p class="status" id="status"></p></header>
     <div class="density-box">
       <label for="density">toy density <span id="densityVal">70</span></label>
-      <input type="range" id="density" min="0" max="400" value="70">
-    </div>
-    <div class="xp-box">
-      <label>xp lvl <span id="lvlVal">1</span> — <span id="xpVal">0</span>%</label>
-      <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+      <input type="range" id="density" min="10" max="400" value="70">
     </div>
     <div class="actions">
-      <button type="button" id="fullscreen">page full screen</button>
-      <button type="button" id="corner">corner charts</button>
-      <button type="button" id="wormBtn">no worm</button>
+      <span class="dock-btns">
+        <button type="button" id="fullscreen">page full screen</button>
+        <button type="button" id="toggleCharts">hide charts</button>
+      </span>
       <button type="button" id="zen">hide everything</button>
     </div>
     <div class="board center" id="board">
@@ -104,10 +81,9 @@
       <div class="toys-col toys-right" id="toysRight"></div>
     </div>
   </div>
-  <div class="joystick" id="joystick"><div class="joy-base"></div><div class="joy-knob" id="joyKnob"></div></div>
 <script>
 const TOYS = [
-  ["mushrooms","Mushrooms"],["stars","Stars"],["moons","Moons"],["turtles","Turtles"],
+  ["mushrooms","Mushrooms",true],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
   ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
   ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"]
@@ -119,31 +95,18 @@ const TFS = [
   {id:"1d",interval:"1d",range:"6mo"},{id:"1w",interval:"1wk",range:"2y"}
 ];
 const GROUPS = [
-  {title:"Magnificent 7 / Mega-cap Tech", names:[
-    ["NVDA","Nvidia"],["AAPL","Apple"],["MSFT","Microsoft"],["AMZN","Amazon"],["GOOGL","Alphabet"],["META","Meta"],["TSLA","Tesla"],
-    ["SPY","S&P 500 ETF"],["QQQ","Nasdaq 100 ETF"],["DIA","Dow ETF"],["IWM","Russell 2000 ETF"],["VTI","Total Market ETF"],["VOO","Vanguard S&P 500"]
-  ]},
-  {title:"Semis & AI Infrastructure", names:[
-    ["AVGO","Broadcom"],["AMD","AMD"],["MU","Micron"],["INTC","Intel"],["PLTR","Palantir"],["TSM","TSMC"],["AMAT","Applied Materials"],
-    ["ASML","ASML"],["ARM","Arm"],["SMCI","Super Micro"],["NVDA","Nvidia"],["SOXX","Semis ETF"],["SMH","VanEck Semis ETF"],["BOTZ","Robotics AI ETF"]
-  ]},
-  {title:"Financials", names:[
-    ["JPM","JPMorgan"],["BAC","Bank of America"],["V","Visa"],["MA","Mastercard"],["WFC","Wells Fargo"],["GS","Goldman Sachs"],["MS","Morgan Stanley"],
-    ["BLK","BlackRock"],["SCHW","Charles Schwab"],["C","Citigroup"],["AXP","American Express"],["BRK-B","Berkshire Hathaway"],
-    ["XLF","Financials ETF"],["KRE","Regional Banks ETF"]
-  ]},
-  {title:"Healthcare", names:[
-    ["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],
-    ["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"],["NVO","Novo Nordisk"],["MRNA","Moderna"],
-    ["XLV","Healthcare ETF"],["IBB","Biotech ETF"]
-  ]}
+  {title:"Magnificent 7 / Mega-cap Tech", names:[["NVDA","Nvidia"],["AAPL","Apple"],["MSFT","Microsoft"],["AMZN","Amazon"],["GOOGL","Alphabet"],["META","Meta"],["TSLA","Tesla"]]},
+  {title:"Semis & AI Infrastructure", names:[["AVGO","Broadcom"],["AMD","AMD"],["MU","Micron"],["INTC","Intel"],["PLTR","Palantir"],["TSM","TSMC"],["AMAT","Applied Materials"]]},
+  {title:"Financials", names:[["JPM","JPMorgan"],["BAC","Bank of America"],["V","Visa"],["MA","Mastercard"],["WFC","Wells Fargo"],["GS","Goldman Sachs"],["MS","Morgan Stanley"],["BLK","BlackRock"],["SCHW","Charles Schwab"],["C","Citigroup"]]},
+  {title:"Healthcare", names:[["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"]]}
 ];
+
 const SAVE_KEY = "trippy_player_v1";
 function defaultPlayer(){
   return {
     xp: 0, eaten: 0, eatenCycle: 0,
-    toyDensity: 20,
-    ownedToyIds: ["mushrooms"],
+    toyDensity: 70,
+    ownedToyIds: TOYS.map(t => t[0]),
     equippedToyIds: ["mushrooms"],
     passActive: false,
     passExpiresAt: null
@@ -159,133 +122,57 @@ function loadPlayer(){
 function savePlayer(){
   localStorage.setItem(SAVE_KEY, JSON.stringify(player));
 }
+function levelFromXp(xp){ return Math.floor((xp || 0) / 100) + 1; }
 let player = loadPlayer();
-  function isPhone(){ return matchMedia("(max-width:900px)").matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
-function syncPhone(){ document.body.classList.toggle("phone", isPhone()); }
-syncPhone(); addEventListener("resize", syncPhone);
-let unlocked = Math.max(1, Math.min(TOYS.length, +(localStorage.getItem("tc_unlocked")||1)));
-let xp = Math.max(0, Math.min(99, +(localStorage.getItem("tc_xp")||0)));
-function saveProg(){ localStorage.setItem("tc_unlocked", unlocked); localStorage.setItem("tc_xp", xp); }
-function paintXP(){
-  document.getElementById("xpVal").textContent = xp;
-  document.getElementById("lvlVal").textContent = unlocked;
-  document.getElementById("xpFill").style.width = xp + "%";
+
+const mid = Math.ceil(TOYS.length/2);
+function toyChecked(id){
+  if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
+  return id === "mushrooms";
 }
-function gainXP(n){
-  xp += n;
-  while (xp >= 100) { xp -= 100; if (unlocked < TOYS.length) { unlocked += 1; renderToys(); } }
-  saveProg(); paintXP();
-}
-function renderToys(){
-  const mid = Math.ceil(TOYS.length/2);
-  const html = (slice, start) => slice.map(([id,label], i) => {
-    const idx = start + i;
-    if (idx >= unlocked) return `<span class="chip locked" title="locked"><span>${label}</span></span>`;
-    const checked = id==="mushrooms" || document.querySelector(`[data-toy="${id}"]:checked`);
-    return `<label class="chip"><input type="checkbox" data-toy="${id}" ${checked?"checked":""}>${label}</label>`;
-  }).join("");
-  document.getElementById("toysLeft").innerHTML = html(TOYS.slice(0,mid), 0);
-  document.getElementById("toysRight").innerHTML = html(TOYS.slice(mid), mid);
-}
-renderToys(); paintXP();
+document.getElementById("toysLeft").innerHTML = TOYS.slice(0,mid).map(([id,label]) => `<label class="chip"><input type="checkbox" data-toy="${id}" ${toyChecked(id)?"checked":""}>${label}</label>`).join("");
+document.getElementById("toysRight").innerHTML = TOYS.slice(mid).map(([id,label]) => `<label class="chip"><input type="checkbox" data-toy="${id}" ${toyChecked(id)?"checked":""}>${label}</label>`).join("");
+document.getElementById("density").value = player.toyDensity || 70;
+document.getElementById("densityVal").textContent = document.getElementById("density").value;
+
 function activeToys(){ return [...document.querySelectorAll("[data-toy]:checked")].map(el => el.dataset.toy); }
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-document.getElementById("board").addEventListener("change", () => { const kinds = activeToys(); bits.forEach(b => { if (kinds.length) b.kind = pick(kinds); }); });
+document.getElementById("board").addEventListener("change", () => {
+  const kinds = activeToys();
+  player.equippedToyIds = kinds.slice();
+  savePlayer();
+  bits.forEach(b => { if (kinds.length) b.kind = pick(kinds); });
+});
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
-addEventListener("mousemove", e => { if (isPhone() && zenMode) return; mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
-addEventListener("touchmove", e => {
-  if (!isPhone() || zenMode) return;
-  const t = e.touches[0]; if (!t) return;
-  mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = t.clientX; mouse.y = t.clientY;
-}, {passive:true});
+addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.65, zenMode = false, boss = null, novaFX = 0, fightStarted = 0, showWorm = !isPhone();
-const joy = { active:false, x:0, y:0 };
-const joyEl = document.getElementById("joystick"), knob = document.getElementById("joyKnob");
-function setJoy(cx, cy){
-  const r = joyEl.getBoundingClientRect();
-  const midX = r.left + r.width/2, midY = r.top + r.height/2;
-  let dx = cx - midX, dy = cy - midY;
-  const max = r.width * 0.34, dist = Math.hypot(dx, dy) || 1;
-  if (dist > max) { dx *= max/dist; dy *= max/dist; }
-  joy.x = dx / max; joy.y = dy / max;
-  knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-}
-function resetJoy(){ joy.active=false; joy.x=0; joy.y=0; knob.style.transform="translate(-50%,-50%)"; }
-function bindJoy(ev, fn){ joyEl.addEventListener(ev, e => { e.preventDefault(); fn(e); }, {passive:false}); }
-bindJoy("touchstart", e => { joy.active=true; setJoy(e.touches[0].clientX, e.touches[0].clientY); });
-bindJoy("touchmove", e => { if (joy.active) setJoy(e.touches[0].clientX, e.touches[0].clientY); });
-bindJoy("touchend", resetJoy); bindJoy("touchcancel", resetJoy);
-bindJoy("mousedown", e => { joy.active=true; setJoy(e.clientX, e.clientY); });
-addEventListener("mousemove", e => { if (joy.active) setJoy(e.clientX, e.clientY); });
-addEventListener("mouseup", resetJoy);
-function driveFromJoystick(){
-  if (!(isPhone() && zenMode)) return;
-  const speed = 8.5;
-  mouse.px = mouse.x; mouse.py = mouse.y;
-  mouse.x = Math.max(16, Math.min(innerWidth-16, mouse.x + joy.x * speed));
-  mouse.y = Math.max(16, Math.min(innerHeight-16, mouse.y + joy.y * speed));
-}
-const audio = { ctx:null };
-function audioCtx(){
-  if (!audio.ctx) audio.ctx = new (window.AudioContext||window.webkitAudioContext)();
-  if (audio.ctx.state === "suspended") audio.ctx.resume();
-  return audio.ctx;
-}
-function beep(type, freq, dur, vol){
-  if (!zenMode) return;
-  try{
-    const a = audioCtx(), t = a.currentTime;
-    const o = a.createOscillator(), g = a.createGain();
-    o.type = type; o.frequency.setValueAtTime(freq, t);
-    o.frequency.exponentialRampToValueAtTime(Math.max(80, freq*0.35), t+dur);
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t+dur);
-    o.connect(g); g.connect(a.destination);
-    o.start(t); o.stop(t+dur);
-  }catch(e){}
-}
-function laserSound(){ beep("sawtooth", 880+Math.random()*420, 0.12, 0.07); }
-function hitSound(){ beep("square", 220+Math.random()*80, 0.16, 0.09); }
-function boomSound(){ beep("triangle", 90, 0.45, 0.12); }
-const SQUID_START = 0.65, SQUID_MAX = 1.15, WORM_N = 28;
-const worm = Array.from({length: WORM_N}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(2.2, 16 - i*0.42) }));
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.5, zenMode = false, boss = null, novaFX = 0;
+const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
+const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
-function nova(){ for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); } eaten=0; squidScale=SQUID_START; }
-function growFromEat(){ eaten++; if (eaten>0 && eaten%15===0){ squidScale=Math.min(SQUID_MAX, squidScale*1.05); if (squidScale>=SQUID_MAX) nova(); } }
-function spawnBoss(phase){
-  boss = { kind:"mushrooms", phase, nasty:phase>=2, x:innerWidth*0.5, y:innerHeight*0.38, s:phase===1?170:phase===2?260:320, hp:100, maxHp:100, rot:0, spin:phase===1?.02:.08, hue:phase===1?120:phase===2?12:280, hurt:0 };
-  fightStarted = performance.now();
+function nova(){ for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); } eaten=0; player.eatenCycle=0; squidScale=SQUID_START; savePlayer(); }
+function growFromEat(){
+  eaten++;
+  player.eaten = (player.eaten || 0) + 1;
+  player.eatenCycle = eaten;
+  player.xp = (player.xp || 0) + 1;
+  savePlayer();
+  if (eaten>0 && eaten%15===0){ squidScale=Math.min(SQUID_MAX, squidScale*1.05); if (squidScale>=SQUID_MAX) nova(); }
 }
-function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; if (isPhone()) showWorm=false; resetJoy(); }
-function startSuperNova(x,y){ boomSound(); novaFX=1; for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); } setTimeout(endZenAfterNova,1700); }
-function hitBoss(b){
-  if(!boss) return false;
-  if(Math.hypot(b.x-boss.x,b.y-boss.y)>=boss.s*0.48) return false;
-  boss.hp=Math.max(0,boss.hp-2); boss.hurt=8; hitSound();
-  burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8});
-  if(boss.hp<=0){
-    const bx=boss.x, by=boss.y, phase=boss.phase, fast=(performance.now()-fightStarted)<4000;
-    boss=null;
-    if(phase===1){ gainXP(5); if(fast) spawnBoss(2); else startSuperNova(bx,by); }
-    else if(phase===2){ gainXP(5); if(fast) spawnBoss(3); else startSuperNova(bx,by); }
-    else { gainXP(15); if(fast) gainXP(5); startSuperNova(bx,by); }
-  }
-  return true;
-}
-function newBit(x,y,state){
-  const kinds=activeToys(); if(!kinds.length && state!=="eject") return null;
-  return {kind:kinds.length?pick(kinds):"mushrooms",x:x??Math.random()*bg.width,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:14+Math.random()*18,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0};
-}
+function spawnBoss(){ const kinds = activeToys().length ? activeToys() : TOYS.map(t=>t[0]); boss = { kind:pick(kinds), x:innerWidth*0.5+(Math.random()-0.5)*innerWidth*0.35, y:innerHeight*0.38+Math.random()*innerHeight*0.2, s:170, hp:100, maxHp:100, rot:0, spin:(Math.random()-0.5)*.02, hue:Math.random()*360, hurt:0 }; }
+function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; document.getElementById("grid").classList.remove("hide"); document.getElementById("toggleCharts").textContent="hide charts"; }
+function startSuperNova(x,y){ novaFX=1; for(let i=0;i<280;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*22; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*14}); } setTimeout(endZenAfterNova,1700); }
+function hitBoss(b){ if(!boss) return false; if(Math.hypot(b.x-boss.x,b.y-boss.y)>=boss.s*0.48) return false; boss.hp=Math.max(0,boss.hp-2); boss.hurt=8; burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8}); if(boss.hp<=0){ const bx=boss.x,by=boss.y; boss=null; startSuperNova(bx,by);} return true; }
+function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*bg.width,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:14+Math.random()*18,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
 function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot);
   const s=b.s; c.fillStyle=`hsl(${b.hue},85%,65%)`; c.strokeStyle=`hsl(${b.hue},90%,80%)`; c.lineWidth=1.4;
-  if(b.kind==="mushrooms"){ c.fillStyle=b.nasty?"#3a1020":"#f3e2b8"; c.fillRect(-s*.1,0,s*.2,s*.55); c.fillStyle=b.nasty?(b.phase===3?"#c44bff":"#ff2a4a"):`hsl(${b.hue},80%,58%)`; c.beginPath(); c.ellipse(0,0,s*.42,s*.26,0,0,7); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.12,-s*.04,s*.07,0,7); c.fill(); if(b.nasty){ c.fillStyle="#111"; c.beginPath(); c.arc(-s*.1,-s*.02,s*.05,0,7); c.fill(); c.beginPath(); c.arc(s*.1,-s*.02,s*.05,0,7); c.fill(); } }
+  if(b.kind==="mushrooms"){ c.fillStyle="#f3e2b8"; c.fillRect(-s*.1,0,s*.2,s*.55); c.fillStyle=`hsl(${b.hue},80%,58%)`; c.beginPath(); c.ellipse(0,0,s*.42,s*.26,0,0,7); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.12,-s*.04,s*.07,0,7); c.fill(); }
   else if(b.kind==="stars"){ c.beginPath(); for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566; c.lineTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5); c.lineTo(Math.cos(a+.628)*s*.2,Math.sin(a+.628)*s*.2);} c.closePath(); c.fill(); }
   else if(b.kind==="moons"){ c.beginPath(); c.arc(0,0,s*.38,0,7); c.fill(); c.globalCompositeOperation="destination-out"; c.beginPath(); c.arc(s*.16,-s*.08,s*.3,0,7); c.fill(); c.globalCompositeOperation="source-over"; }
-  else if(b.kind==="turtles"){ c.fillStyle=`hsl(${b.hue},70%,42%)`; c.beginPath(); c.ellipse(0,0,s*.34,s*.26,0,0,7); c.fill(); c.fillStyle=`hsl(${b.hue},80%,58%)`; c.beginPath(); c.arc(-s*.28,-s*.02,s*.12,0,7); c.fill(); for(let i=-1;i<=1;i+=2){ c.beginPath(); c.ellipse(i*s*.2,s*.18,s*.1,s*.07,0,0,7); c.fill(); } c.fillStyle="#111"; c.beginPath(); c.arc(-s*.32,-s*.04,s*.03,0,7); c.fill(); }
+  else if(b.kind==="leaves"){ c.beginPath(); for(let i=-2;i<=2;i++) c.ellipse(i*s*.12,Math.abs(i)*s*.04,s*.08,s*.28,i*.45,0,7); c.fill(); }
   else if(b.kind==="skulls"){ c.beginPath(); c.arc(0,-s*.05,s*.28,0,7); c.fill(); c.fillRect(-s*.18,s*.05,s*.36,s*.16); c.fillStyle="#14010c"; c.beginPath(); c.arc(-s*.09,-s*.06,s*.07,0,7); c.fill(); c.beginPath(); c.arc(s*.09,-s*.06,s*.07,0,7); c.fill(); }
   else if(b.kind==="hearts"){ c.beginPath(); c.moveTo(0,s*.28); c.bezierCurveTo(-s*.5,-s*.05,-s*.18,-s*.4,0,-s*.12); c.bezierCurveTo(s*.18,-s*.4,s*.5,-s*.05,0,s*.28); c.fill(); }
   else if(b.kind==="flowers"){ for(let i=0;i<6;i++){ c.beginPath(); c.ellipse(Math.cos(i)*s*.18,Math.sin(i)*s*.18,s*.12,s*.18,i,0,7); c.fill(); } c.fillStyle="#fff59a"; c.beginPath(); c.arc(0,0,s*.1,0,7); c.fill(); }
@@ -303,67 +190,22 @@ function drawToy(c,b){
 }
 function drawSquid(){
   step++;
-  jetAng = Math.atan2(mouse.y - mouse.py, mouse.x - mouse.px);
-  if (!isFinite(jetAng) || Math.hypot(mouse.x-mouse.px, mouse.y-mouse.py) < 1) jetAng = step * 0.04;
-  if (!showWorm) return;
-  const sc = squidScale;
-  const head = worm[0];
-  head.x += (mouse.x - head.x) * 0.45;
-  head.y += (mouse.y - head.y) * 0.45;
-  for (let i=1;i<worm.length;i++){
-    const prev = worm[i-1], p = worm[i];
-    const wriggle = Math.sin(step*0.18 + i*0.55) * (7*sc);
-    const cork = Math.cos(step*0.12 + i*0.4) * (5*sc);
-    const ang = Math.atan2(prev.y - p.y, prev.x - p.x) + 0.08*Math.sin(step*0.1 + i);
-    const gap = (p.r + prev.r) * 0.55 * sc;
-    p.x = prev.x - Math.cos(ang)*gap + Math.cos(ang+1.57)*wriggle*0.15;
-    p.y = prev.y - Math.sin(ang)*gap + Math.sin(ang+1.57)*wriggle*0.15 + cork*0.08;
-  }
-  ctx.save();
-  for (let i=worm.length-1;i>=1;i--){
-    const p = worm[i], pulse = 1 + 0.08*Math.sin(step*0.2 + i);
-    const rr = p.r * sc * pulse;
-    ctx.beginPath(); ctx.arc(p.x, p.y, rr+2.2, 0, 7); ctx.fillStyle = "#111"; ctx.fill();
-    ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, 7); ctx.fillStyle = i%2 ? "#f4f0e6" : "#d9c9a3"; ctx.fill();
-    ctx.strokeStyle = `hsla(${160+i*8},100%,60%,.35)`; ctx.lineWidth = 1.6; ctx.stroke();
-  }
-  const hr = 18 * sc * (1 + 0.06*Math.sin(step*0.25));
-  const spin = step * 0.16;
-  ctx.translate(head.x, head.y);
-  ctx.rotate(jetAng + 0.15*Math.sin(step*0.12));
-  ctx.beginPath(); ctx.arc(0,0,hr+3,0,7); ctx.fillStyle="#000"; ctx.fill();
-  ctx.beginPath(); ctx.arc(0,0,hr,0,7); ctx.fillStyle="#efe6d4"; ctx.fill();
-  ctx.strokeStyle="hsla(160,100%,65%,.45)"; ctx.lineWidth=2; ctx.stroke();
-  ctx.beginPath(); ctx.arc(0,0,hr*0.62,0,7); ctx.fillStyle="#1a0a10"; ctx.fill();
-  for (let t=0;t<14;t++){
-    const a = spin + t*(Math.PI*2/14);
-    ctx.beginPath();
-    ctx.moveTo(Math.cos(a-0.09)*hr*0.28, Math.sin(a-0.09)*hr*0.28);
-    ctx.lineTo(Math.cos(a)*hr*0.58, Math.sin(a)*hr*0.58);
-    ctx.lineTo(Math.cos(a+0.09)*hr*0.28, Math.sin(a+0.09)*hr*0.28);
-    ctx.closePath(); ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle="#000"; ctx.lineWidth=1; ctx.stroke();
-  }
-  ctx.beginPath(); ctx.arc(0,0,hr*0.16,0,7); ctx.fillStyle="#4a1020"; ctx.fill();
-  const eyeY = -hr*0.72, eyeS = hr*0.28;
-  function eye(ex, wobble){
-    ctx.beginPath(); ctx.ellipse(ex, eyeY, eyeS*1.15, eyeS, 0, 0, 7);
-    ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle="#000"; ctx.lineWidth=2; ctx.stroke();
-    const px = ex + Math.cos(step*0.2+wobble)*eyeS*0.25;
-    const py = eyeY + Math.sin(step*0.17+wobble)*eyeS*0.18;
-    ctx.beginPath(); ctx.arc(px, py, eyeS*0.42, 0, 7); ctx.fillStyle="#111"; ctx.fill();
-    ctx.beginPath(); ctx.arc(px-eyeS*0.12, py-eyeS*0.12, eyeS*0.12, 0, 7); ctx.fillStyle="#fff"; ctx.fill();
-  }
-  eye(-hr*0.42, 0.6); eye(hr*0.48, 1.8);
+  const radius=(13+5*Math.sin(step/10))*squidScale;
+  jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
+  if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
+  ctx.save(); ctx.globalCompositeOperation="lighter";
+  squid.forEach((arm,ai)=>{
+    const ang=2*Math.PI*ai/ARM_N+step*0.004;
+    let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
+    arm.forEach((p)=>{ const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*squidScale; p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35; ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; ctx.lineWidth=Math.max(1,p.r*0.35*squidScale); ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke(); tx=p.x; ty=p.y; });
+  });
   ctx.restore();
 }
 function tickBits(){
-  const phone = isPhone();
-  let dens = +(document.getElementById("density")||{}).value || 0;
-  if (phone) dens = Math.min(dens, zenMode ? 90 : 40);
-  if (dens <= 0) bits = bits.filter(b => b.state !== "fall");
-  else if (activeToys().length) {
+  const dens = +(document.getElementById("density")||{}).value || 70;
+  if (activeToys().length) {
     const need = dens - bits.length;
-    const burstN = Math.min(phone ? 4 : 18, Math.max(0, need));
+    const burstN = Math.min(18, Math.max(0, need));
     for (let i=0;i<burstN;i++) spawnBit();
   }
   const capture=40+20*squidScale;
@@ -374,7 +216,6 @@ function tickBits(){
       b.ang+=0.085; const nd=Math.max(0,dist-0.55); b.x=mouse.x+Math.cos(b.ang)*nd; b.y=mouse.y+Math.sin(b.ang)*nd; b.s=Math.max(6,b.s*0.995); b.rot+=0.08;
       if(nd<8*squidScale){
         growFromEat(); b.state="eject";
-        if (zenMode) laserSound();
         if(zenMode&&boss){ const ang=Math.atan2(boss.y-mouse.y,boss.x-mouse.x); const power=20+Math.random()*8; b.vx=Math.cos(ang)*power; b.vy=Math.sin(ang)*power; b.s=12; }
         else { const side=Math.random()<0.5?0:Math.PI, spd=11+Math.random()*7; b.vx=Math.cos(jetAng+side)*spd; b.vy=Math.sin(jetAng+side)*spd; b.s=8; }
       }
@@ -390,10 +231,9 @@ function tickBits(){
   burst.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vx*=0.98; p.vy*=0.98; p.life-=0.012; });
 }
 (function loopSky(){
-  driveFromJoystick();
   ctx.clearRect(0,0,bg.width,bg.height); tickBits(); bits.forEach(b=>drawToy(ctx,b));
   burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
-  if(zenMode&&boss){ boss.rot+=boss.spin; if(boss.hurt>0) boss.hurt--; drawToy(ctx,boss); ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-60, boss.y-boss.s*0.62, 120, 8); ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-60, boss.y-boss.s*0.62, 120*(boss.hp/boss.maxHp), 8); }
+  if(zenMode&&boss){ boss.rot+=boss.spin; if(boss.hurt>0) boss.hurt--; drawToy(ctx,boss); ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90,8); ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90*(boss.hp/boss.maxHp),8); }
   if(novaFX>0){ novaFX=Math.min(1.2,novaFX+0.035); const g=ctx.createRadialGradient(innerWidth/2,innerHeight/2,10,innerWidth/2,innerHeight/2,Math.max(innerWidth,innerHeight)*novaFX); g.addColorStop(0,`hsla(${(step*8)%360},100%,70%,.85)`); g.addColorStop(.35,`hsla(${(step*8+80)%360},100%,60%,.55)`); g.addColorStop(.7,`hsla(${(step*8+160)%360},100%,50%,.28)`); g.addColorStop(1,"rgba(0,0,0,0)"); ctx.globalCompositeOperation="lighter"; ctx.fillStyle=g; ctx.fillRect(0,0,bg.width,bg.height); ctx.globalCompositeOperation="source-over"; if(novaFX>1.15) novaFX=0; }
   drawSquid(); requestAnimationFrame(loopSky);
 })();
@@ -419,7 +259,7 @@ document.getElementById("grid").innerHTML = slots.map(s=>`
     </div>
   </section>`).join("");
 function isChartFs(id){ return document.fullscreenElement && document.fullscreenElement.id==="card-"+id; }
-function visibleBars(slot){ const src=slot.allBars||[]; const n=Math.max(12, Math.min(src.length||12, slot.view||70)); return src.slice(-n); }
+function visibleBars(slot){ const src=slot.allBars||[]; const n=isChartFs(slot.id)?slot.view:Math.min(70,src.length); return src.slice(-Math.max(12,Math.min(src.length||12,n))); }
 function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id), r=c.getBoundingClientRect();
   const w=Math.max(240,Math.floor(r.width*devicePixelRatio)), h=Math.max(140,Math.floor(r.height*devicePixelRatio));
   if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } }); }
@@ -457,7 +297,6 @@ function applyLive(slot, price){
 function drawChart(slot){
   const canvas=document.getElementById("cv-"+slot.id), c=canvas.getContext("2d");
   const w=canvas.width,h=canvas.height; c.clearRect(0,0,w,h);
-  if (document.body.classList.contains("corner")) return;
   const bars=visibleBars(slot); if(!bars.length) return;
   if (slot.showPx && slot.price) slot.showPx += (slot.price - slot.showPx) * 0.18;
   const liveBars = bars.map((b,i) => i===bars.length-1 && slot.showPx ? {...b, close:slot.showPx, high:Math.max(b.high,slot.showPx), low:Math.min(b.low,slot.showPx)} : b);
@@ -492,11 +331,11 @@ function paintMeta(slot){
   chg.className="chg "+(pct>0.01?"up":pct<-0.01?"down":"flat");
   document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • live last candle`: `${slot.tf} • no live feed`;
 }
-function clock(){ document.getElementById("status").textContent = `${new Date().toLocaleTimeString()}   eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%`; }
-function zoomSlot(i,dir){
-  const slot=slots[i], max=Math.max(12,slot.allBars.length);
-  slot.view = dir>0 ? Math.max(12, Math.round((slot.view||70)*0.78)) : Math.min(max, Math.round((slot.view||70)/0.78));
+function clock(){
+  document.getElementById("status").textContent =
+    `${new Date().toLocaleTimeString()}   eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%   xp ${player.xp||0}  lvl ${levelFromXp(player.xp)}`;
 }
+function zoomSlot(i,dir){ if(!isChartFs(i)) return; const slot=slots[i], max=Math.max(12,slot.allBars.length); slot.view=dir>0?Math.max(12,Math.round(slot.view*.72)):Math.min(max,Math.round(slot.view/.72)); }
 async function loadSlot(i, forceReset=false){
   const symbol=document.getElementById("in-"+i).value, tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
@@ -515,44 +354,26 @@ slots.forEach((_,i)=>{
     const card=document.getElementById("card-"+i);
     if(document.fullscreenElement===card) await document.exitFullscreen(); else await card.requestFullscreen();
   });
-  const canvas=document.getElementById("cv-"+i);
-  canvas.addEventListener("wheel", e=>{
-    if (document.body.classList.contains("corner")) return;
-    e.preventDefault();
-    zoomSlot(i, e.deltaY<0 ? 1 : -1);
-  }, {passive:false});
 });
-document.getElementById("density").addEventListener("input", e => { document.getElementById("densityVal").textContent = e.target.value; });
+document.getElementById("toggleCharts").addEventListener("click", ()=>{
+  const stage=document.getElementById("grid"), btn=document.getElementById("toggleCharts");
+  btn.textContent = stage.classList.toggle("hide") ? "show charts" : "hide charts";
+});
+document.getElementById("density").addEventListener("input", e => {
+  document.getElementById("densityVal").textContent = e.target.value;
+  player.toyDensity = Number(e.target.value);
+  savePlayer();
+});
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
   if(!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen();
 });
-document.getElementById("corner").addEventListener("click", ()=>{
-  document.body.classList.toggle("corner");
-  document.getElementById("corner").textContent = document.body.classList.contains("corner") ? "show charts" : "corner charts";
-  sizeCanvases();
-});
-document.getElementById("wormBtn").addEventListener("click", ()=>{
-  if (isPhone() && !zenMode) { showWorm = false; document.getElementById("wormBtn").textContent = "show worm"; return; }
-  showWorm = !showWorm;
-  document.getElementById("wormBtn").textContent = showWorm ? "no worm" : "show worm";
-});
 document.getElementById("zen").addEventListener("click", ()=>{
-  audioCtx();
   zenMode = !zenMode;
   document.body.classList.toggle("zen", zenMode);
   document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
-  if (zenMode) {
-    spawnBoss(1);
-    showWorm = true;
-    mouse.x = innerWidth/2; mouse.y = innerHeight/2;
-  } else {
-    boss = null;
-    if (isPhone()) showWorm = false;
-    resetJoy();
-  }
+  if (zenMode) spawnBoss(); else boss = null;
 });
-if (isPhone()) { showWorm = false; document.getElementById("wormBtn").textContent = "show worm"; }
 boot(true); loop(); clock();
 setInterval(clock,1000);
 setInterval(tickLive, 4000);
