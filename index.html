@@ -405,9 +405,19 @@ function drawToy(c,b){
   c.lineJoin="round"; c.lineCap="round";
   const stroke=()=>{ c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1.2,s*0.06); c.stroke(); };
   if(k==="mushrooms"){
-    c.fillStyle="#f3d7a8"; c.beginPath(); c.roundRect(-s*.12,s*.02,s*.24,s*.42,s*.06); c.fill(); stroke();
-    c.fillStyle="#6b4dff"; c.beginPath(); c.ellipse(0,-s*.02,s*.42,s*.28,0,Math.PI,0,true); c.fill(); stroke();
-    c.fillStyle="#4ad6c8"; [[-s*.16,-s*.08,s*.09],[s*.1,-s*.14,s*.08],[s*.18,-s*.02,s*.07],[-s*.02,-s*.16,s*.06]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
+    c.fillStyle="#f0d5a0";
+    c.beginPath(); c.roundRect(-s*.11, s*.02, s*.22, s*.46, s*.08); c.fill(); stroke();
+    c.fillStyle="#e8c48a"; c.beginPath(); c.roundRect(-s*.16, s*.38, s*.32, s*.1, s*.05); c.fill();
+    c.fillStyle="#ef4d5a";
+    c.beginPath();
+    c.moveTo(-s*.48, s*.04);
+    c.quadraticCurveTo(-s*.5, -s*.18, -s*.22, -s*.36);
+    c.quadraticCurveTo(0, -s*.5, s*.22, -s*.36);
+    c.quadraticCurveTo(s*.5, -s*.18, s*.48, s*.04);
+    c.quadraticCurveTo(0, s*.16, -s*.48, s*.04);
+    c.closePath(); c.fill(); stroke();
+    c.fillStyle="#fff8ee";
+    [[-s*.16,-s*.18,s*.08],[s*.14,-s*.22,s*.07],[s*.22,-s*.06,s*.055],[-s*.26,-s*.04,s*.05],[0,-s*.3,s*.045]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
   } else if(k==="moons"){
     c.fillStyle="#d9d3c6"; c.beginPath(); c.arc(0,0,s*.4,0,7); c.fill(); stroke();
     c.fillStyle="#b9b2a4"; [[-s*.1,-s*.08,s*.08],[s*.14,s*.06,s*.06],[-s*.16,s*.14,s*.05],[s*.02,-s*.2,s*.04]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
@@ -495,22 +505,32 @@ function tickBits(){
     const burstN = Math.min(18, Math.max(0, need));
     for (let i=0;i<burstN;i++) spawnBit();
   }
-  const capture=40+20*squidScale;
+  const capture=48+18*squidScale;
   bits.forEach(b=>{
     const dx=b.x-mouse.x, dy=b.y-mouse.y, dist=Math.hypot(dx,dy);
-    if(b.state==="fall"){ b.y+=b.v; b.x+=b.drift; b.rot+=b.spin; if(dist<capture){ b.state="suck"; b.ang=Math.atan2(dy,dx);} }
-    else if(b.state==="suck"){
-      b.ang+=0.085; const nd=Math.max(0,dist-0.55); b.x=mouse.x+Math.cos(b.ang)*nd; b.y=mouse.y+Math.sin(b.ang)*nd; b.s=Math.max(6,b.s*0.995); b.rot+=0.08;
-      if(nd<8*squidScale){
+    if(b.state==="fall"){
+      b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
+      if(dist<capture) b.state="suck";
+    } else if(b.state==="suck"){
+      b.x += (mouse.x - b.x) * 0.28;
+      b.y += (mouse.y - b.y) * 0.28;
+      b.s = Math.max(5, b.s * 0.9);
+      if(dist < 12*squidScale){
         growFromEat(); b.state="eject";
-        if(zenMode&&boss){ const ang=Math.atan2(boss.y-mouse.y,boss.x-mouse.x); const power=20+Math.random()*8; b.vx=Math.cos(ang)*power; b.vy=Math.sin(ang)*power; b.s=12; }
-        else { const side=Math.random()<0.5?0:Math.PI, spd=11+Math.random()*7; b.vx=Math.cos(jetAng+side)*spd; b.vy=Math.sin(jetAng+side)*spd; b.s=8; }
+        if(zenMode&&boss){
+          const ang=Math.atan2(boss.y-mouse.y,boss.x-mouse.x);
+          const power=18+Math.random()*8; b.vx=Math.cos(ang)*power; b.vy=Math.sin(ang)*power; b.s=14;
+        } else {
+          let ang=jetAng;
+          if(!isFinite(ang) || Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<2) ang = Math.atan2(b.y-mouse.y,b.x-mouse.x);
+          const spd=10+Math.random()*6;
+          b.vx=Math.cos(ang)*spd; b.vy=Math.sin(ang)*spd; b.s=10;
+        }
       }
     } else if(b.state==="eject"){
-      if(zenMode){ b.vx*=1.015; b.vy*=1.015; }
-      b.x+=b.vx; b.y+=b.vy; b.vx*=zenMode?0.999:0.992; b.vy*=zenMode?0.999:0.992; b.s=Math.min(22,b.s*1.03); b.rot+=0.12;
+      b.x+=b.vx; b.y+=b.vy; b.vx*=0.985; b.vy*=0.985; b.s=Math.min(24,b.s*1.04); b.rot+=0.06;
       if(zenMode&&hitBoss(b)) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall")||b);
-      else if(dist>(zenMode?420:170)){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.08; }
+      else if(dist>(zenMode?380:150)){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
     }
     if(b.y>bg.height+50||b.x<-60||b.x>bg.width+60) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall"));
   });
