@@ -580,14 +580,51 @@ function drawSquid(){
   }
   const jig = blobT > 0 ? (1 + 0.7*blobT + 0.18*Math.sin(step*0.55)*blobT) : 1;
   const sc = squidScale * jig;
+  const skin = player.equippedCursor || "squid";
+  const spin = skin === "nebula" ? 0.018 : skin === "lotus" ? 0.012 : skin === "prism" ? 0.02 : 0.004;
   const radius=(13+5*Math.sin(step/10))*sc;
   jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
   if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
   ctx.save(); ctx.globalCompositeOperation="lighter";
   squid.forEach((arm,ai)=>{
-    const ang=2*Math.PI*ai/ARM_N+step*0.004;
+    const ang=2*Math.PI*ai/ARM_N+step*spin;
     let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
-    arm.forEach((p)=>{ const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*sc; p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35; ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; ctx.lineWidth=Math.max(1,p.r*0.35*sc); ctx.beginPath(); ctx.arc(p.x,p.y,p.r*sc,0,7); ctx.stroke(); tx=p.x; ty=p.y; });
+    arm.forEach((p,si)=>{
+      const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*sc;
+      p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35;
+      const rr = p.r*sc;
+      if (skin === "nebula") {
+        ctx.fillStyle=`hsla(${(ai*28+step*4+si*12)%360},100%,65%,.45)`;
+        ctx.beginPath(); ctx.arc(p.x,p.y,rr*(1.1+0.3*Math.sin(step/6+si)),0,7); ctx.fill();
+      } else if (skin === "comet") {
+        ctx.strokeStyle=`hsla(${38+si*8},100%,70%,${0.55-si*0.03})`;
+        ctx.lineWidth=Math.max(1.2,(rr*1.4)*(1-si/SEG));
+        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(p.x,p.y); ctx.stroke();
+        if (si===0){ ctx.fillStyle="#fff6c8"; ctx.beginPath(); ctx.arc(p.x,p.y,rr*1.6,0,7); ctx.fill(); }
+      } else if (skin === "lotus") {
+        if (si%3===0){
+          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(step*0.08+ai+si);
+          ctx.fillStyle=`hsla(${320+ai*8},90%,70%,.5)`;
+          ctx.beginPath(); ctx.ellipse(0,0,rr*1.8,rr*0.7,0,0,7); ctx.fill();
+          ctx.restore();
+        }
+      } else if (skin === "void") {
+        ctx.strokeStyle=`hsla(${280+ai*6},100%,60%,.4)`;
+        ctx.lineWidth=Math.max(1,rr*0.25);
+        ctx.beginPath(); ctx.arc(p.x,p.y,rr*(0.8+0.4*Math.sin(step/8+si)),0,7); ctx.stroke();
+        if (si===SEG-1){ ctx.fillStyle="rgba(8,0,16,.35)"; ctx.beginPath(); ctx.arc(p.x,p.y,rr*1.2,0,7); ctx.fill(); }
+      } else if (skin === "prism") {
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(step*0.1+si*0.4);
+        ctx.fillStyle=`hsla(${ai*40+step*3},100%,70%,.5)`;
+        ctx.beginPath(); ctx.moveTo(0,-rr*1.6); ctx.lineTo(rr,0); ctx.lineTo(0,rr*1.6); ctx.lineTo(-rr,0); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`;
+        ctx.lineWidth=Math.max(1,rr*0.35);
+        ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.stroke();
+      }
+      tx=p.x; ty=p.y;
+    });
   });
   ctx.restore();
 }
@@ -651,10 +688,6 @@ function tickBits(){
     ctx.strokeStyle="rgba(255,255,255,.4)"; ctx.strokeRect(mouse.x-28, mouse.y-36, 56, 7);
   }
   drawSquid();
-  const cur = player.equippedCursor || "squid";
-  if (cur && cur !== "squid") {
-    drawToy(ctx, { kind: cur === "spark" ? "sparkles" : cur, x: mouse.x + 18, y: mouse.y + 18, s: 22, hue: (step*3)%360, rot: step*0.04 });
-  }
   requestAnimationFrame(loopSky);
 })();
 const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
