@@ -107,7 +107,20 @@ function drawToy(c,b){
   if(b.kind==="mushrooms"){ c.fillStyle="#f3e2b8"; c.fillRect(-s*.1,0,s*.2,s*.55); c.fillStyle=`hsl(${b.hue},80%,58%)`; c.beginPath(); c.ellipse(0,0,s*.42,s*.26,0,0,7); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.12,-s*.04,s*.07,0,7); c.fill(); }
   else if(b.kind==="stars"){ c.beginPath(); for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566; c.lineTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5); c.lineTo(Math.cos(a+.628)*s*.2,Math.sin(a+.628)*s*.2);} c.closePath(); c.fill(); }
   else if(b.kind==="moons"){ c.beginPath(); c.arc(0,0,s*.38,0,7); c.fill(); c.globalCompositeOperation="destination-out"; c.beginPath(); c.arc(s*.16,-s*.08,s*.3,0,7); c.fill(); c.globalCompositeOperation="source-over"; }
-  else if(b.kind==="leaves"){ c.beginPath(); for(let i=-2;i<=2;i++) c.ellipse(i*s*.12,Math.abs(i)*s*.04,s*.08,s*.28,i*.45,0,7); c.fill(); }
+  else if(b.kind==="leaves"){
+    c.save();
+    const drawLeaflet=(ang,len,wid)=>{
+      c.save(); c.rotate(ang);
+      c.beginPath(); c.moveTo(0,0);
+      for(let t=0;t<=1.001;t+=0.04){ const y=-len*t; const edge=Math.sin(t*Math.PI)*wid*(0.55+0.45*Math.abs(Math.sin(t*Math.PI*7))); c.lineTo(edge,y); }
+      for(let t=1;t>=0;t-=0.04){ const y=-len*t; const edge=Math.sin(t*Math.PI)*wid*(0.55+0.45*Math.abs(Math.sin(t*Math.PI*7))); c.lineTo(-edge,y); }
+      c.closePath(); c.fillStyle="#3fae3a"; c.fill(); c.strokeStyle="#1d5c22"; c.lineWidth=Math.max(1,s*0.03); c.stroke();
+      c.beginPath(); c.moveTo(0,0); c.lineTo(0,-len*0.92); c.stroke(); c.restore();
+    };
+    drawLeaflet(0,s*.55,s*.16); drawLeaflet(-0.42,s*.48,s*.13); drawLeaflet(0.42,s*.48,s*.13);
+    drawLeaflet(-0.85,s*.36,s*.1); drawLeaflet(0.85,s*.36,s*.1); drawLeaflet(-1.22,s*.22,s*.07); drawLeaflet(1.22,s*.22,s*.07);
+    c.fillStyle="#2f8a32"; c.fillRect(-s*.03,0,s*.06,s*.22); c.restore();
+  }
   else if(b.kind==="skulls"){ c.beginPath(); c.arc(0,-s*.05,s*.28,0,7); c.fill(); c.fillRect(-s*.18,s*.05,s*.36,s*.16); c.fillStyle="#14010c"; c.beginPath(); c.arc(-s*.09,-s*.06,s*.07,0,7); c.fill(); c.beginPath(); c.arc(s*.09,-s*.06,s*.07,0,7); c.fill(); }
   else if(b.kind==="hearts"){ c.beginPath(); c.moveTo(0,s*.28); c.bezierCurveTo(-s*.5,-s*.05,-s*.18,-s*.4,0,-s*.12); c.bezierCurveTo(s*.18,-s*.4,s*.5,-s*.05,0,s*.28); c.fill(); }
   else if(b.kind==="flowers"){ for(let i=0;i<6;i++){ c.beginPath(); c.ellipse(Math.cos(i)*s*.18,Math.sin(i)*s*.18,s*.12,s*.18,i,0,7); c.fill(); } c.fillStyle="#fff59a"; c.beginPath(); c.arc(0,0,s*.1,0,7); c.fill(); }
