@@ -64,11 +64,12 @@ function toyDropMonth(id){
   return null;
 }
 const CURSORS = [
-  ["squid","Squid",0],
-  ["mushrooms","Mushroom pointer",300],
-  ["aliens","Alien pointer",300],
-  ["crystals","Crystal pointer",300],
-  ["sparkles","Spark pointer",300]
+  ["squid","Aqua Squid",0],
+  ["nebula","Nebula Bloom",0],
+  ["comet","Comet Tail",0],
+  ["lotus","Spin Lotus",0],
+  ["void","Void Ring",0],
+  ["prism","Prism Shard",0]
 ];
 function defaultPlayer(){
   return { xp:0, eaten:0, eatenCycle:0, toyDensity:70, ownedToyIds:["mushrooms"], equippedToyIds:["mushrooms"], passActive:false, passExpiresAt:null, ownedCursorIds:["squid"], equippedCursor:"squid" };
@@ -277,27 +278,44 @@ document.getElementById("grid").addEventListener("click", async e => {
     else alert(data.error || "Need a $1 Stripe price on the Worker first (STRIPE_TOY_PRICE).");
   } catch(err){ alert("checkout failed"); }
 });
-function ownsCursor(id){
-  return id === "squid" || (player.ownedCursorIds || ["squid"]).includes(id);
+function ownsCursor(id){ return true; }
+function previewCursor(cv, skin){
+  const c = cv.getContext("2d");
+  const w = cv.width, h = cv.height, t = Date.now()/400;
+  c.clearRect(0,0,w,h);
+  c.fillStyle = "rgba(255,255,255,.08)";
+  c.beginPath(); c.arc(w/2,h/2,w*0.42,0,7); c.fill();
+  c.save(); c.globalCompositeOperation="lighter";
+  const arms=8, segs=8;
+  for(let ai=0;ai<arms;ai++){
+    let x=w/2, y=h/2;
+    const ang=2*Math.PI*ai/arms+t*(skin==="prism"?1.4:skin==="nebula"?1.1:0.7);
+    x+=Math.cos(ang)*18; y+=Math.sin(ang)*18;
+    for(let si=0;si<segs;si++){
+      x+=Math.cos(ang+si*0.12)*6; y+=Math.sin(ang+si*0.12)*6;
+      const rr=5-si*0.4;
+      if(skin==="nebula"){ c.fillStyle=`hsla(${(ai*28+t*80+si*12)%360},100%,65%,.5)`; c.beginPath(); c.arc(x,y,rr,0,7); c.fill(); }
+      else if(skin==="comet"){ c.strokeStyle=`hsla(${38+si*8},100%,70%,.55)`; c.lineWidth=Math.max(1,rr); c.beginPath(); c.arc(x,y,rr*0.6,0,7); c.stroke(); }
+      else if(skin==="lotus"){ if(si%2===0){ c.save(); c.translate(x,y); c.rotate(t+ai); c.fillStyle=`hsla(${320+ai*8},90%,70%,.5)`; c.beginPath(); c.ellipse(0,0,rr*1.8,rr*0.6,0,0,7); c.fill(); c.restore(); } }
+      else if(skin==="void"){ c.strokeStyle=`hsla(${280+ai*6},100%,60%,.5)`; c.lineWidth=1.2; c.beginPath(); c.arc(x,y,rr*(0.8+0.3*Math.sin(t+si)),0,7); c.stroke(); }
+      else if(skin==="prism"){ c.save(); c.translate(x,y); c.rotate(t+si); c.fillStyle=`hsla(${ai*40+t*40},100%,70%,.5)`; c.beginPath(); c.moveTo(0,-rr*1.4); c.lineTo(rr,0); c.lineTo(0,rr*1.4); c.lineTo(-rr,0); c.closePath(); c.fill(); c.restore(); }
+      else { c.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; c.lineWidth=1.4; c.beginPath(); c.arc(x,y,rr,0,7); c.stroke(); }
+    }
+  }
+  c.restore();
 }
 function paintCursors(){
   const box = document.getElementById("cursors");
   if (!box) return;
-  box.innerHTML = CURSORS.map(([id,label,cents], i) => {
-    const own = ownsCursor(id);
+  box.innerHTML = CURSORS.map(([id,label]) => {
     const on = player.equippedCursor === id;
-    const action = own
-      ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buycur="${id}">Unlock $3</button>`;
-    const kind = id === "squid" ? "sparkles" : id;
-    return `<article class="card${own?"":" locked"}">
-      <canvas width="180" height="180" data-kind="${kind}" data-hue="${(i*70)%360}"></canvas>
+    return `<article class="card">
+      <canvas width="180" height="180" data-cur="${id}"></canvas>
       <div class="name">${label}</div>
-      <span class="tag">${own ? (on ? "equipped" : "owned") : "$3 cursor"}</span>
-      ${action}
+      <span class="tag">${on ? "equipped" : "free"}</span>
+      <label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>
     </article>`;
   }).join("");
-  box.querySelectorAll("canvas").forEach(cv => previewToy(cv, cv.dataset.kind, +cv.dataset.hue));
 }
 document.getElementById("cursors").addEventListener("change", e => {
   const id = e.target.dataset.cur;
@@ -327,9 +345,10 @@ paint();
 paintCursors();
 pullCloud();
 (function twinkle(){
-  document.querySelectorAll("canvas[data-kind]").forEach(cv => {
+  document.querySelectorAll("#grid canvas[data-kind]").forEach(cv => {
     previewToy(cv, cv.dataset.kind, (+cv.dataset.hue + Date.now()/40)%360);
   });
+  document.querySelectorAll("#cursors canvas[data-cur]").forEach(cv => previewCursor(cv, cv.dataset.cur));
   requestAnimationFrame(twinkle);
 })();
 </script>
