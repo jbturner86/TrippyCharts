@@ -323,7 +323,7 @@ const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHe
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
 let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.5, zenMode = false, boss = null, novaFX = 0;
-const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
+const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16; // 0.5 = 100%, 1.0 = 200% then boom
 const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
@@ -332,9 +332,9 @@ function growFromEat(){
   eaten++;
   player.eaten = (player.eaten || 0) + 1;
   player.eatenCycle = eaten;
-  player.xp = (player.xp || 0) + 1;
   savePlayer();
-  if (eaten>0 && eaten%15===0){ squidScale=Math.min(SQUID_MAX, squidScale*1.05); if (squidScale>=SQUID_MAX) nova(); }
+  squidScale = Math.min(SQUID_MAX, squidScale + (SQUID_MAX - SQUID_START) / 40);
+  if (squidScale >= SQUID_MAX - 0.001) nova();
 }
 function spawnBoss(){ const kinds = activeToys().length ? activeToys() : TOYS.map(t=>t[0]); boss = { kind:pick(kinds), x:innerWidth*0.5+(Math.random()-0.5)*innerWidth*0.35, y:innerHeight*0.38+Math.random()*innerHeight*0.2, s:170, hp:100, maxHp:100, rot:0, spin:(Math.random()-0.5)*.02, hue:Math.random()*360, hurt:0 }; }
 function endZenAfterNova(){ zenMode=false; boss=null; novaFX=0; document.body.classList.remove("zen"); document.getElementById("zen").textContent="hide everything"; document.getElementById("grid").classList.remove("hide"); document.getElementById("toggleCharts").textContent="hide charts"; }
@@ -513,8 +513,7 @@ function paintMeta(slot){
   document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • live last candle`: `${slot.tf} • no live feed`;
 }
 function clock(){
-  document.getElementById("status").textContent =
-    `${new Date().toLocaleTimeString()}   eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%   xp ${player.xp||0}  lvl ${levelFromXp(player.xp)}`;
+  document.getElementById("status").textContent = new Date().toLocaleTimeString();
 }
 function zoomSlot(i,dir){ if(!isChartFs(i)) return; const slot=slots[i], max=Math.max(12,slot.allBars.length); slot.view=dir>0?Math.max(12,Math.round(slot.view*.72)):Math.min(max,Math.round(slot.view/.72)); }
 async function loadSlot(i, forceReset=false){
