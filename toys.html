@@ -107,9 +107,19 @@ function drawToy(c,b){
   c.lineJoin="round"; c.lineCap="round";
   const stroke=()=>{ c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1.2,s*0.06); c.stroke(); };
   if(k==="mushrooms"){
-    c.fillStyle="#f3d7a8"; c.beginPath(); c.roundRect(-s*.12,s*.02,s*.24,s*.42,s*.06); c.fill(); stroke();
-    c.fillStyle="#6b4dff"; c.beginPath(); c.ellipse(0,-s*.02,s*.42,s*.28,0,Math.PI,0,true); c.fill(); stroke();
-    c.fillStyle="#4ad6c8"; [[-s*.16,-s*.08,s*.09],[s*.1,-s*.14,s*.08],[s*.18,-s*.02,s*.07],[-s*.02,-s*.16,s*.06]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
+    c.fillStyle="#f0d5a0";
+    c.beginPath(); c.roundRect(-s*.11, s*.02, s*.22, s*.46, s*.08); c.fill(); stroke();
+    c.fillStyle="#e8c48a"; c.beginPath(); c.roundRect(-s*.16, s*.38, s*.32, s*.1, s*.05); c.fill();
+    c.fillStyle="#ef4d5a";
+    c.beginPath();
+    c.moveTo(-s*.48, s*.04);
+    c.quadraticCurveTo(-s*.5, -s*.18, -s*.22, -s*.36);
+    c.quadraticCurveTo(0, -s*.5, s*.22, -s*.36);
+    c.quadraticCurveTo(s*.5, -s*.18, s*.48, s*.04);
+    c.quadraticCurveTo(0, s*.16, -s*.48, s*.04);
+    c.closePath(); c.fill(); stroke();
+    c.fillStyle="#fff8ee";
+    [[-s*.16,-s*.18,s*.08],[s*.14,-s*.22,s*.07],[s*.22,-s*.06,s*.055],[-s*.26,-s*.04,s*.05],[0,-s*.3,s*.045]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
   } else if(k==="moons"){
     c.fillStyle="#d9d3c6"; c.beginPath(); c.arc(0,0,s*.4,0,7); c.fill(); stroke();
     c.fillStyle="#b9b2a4"; [[-s*.1,-s*.08,s*.08],[s*.14,s*.06,s*.06],[-s*.16,s*.14,s*.05],[s*.02,-s*.2,s*.04]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
