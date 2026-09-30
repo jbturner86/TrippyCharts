@@ -15,9 +15,9 @@
     .lead { padding:0 18px 14px; color:#cbb6ff; max-width:720px; }
     h2 { padding:8px 18px 6px; font-family:"Baloo 2", sans-serif; font-size:1.15rem; letter-spacing:.04em; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; padding:10px 16px 18px; }
-    .card { background:rgba(18,8,28,.82); border:1px solid rgba(255,255,255,.16); border-radius:18px; padding:10px; text-align:center; }
-    .card.locked canvas { filter:grayscale(.75) brightness(.7); }
-    canvas { width:120px; height:120px; display:block; margin:0 auto 8px; }
+    .card { background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.16), rgba(18,8,28,.92)); border:1px solid rgba(255,180,255,.28); border-radius:18px; padding:10px; text-align:center; box-shadow:0 0 18px rgba(196,75,255,.18); }
+    .card.locked canvas { filter:grayscale(.45) brightness(.85); }
+    canvas { width:140px; height:140px; display:block; margin:0 auto 8px; }
     .name { font-family:"Baloo 2", sans-serif; font-size:1.05rem; }
     .tag { display:block; margin:4px 0 8px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#b9a6dd; }
     .card button, .card label { width:100%; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.07); color:#efe6ff; padding:7px 8px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
@@ -131,6 +131,30 @@ function statusFor(id){
   if (m) return "drops " + m + " or $1 now";
   return "$1 unlock";
 }
+function sparkleField(c, w, h, hue){
+  c.save();
+  c.globalCompositeOperation = "lighter";
+  for (let i=0;i<18;i++){
+    const x = (i*47 + hue)%w, y = (i*31 + hue*0.7)%h;
+    const r = 1 + (i%3);
+    c.fillStyle = `hsla(${(hue+i*20)%360},100%,70%,.55)`;
+    c.beginPath(); c.arc(x,y,r,0,7); c.fill();
+  }
+  c.restore();
+}
+function previewToy(cv, kind, hue){
+  const c = cv.getContext("2d");
+  const w = cv.width, h = cv.height;
+  c.clearRect(0,0,w,h);
+  const g = c.createRadialGradient(w/2,h/2,8,w/2,h/2,w*0.55);
+  g.addColorStop(0, `hsla(${hue},90%,60%,.35)`);
+  g.addColorStop(1, "rgba(0,0,0,0)");
+  c.fillStyle = g; c.fillRect(0,0,w,h);
+  sparkleField(c,w,h,hue);
+  drawToy(c, { kind, x:w/2, y:h/2+8, s:58, hue, rot:0 });
+  drawToy(c, { kind, x:w*0.22, y:h*0.28, s:22, hue:(hue+80)%360, rot:-0.4 });
+  drawToy(c, { kind, x:w*0.78, y:h*0.3, s:18, hue:(hue+160)%360, rot:0.5 });
+}
 function paint(){
   const box = document.getElementById("grid");
   box.innerHTML = TOYS.map(([id,label], i) => {
@@ -140,17 +164,13 @@ function paint(){
       ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}> rain this</label>`
       : `<button class="buy" data-buy="${id}">Unlock $1</button>`;
     return `<article class="card${own?"":" locked"}">
-      <canvas width="160" height="160" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
+      <canvas width="180" height="180" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
       <div class="name">${label}</div>
       <span class="tag">${statusFor(id)}</span>
       ${action}
     </article>`;
   }).join("");
-  box.querySelectorAll("canvas").forEach(cv => {
-    const c = cv.getContext("2d");
-    c.clearRect(0,0,160,160);
-    drawToy(c, { kind: cv.dataset.kind, x:80, y:88, s:70, hue:+cv.dataset.hue, rot:0 });
-  });
+  box.querySelectorAll("canvas").forEach(cv => previewToy(cv, cv.dataset.kind, +cv.dataset.hue));
 }
 async function pullCloud(){
   try {
@@ -207,19 +227,15 @@ function paintCursors(){
     const action = own
       ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}> use this</label>`
       : `<button class="buy" data-buycur="${id}">Unlock $3</button>`;
-    const kind = id === "squid" ? "aliens" : id;
+    const kind = id === "squid" ? "sparkles" : id;
     return `<article class="card${own?"":" locked"}">
-      <canvas width="160" height="160" data-kind="${kind}" data-hue="${(i*70)%360}"></canvas>
+      <canvas width="180" height="180" data-kind="${kind}" data-hue="${(i*70)%360}"></canvas>
       <div class="name">${label}</div>
       <span class="tag">${own ? (on ? "equipped" : "owned") : "$3 cursor"}</span>
       ${action}
     </article>`;
   }).join("");
-  box.querySelectorAll("canvas").forEach(cv => {
-    const c = cv.getContext("2d");
-    c.clearRect(0,0,160,160);
-    drawToy(c, { kind: cv.dataset.kind, x:80, y:88, s:70, hue:+cv.dataset.hue, rot:0 });
-  });
+  box.querySelectorAll("canvas").forEach(cv => previewToy(cv, cv.dataset.kind, +cv.dataset.hue));
 }
 document.getElementById("cursors").addEventListener("change", e => {
   const id = e.target.dataset.cur;
@@ -247,6 +263,12 @@ document.getElementById("cursors").addEventListener("click", async e => {
 paint();
 paintCursors();
 pullCloud();
+(function twinkle(){
+  document.querySelectorAll("canvas[data-kind]").forEach(cv => {
+    previewToy(cv, cv.dataset.kind, (+cv.dataset.hue + Date.now()/40)%360);
+  });
+  requestAnimationFrame(twinkle);
+})();
 </script>
 </body>
 </html>
