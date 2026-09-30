@@ -30,7 +30,9 @@
     .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
-    .density-box { position:fixed; top:10px; left:12px; z-index:6; width:220px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
+    .density-box { position:fixed; top:92px; left:12px; z-index:6; width:220px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
+    body.pass-on .density-box { top:12px; }
+    input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
     body.zen .density-box { display:none; }
@@ -77,7 +79,7 @@
     .note { font-size:.62rem; color:#b9a6dd; }
     .zoom { display:none; }
     #buyPass {
-      position:fixed; top:12px; right:14px; z-index:10; max-width:150px;
+      position:fixed; top:12px; left:12px; z-index:10; max-width:150px;
       padding:14px 16px 16px; font-family:"Baloo 2", system-ui, sans-serif; font-weight:800;
       letter-spacing:.01em; text-transform:none; font-size:.8rem; line-height:1.15;
       text-align:center; color:#12331c; background:radial-gradient(circle at 30% 25%, #fff, #c8ffd9 42%, #8ef0b0);
@@ -121,14 +123,16 @@
     </div>
     <div class="actions">
       <span class="dock-btns">
-        <button type="button" id="fullscreen">full screen</button>
-        <button type="button" data-layout="1x1">1×1</button>
-        <button type="button" data-layout="1x2">1×2</button>
-        <button type="button" data-layout="1x3">1×3</button>
-        <button type="button" data-layout="2x2" class="on">2×2</button>
+        <select id="layoutPick">
+          <option value="1x1">1 × 1</option>
+          <option value="1x2">1 × 2</option>
+          <option value="1x3">1 × 3</option>
+          <option value="2x2" selected>2 × 2</option>
+        </select>
         <span id="passBadge">pass on</span>
         <a href="toys.html" id="storeBtn" class="page-link">Toy Store</a>
       </span>
+      <button type="button" id="fullscreen">full screen</button>
       <button type="button" id="zen">hide everything</button>
     </div>
     <button type="button" id="legalBtn">disclaimer</button>
@@ -172,12 +176,8 @@ const TFS = [
   {id:"2h",interval:"60m",range:"3mo",group:2},{id:"4h",interval:"60m",range:"3mo",group:4},
   {id:"1d",interval:"1d",range:"6mo"},{id:"1w",interval:"1wk",range:"2y"}
 ];
-const GROUPS = [
-  {title:"Magnificent 7 / Mega-cap Tech", names:[["NVDA","Nvidia"],["AAPL","Apple"],["MSFT","Microsoft"],["AMZN","Amazon"],["GOOGL","Alphabet"],["META","Meta"],["TSLA","Tesla"]]},
-  {title:"Semis & AI Infrastructure", names:[["AVGO","Broadcom"],["AMD","AMD"],["MU","Micron"],["INTC","Intel"],["PLTR","Palantir"],["TSM","TSMC"],["AMAT","Applied Materials"]]},
-  {title:"Financials", names:[["JPM","JPMorgan"],["BAC","Bank of America"],["V","Visa"],["MA","Mastercard"],["WFC","Wells Fargo"],["GS","Goldman Sachs"],["MS","Morgan Stanley"],["BLK","BlackRock"],["SCHW","Charles Schwab"],["C","Citigroup"]]},
-  {title:"Healthcare", names:[["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"]]}
-];
+const STARTERS = ["SPY","QQQ","NVDA","IWM"];
+const SUGGESTS = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AMD","AVGO","PLTR","JPM","V","UNH","LLY","GLD","SLV","TLT","BTC-USD","ETH-USD"];
 
 const SAVE_KEY = "trippy_player_v1";
 function defaultPlayer(){
@@ -300,6 +300,7 @@ function paintPass(){
   const buy = document.getElementById("buyPass");
   if (badge) badge.style.display = on ? "inline-flex" : "none";
   if (buy) buy.style.display = on ? "none" : "";
+  document.body.classList.toggle("pass-on", on);
 }
 function paintStore(){
   const box = document.getElementById("storeList");
@@ -433,14 +434,13 @@ function fmtAxisTime(t, tf){
   if (tf==="1h" || tf==="2h" || tf==="4h") return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric"});
   return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
-const slots = GROUPS.map((g,id) => ({id, title:g.title, names:g.names, symbol:g.names[0][0], tf:"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0}));
-document.getElementById("grid").innerHTML = slots.map(s=>`
+const slots = STARTERS.map((symbol,id) => ({id, symbol, tf:"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0}));
+document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
   <section class="card" id="card-${s.id}">
     <canvas id="cv-${s.id}"></canvas>
     <div class="meta"><div>
-      <div class="group-name">${s.title}</div>
       <div class="pickers">
-        <select id="in-${s.id}">${s.names.map(([sym,name])=>`<option value="${sym}">${sym} — ${name}</option>`).join("")}</select>
+        <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
         <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id==="30m"?"selected":""}>${t.id}</option>`).join("")}</select>
         <button type="button" data-fs="${s.id}">full screen</button>
       </div></div>
@@ -544,8 +544,11 @@ function setLayout(name){
   document.querySelectorAll("[data-layout]").forEach(b => b.classList.toggle("on", b.dataset.layout===name));
   sizeCanvases();
 }
+function slotSymbol(i){
+  return (document.getElementById("sym-"+i).value||"SPY").trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12) || "SPY";
+}
 async function loadSlot(i, forceReset=false){
-  const symbol=document.getElementById("in-"+i).value, tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
+  const symbol=slotSymbol(i), tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
     const data=await fetchBars(symbol,tf);
     slots[i].allBars=(forceReset||slots[i].key!==key||!slots[i].allBars.length)?data.bars:mergeBars(slots[i].allBars,data.bars);
@@ -556,7 +559,8 @@ async function loadSlot(i, forceReset=false){
 async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
 async function boot(reset=false){ clock(); sizeCanvases(); await Promise.all(slots.map((_,i)=>loadSlot(i,reset))); }
 slots.forEach((_,i)=>{
-  document.getElementById("in-"+i).addEventListener("change",()=>loadSlot(i,true));
+  document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
+  document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
   document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.querySelector(`[data-fs="${i}"]`).addEventListener("click", async()=>{
     const card=document.getElementById("card-"+i);
@@ -565,7 +569,7 @@ slots.forEach((_,i)=>{
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
 });
-document.querySelectorAll("[data-layout]").forEach(b => b.addEventListener("click", () => setLayout(b.dataset.layout)));
+document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
 // hide-charts removed
 document.getElementById("density").addEventListener("input", e => {
   document.getElementById("densityVal").textContent = e.target.value;
