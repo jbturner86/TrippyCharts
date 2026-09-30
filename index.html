@@ -18,7 +18,9 @@
       font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
       background:linear-gradient(90deg,#7cff3a,#fff,#c44bff,#ff5d8f); background-size:220% auto;
       -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 7s linear infinite;
-      -webkit-text-stroke:1.4px rgba(255,255,255,.28); filter:drop-shadow(0 0 8px rgba(196,75,255,.55)); }
+      -webkit-text-stroke:1.4px rgba(255,255,255,.28); filter:drop-shadow(0 0 8px rgba(196,75,255,.55));
+      display:inline-flex; align-items:baseline; gap:.35em; }
+    .byline { font-family:Georgia,"Palatino Linotype","Book Antiqua",serif; font-style:italic; font-weight:500; letter-spacing:.04em; text-transform:none; font-size:.42em; -webkit-text-stroke:0; filter:none; }
     @keyframes sheen { to { background-position:220% center; } }
     .status { margin-top:4px; color:#cbb6ff; font-size:.8rem; }
     .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
@@ -71,7 +73,7 @@
 <body>
   <div id="sky"><canvas id="bg"></canvas></div>
   <div class="wrap">
-    <header><h1>TrippyCharts</h1><p class="status" id="status"></p></header>
+    <header><h1>TrippyCharts <span class="byline">by james bradly</span></h1><p class="status" id="status"></p></header>
     <div class="density-box">
       <label for="density">toy density <span id="densityVal">70</span></label>
       <input type="range" id="density" min="0" max="400" value="70">
