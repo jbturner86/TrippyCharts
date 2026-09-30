@@ -3,258 +3,80 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrippyCharts</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <title>Toy Store — TrippyCharts</title>
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height:100%; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif; background:#07010e; overflow:hidden; cursor:crosshair; }
-    button, select, .chip, input { cursor:pointer; }
-    #sky { position:fixed; inset:0; z-index:0; pointer-events:none;
-      background: radial-gradient(ellipse at 12% 8%, rgba(255,60,180,.16), transparent 40%),
-                  linear-gradient(180deg,#12061c 0%,#07010e 60%,#0b0714 100%); }
-    #sky canvas { width:100%; height:100%; display:block; }
-    .wrap { position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
-    header { text-align:center; padding:10px 12px 6px; }
-    h1 { font-size:clamp(1.25rem,3vw,2.15rem); letter-spacing:.16em; text-transform:uppercase; font-weight:900;
-      font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
-      color:#f3e9ff;
-      -webkit-text-stroke:1px #1a0724;
-      text-shadow:
-        -1px -1px 0 #12061c, 1px -1px 0 #12061c, -1px 1px 0 #12061c, 1px 1px 0 #12061c,
-        0 0 10px rgba(196,75,255,.35);
-    }
-    @keyframes sheen { to { background-position:220% center; } }
-    .status { margin-top:4px; color:#cbb6ff; font-size:.8rem; }
-    .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
-    .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-    button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
-    button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
-    .density-box { position:fixed; top:12px; left:12px; z-index:6; width:228px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
-    .sound-row { display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:6px; }
-    #soundBtn, #musicBtn { padding:4px 9px; font-size:.62rem; letter-spacing:.06em; }
-    input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
-    .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
-    .density-box input { width:100%; accent-color:#ff9a3a; }
-    body.zen .density-box { display:none; }
-    .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: minmax(0,1fr); gap:6px; padding:0 10px 8px; }
-    .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
-    .toys-left { align-items:flex-end; }
-    .toys-right { align-items:flex-start; }
-    #legalBtn { background:rgba(12,6,22,.82); }
-    body.zen header, body.zen .dock-btns, body.zen .stage, body.zen .toys-col, body.zen .density-box, body.zen #store, body.zen #legal, body.zen #buyPass, body.zen #legalBtn { display:none !important; }
-    body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
-    .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
-    .chip input { width:15px; height:15px; accent-color:#c44bff; }
-    .chip.locked { opacity:.38; filter:grayscale(.6); }
-    .chip.locked input { pointer-events:none; }
-    #passBadge { display:none; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:#7cff3a; border:1px solid rgba(124,255,58,.4); border-radius:999px; padding:6px 11px; }
-    #store {
-      display:none; position:fixed; right:12px; top:70px; z-index:8; width:min(320px,92vw);
-      max-height:calc(100dvh - 90px); overflow:auto; padding:12px;
-      background:rgba(12,6,22,.94); border:1px solid rgba(196,75,255,.45); border-radius:16px;
-    }
-    #store h2 { font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; margin-bottom:8px; color:#e9d7ff; }
-    #store .row { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.08); font-size:.78rem; }
-    #store .tag { font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color:#b9a6dd; }
-    #store.open { display:block; }
-    body.zen #store { display:none !important; }
-    .stage { min-height:0; display:grid; gap:12px; width:100%; height:100%; }
-    .stage.layout-2x2 { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
-    .stage.layout-1x1 { grid-template-columns:1fr; grid-template-rows:1fr; }
-    .stage.layout-1x2 { grid-template-columns:1fr 1fr; grid-template-rows:1fr; }
-    .stage.layout-1x3 { grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr; }
-    .stage.hide { display:none; }
-    .card.off { display:none; }
-    .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; }
-    .card canvas { display:block; width:100%; flex:1 1 auto; min-height:0; }
-    .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:7px 9px 9px; }
-    .group-name { font-size:1rem; letter-spacing:.08em; text-transform:uppercase; color:#efe6ff; margin-bottom:5px; font-weight:700; }
-    .pickers { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
-    select { padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; }
-    .px { font-variant-numeric:tabular-nums; font-size:.92rem; }
-    .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
-    .note { font-size:.62rem; color:#b9a6dd; }
-    .zoom { display:none; }
-    #buyPass {
-      position:fixed; top:8px; right:10px; z-index:10; width:128px; height:86px; padding:0;
-      border:none; background:transparent; filter:drop-shadow(0 0 10px rgba(255,60,200,.45));
-    }
-    #buyPass img { width:100%; height:100%; object-fit:contain; display:block; pointer-events:none; }
-    @keyframes passGlow {
-      0%,100% { box-shadow:0 0 8px #b7ffd2, 0 0 16px rgba(180,255,210,.55); }
-      50% { box-shadow:0 0 16px #fff, 0 0 28px #b7ffd2, 0 0 48px rgba(255,255,255,.35); }
-    }
-    #legal {
-      display:none; position:fixed; inset:8% 8%; z-index:12; overflow:auto;
-      background:rgba(10,6,18,.97); border:1px solid rgba(255,255,255,.2); border-radius:16px;
-      padding:18px 20px; color:#e8dcff; font-size:.82rem; line-height:1.45;
-    }
-    #legal.open { display:block; }
-    #legal h2 { margin:0 0 10px; letter-spacing:.08em; text-transform:uppercase; }
-    #legal h3 { margin:14px 0 6px; font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; color:#cbb6ff; }
-    #legal p { margin:0 0 8px; color:#d7c7ff; }
-    #legalClose { margin-top:12px; }
-    @media (max-width:900px) {
-      html,body { overflow:auto; cursor:auto; }
-      .wrap { height:auto; min-height:100dvh; overflow:visible; }
-      .board { display:flex; flex-direction:column; height:auto; }
-      .toys-col { flex-direction:row; flex-wrap:wrap; justify-content:center; }
-      .stage { grid-template-columns:1fr; height:auto; }
-      .card canvas { height:230px; flex:none; }
-      .density-box { position:static; width:min(220px,90%); margin:8px auto 0; }
-    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { min-height:100dvh; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif;
+      background:radial-gradient(ellipse at 20% 0%, rgba(255,60,180,.18), transparent 42%), #07010e; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 18px 8px; flex-wrap:wrap; }
+    h1 { font-family:"Baloo 2", Impact, sans-serif; font-size:clamp(1.4rem,3vw,2rem); letter-spacing:.04em; }
+    a.back { color:#04140a; background:#b7ffd2; text-decoration:none; border-radius:999px; padding:8px 14px; font-weight:800; }
+    .lead { padding:0 18px 14px; color:#cbb6ff; max-width:720px; }
+    h2 { padding:8px 18px 6px; font-family:"Baloo 2", sans-serif; font-size:1.15rem; letter-spacing:.04em; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; padding:10px 16px 18px; }
+    .card { background:radial-gradient(circle at 50% 30%, rgba(255,255,255,.16), rgba(18,8,28,.55)); border:none; border-radius:18px; padding:10px; text-align:center; box-shadow:0 0 22px rgba(196,75,255,.16); }
+    .card.locked canvas { filter:grayscale(.45) brightness(.85); }
+    canvas { width:140px; height:140px; display:block; margin:0 auto 8px; }
+    .name { font-family:"Baloo 2", sans-serif; font-size:1.05rem; }
+    .tag { display:block; margin:4px 0 8px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#b9a6dd; }
+    .card button, .card label { width:100%; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.07); color:#efe6ff; padding:7px 8px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+    .card button.buy { background:#b7ffd2; color:#04140a; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.9rem; }
+    .card label { display:flex; gap:6px; align-items:center; justify-content:center; background:transparent; border:none; }
+    .card input[type="checkbox"], .card input[type="radio"] { width:22px; height:22px; accent-color:#c44bff; }
+    .note { padding:0 18px 24px; color:#9e8cc4; font-size:.75rem; }
   </style>
 </head>
 <body>
-  <div id="sky"><canvas id="bg"></canvas></div>
-  <button type="button" id="buyPass" title="Five new falling trinkets every month while you watch the charts"><img src="pass-blob.png" alt="New Toys Every Month! Only $5 a month!"></button>
-  <div class="wrap">
-    <header><h1>TrippyCharts</h1><p class="status" id="status"></p></header>
-    <div class="density-box">
-      <label for="density">toy density <span id="densityVal">70</span></label>
-      <input type="range" id="density" min="10" max="400" value="70">
-      <div class="sound-row">
-        <span style="font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd39a">sfx</span>
-        <button type="button" id="soundBtn">on</button>
-        <span style="font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:#ffd39a">music</span>
-        <button type="button" id="musicBtn">on</button>
-      </div>
-    </div>
-    <div class="actions">
-      <span class="dock-btns">
-        <select id="layoutPick">
-          <option value="1x1">1 × 1</option>
-          <option value="1x2">1 × 2</option>
-          <option value="1x3">1 × 3</option>
-          <option value="2x2" selected>2 × 2</option>
-        </select>
-        <span id="passBadge">pass on</span>
-        <a href="toys.html" id="storeBtn" class="page-link">Toy Store</a>
-      </span>
-      <button type="button" id="fullscreen">full screen</button>
-      <button type="button" id="zen">hide everything</button>
-      <button type="button" id="legalBtn">disclaimer</button>
-    </div>
-    <aside id="legal">
-      <h2>Disclaimer</h2>
-      <p>TrippyCharts is an entertainment and visualization toy. It is not a broker, adviser, exchange, or data vendor.</p>
-      <h3>Not financial advice</h3>
-      <p>Nothing on this site is investment, tax, or trading advice. Do your own research. You can lose money trading. We do not promise profits, signals, or “alpha.”</p>
-      <h3>Charts are imperfect</h3>
-      <p>Prices and candles are pulled from third-party public sources (including Yahoo Finance-style endpoints). Data can be delayed, missing, aggregated wrong, or plotted on the wrong timeframe. After-hours prints may not match a 30-minute candle. Live last-candle animation is a visual estimate, not an official print. Do not place orders from these charts. Confirm every number on your broker.</p>
-      <h3>Outages and changes</h3>
-      <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
-      <h3>Pass and store</h3>
-      <p>Payments are for cosmetic toys, drops, and save slots — not market data. Subscriptions renew until you cancel in Stripe. Test charges in sandbox are not real. Refunds follow Stripe and applicable law. Monthly toy lineups can change.</p>
-      <h3>As-is</h3>
-      <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
-      <h3>You agree</h3>
-      <p>By using the site or clicking Buy Pass you agree to this disclaimer. If you do not agree, don’t use the charts or pay.</p>
-      <p style="opacity:.7">This text is not legal advice. A Colorado attorney can tighten it before Live charges.</p>
-      <button type="button" id="legalClose">close</button>
-    </aside>
-    <aside id="store">
-      <h2>Charm store</h2>
-      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Pass unlocks 5 this month. The rest drop later or will be $1 each.</p>
-      <div id="storeList"></div>
-    </aside>
-    <div class="board center" id="board">
-      <main class="stage layout-2x2" id="grid"></main>
-    </div>
-  </div>
+  <header>
+    <h1>Toy Store</h1>
+    <a class="back" href="index.html">← back to charts</a>
+  </header>
+  <p class="lead">Pick what rains on the charts. Mushrooms are free. Pass unlocks 5 this month. Anything else is $1 to unlock forever. Cursors are $3 — right now Squid is the free one.</p>
+  <h2>Falling toys</h2>
+  <div class="grid" id="grid"></div>
+  <h2>Cursors</h2>
+  <p class="lead">These ride with your pointer on the chart page. Squid is included. More skins are $3.</p>
+  <div class="grid" id="cursors"></div>
+  <p class="note">$1 toys and $3 cursors need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error.</p>
 <script>
 const TOYS = [
-  ["mushrooms","Mushrooms",true],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
+  ["mushrooms","Mushrooms"],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
   ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
   ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"]
 ];
-const TFS = [
-  {id:"1m",interval:"1m",range:"1d"},{id:"5m",interval:"5m",range:"5d"},{id:"10m",interval:"5m",range:"5d",group:2},
-  {id:"15m",interval:"15m",range:"5d"},{id:"30m",interval:"30m",range:"5d"},{id:"1h",interval:"60m",range:"1mo"},
-  {id:"2h",interval:"60m",range:"3mo",group:2},{id:"4h",interval:"60m",range:"3mo",group:4},
-  {id:"1d",interval:"1d",range:"6mo"},{id:"1w",interval:"1wk",range:"2y"}
-];
-const STARTERS = ["SPY","QQQ","NVDA","IWM"];
-const SUGGESTS = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AMD","AVGO","PLTR","JPM","V","UNH","LLY","GLD","SLV","TLT","BTC-USD","ETH-USD"];
-
+const FREE_TOYS = ["mushrooms"];
+const PASS_BY_MONTH = {
+  "2026-09": ["stars","moons","leaves","flowers","hearts"],
+  "2026-10": ["skulls","aliens","butterflies","crystals","frogs"],
+  "2026-11": ["cats","planets","clouds","dice","peace"]
+};
 const SAVE_KEY = "trippy_player_v1";
-const SOUND_KEY = "trippy_sound_on";
-const MUSIC_KEY = "trippy_music_on";
-let soundOn = localStorage.getItem(SOUND_KEY) !== "0";
-let musicOn = localStorage.getItem(MUSIC_KEY) !== "0";
-let audioCtx = null, musicTimer = -1, lastEatSfx = 0;
-function ensureAudio(){
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  if (audioCtx.state === "suspended") audioCtx.resume();
-  return audioCtx;
+const API = "https://trippy-quote.j-bradturner.workers.dev";
+function currentMonth(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
 }
-function tone(freq, dur, type, vol, slide){
-  if (!freq) return;
-  const ctx = ensureAudio();
-  const o = ctx.createOscillator(), g = ctx.createGain();
-  o.type = type || "triangle";
-  o.frequency.setValueAtTime(freq, ctx.currentTime);
-  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, slide), ctx.currentTime + dur);
-  g.gain.setValueAtTime(vol || 0.03, ctx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
-  o.connect(g); g.connect(ctx.destination);
-  o.start(); o.stop(ctx.currentTime + dur + 0.02);
+function passToys(){ return PASS_BY_MONTH[currentMonth()] || PASS_BY_MONTH["2026-09"]; }
+function toyDropMonth(id){
+  for (const [m, list] of Object.entries(PASS_BY_MONTH)) if (list.includes(id)) return m;
+  return null;
 }
-function beep(freq, dur, type, vol, slide){
-  if (!soundOn) return;
-  tone(freq, dur, type, vol, slide);
-}
-function sfx(kind){
-  if (!soundOn) return;
-  const now = performance.now();
-  if (kind === "eat"){
-    if (now - lastEatSfx < 140) return;
-    lastEatSfx = now;
-    beep(640, 0.05, "triangle", 0.018, 820);
-    return;
-  }
-  if (kind === "spit") beep(280, 0.06, "triangle", 0.016, 160);
-  if (kind === "hit") beep(210, 0.05, "triangle", 0.02);
-  if (kind === "hurt") beep(110, 0.14, "sine", 0.03, 70);
-  if (kind === "nova") beep(180, 0.18, "triangle", 0.025, 90);
-  if (kind === "boss") beep(160, 0.12, "triangle", 0.022, 90);
-  if (kind === "die") beep(150, 0.22, "sine", 0.03, 60);
-}
-const OVERWORLD = [
-  392,523,659,784, 659,523,392,330,
-  349,392,523,659, 587,523,392,0,
-  440,523,659,698, 659,523,440,392,
-  349,330,294,330, 349,392,523,392
+const CURSORS = [
+  ["squid","Aqua Squid",0],
+  ["nebula","Nebula Bloom",0],
+  ["comet","Comet Tail",0],
+  ["lotus","Spin Lotus",0],
+  ["void","Void Ring",0],
+  ["prism","Prism Shard",0],
+  ["aurora","Aurora Trail",0],
+  ["ember","Ember Drift",0],
+  ["candy","Candy Orbit",0],
+  ["plasma","Plasma Lash",0]
 ];
-const BASS = [
-  196,196,165,165, 175,175,196,196,
-  220,220,196,196, 175,165,147,196
-];
-function tickMusic(){
-  if (!musicOn || !audioCtx) return;
-  const step = Math.floor((audioCtx.currentTime * 3.2) % OVERWORLD.length);
-  if (step === musicTimer) return;
-  musicTimer = step;
-  const n = OVERWORLD[step];
-  if (n) tone(n, 0.22, "triangle", 0.028);
-  const b = BASS[step % BASS.length];
-  if (step % 2 === 0 && b) tone(b, 0.28, "sine", 0.016);
-}
-function startMusic(){ ensureAudio(); musicTimer = -1; }
-function stopMusic(){ musicTimer = -1; }
 function defaultPlayer(){
-  return {
-    xp: 0, eaten: 0, eatenCycle: 0,
-    toyDensity: 70,
-    ownedToyIds: ["mushrooms"],
-    equippedToyIds: ["mushrooms"],
-    passActive: false,
-    passExpiresAt: null,
-    ownedCursorIds: ["squid"],
-    equippedCursor: "squid"
-  };
+  return { xp:0, eaten:0, eatenCycle:0, toyDensity:70, ownedToyIds:["mushrooms"], equippedToyIds:["mushrooms"], passActive:false, passExpiresAt:null, ownedCursorIds:["squid"], equippedCursor:"squid" };
 }
 function loadPlayer(){
   try {
@@ -265,100 +87,14 @@ function loadPlayer(){
     return p;
   } catch(e){ return defaultPlayer(); }
 }
-function savePlayer(){
-  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
-}
-function levelFromXp(xp){ return Math.floor((xp || 0) / 100) + 1; }
+function savePlayer(){ localStorage.setItem(SAVE_KEY, JSON.stringify(player)); }
 let player = loadPlayer();
-
 function getPlayerId(){
   let id = localStorage.getItem("trippy_id");
-  if (!id) {
-    id = "p_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem("trippy_id", id);
-  }
+  if (!id) { id = "p_" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("trippy_id", id); }
   return id;
 }
 const PLAYER_ID = getPlayerId();
-const API = "https://trippy-quote.j-bradturner.workers.dev";
-
-async function pullCloud(){
-  try {
-    const r = await fetch(API + "/me?player=" + encodeURIComponent(PLAYER_ID));
-    if (!r.ok) return;
-    const row = await r.json();
-    if (!row || !row.id) return;
-    player.xp = row.xp || 0;
-    player.eaten = row.eaten || 0;
-    player.eatenCycle = row.eaten_cycle || 0;
-    player.toyDensity = row.toy_density || player.toyDensity;
-    try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
-    try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
-    player.passActive = !!row.pass_active;
-    player.passExpiresAt = row.pass_expires_at;
-    savePlayer();
-    const dens = document.getElementById("density");
-    if (dens) {
-      dens.value = player.toyDensity;
-      const label = document.getElementById("densityVal");
-      if (label) label.textContent = dens.value;
-    }
-    paintToys();
-    paintPass();
-    paintStore();
-  } catch(e){}
-}
-async function pushCloud(){
-  try {
-    await fetch(API + "/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify(player)
-    });
-  } catch(e){}
-}
-window.addEventListener("visibilitychange", () => {
-  if (document.hidden) pushCloud();
-  else syncFromLocal();
-});
-window.addEventListener("pageshow", syncFromLocal);
-window.addEventListener("focus", syncFromLocal);
-function syncFromLocal(){
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return;
-    const fresh = JSON.parse(raw);
-    player = { ...player, ...fresh };
-    const dens = document.getElementById("density");
-    if (dens && player.toyDensity) {
-      dens.value = player.toyDensity;
-      const label = document.getElementById("densityVal");
-      if (label) label.textContent = dens.value;
-    }
-    paintPass();
-  } catch(e){}
-}
-
-const mid = Math.ceil(TOYS.length/2);
-const FREE_TOYS = ["mushrooms"];
-const PASS_BY_MONTH = {
-  "2026-09": ["stars","moons","leaves","flowers","hearts"],
-  "2026-10": ["skulls","aliens","butterflies","crystals","frogs"],
-  "2026-11": ["cats","planets","clouds","dice","peace"]
-};
-function currentMonth(){
-  const d = new Date();
-  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
-}
-function passToys(){
-  return PASS_BY_MONTH[currentMonth()] || PASS_BY_MONTH["2026-09"];
-}
-function toyDropMonth(id){
-  for (const [m, list] of Object.entries(PASS_BY_MONTH)) {
-    if (list.includes(id)) return m;
-  }
-  return null;
-}
 function hasPass(){
   if (!player.passActive) return false;
   if (!player.passExpiresAt) return true;
@@ -370,119 +106,6 @@ function ownedToys(){
   return [...new Set([...FREE_TOYS, ...own, ...extra])];
 }
 function canUse(id){ return ownedToys().includes(id); }
-function toyChecked(id){
-  if (!canUse(id)) return false;
-  if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
-  return id === "mushrooms";
-}
-function paintToys(){}
-function paintPass(){
-  const on = hasPass();
-  const badge = document.getElementById("passBadge");
-  const buy = document.getElementById("buyPass");
-  if (badge) badge.style.display = on ? "inline-flex" : "none";
-  if (buy) buy.style.display = on ? "none" : "";
-  document.body.classList.toggle("pass-on", on);
-}
-function paintStore(){
-  const box = document.getElementById("storeList");
-  if (!box) return;
-  const month = currentMonth();
-  box.innerHTML = TOYS.map(([id,label]) => {
-    let tag = "later drop";
-    if (FREE_TOYS.includes(id)) tag = "free";
-    else if ((PASS_BY_MONTH[month]||[]).includes(id)) tag = hasPass() ? "unlocked this month" : "this month with pass";
-    else {
-      const m = toyDropMonth(id);
-      tag = m ? ("drops " + m) : "later drop";
-    }
-    return `<div class="row"><span>${label}</span><span class="tag">${tag}</span></div>`;
-  }).join("");
-}
-paintToys();
-paintPass();
-paintStore();
-document.getElementById("density").value = player.toyDensity || 70;
-document.getElementById("densityVal").textContent = document.getElementById("density").value;
-
-function activeToys(){
-  const eq = (player.equippedToyIds || []).filter(canUse);
-  return eq.length ? eq : ["mushrooms"];
-}
-const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
-addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
-const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.5, zenMode = false, boss = null, blobT = 0, playerHp = 100, hurtCool = 0;
-const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
-const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
-function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
-addEventListener("resize", resizeBg); resizeBg();
-function sparkPops(x,y,n){
-  const count = Math.min(14, n||10);
-  for (let i=0;i<count;i++){
-    const a=Math.random()*Math.PI*2, sp=1.2+Math.random()*3.2;
-    burst.push({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:0, r:1.4+Math.random()*2.2, white:true });
-  }
-}
-function nova(){
-  sfx("nova");
-  blobT = 1;
-  sparkPops(mouse.x, mouse.y, 12);
-  eaten=0; player.eatenCycle=0; savePlayer();
-}
-function growFromEat(){
-  eaten++;
-  player.eaten = (player.eaten || 0) + 1;
-  player.eatenCycle = eaten;
-  savePlayer();
-  sfx("eat");
-  if (blobT > 0) return;
-  squidScale = Math.min(SQUID_MAX, squidScale + (SQUID_MAX - SQUID_START) / 40);
-  if (squidScale >= SQUID_MAX - 0.001) nova();
-}
-function spawnBoss(){
-  const kinds = activeToys().length ? activeToys() : TOYS.map(t=>t[0]);
-  const pad = 90;
-  boss = {
-    kind: pick(kinds),
-    x: pad + Math.random()*(innerWidth-pad*2),
-    y: pad + Math.random()*(innerHeight-pad*2),
-    vx: (Math.random()<.5?-1:1)*(1.4+Math.random()*1.6),
-    vy: (Math.random()<.5?-1:1)*(1.1+Math.random()*1.5),
-    s: 150, hp:100, maxHp:100, rot:0, spin:(Math.random()-0.5)*.03, hue:Math.random()*360, hurt:0
-  };
-}
-function endZen(){
-  zenMode=false; boss=null; blobT=0; playerHp=100; hurtCool=0;
-  document.body.classList.remove("zen");
-  const z=document.getElementById("zen");
-  if(z) z.textContent="hide everything";
-  document.getElementById("grid").classList.remove("hide");
-}
-function startSuperNova(x,y){
-  sfx("boss");
-  sparkPops(x, y, 12);
-  setTimeout(()=>{ if(zenMode) spawnBoss(); }, 400);
-}
-function hitBoss(b){
-  if(!boss) return false;
-  if(Math.hypot(b.x-boss.x,b.y-boss.y)>=boss.s*0.48) return false;
-  boss.hp=Math.max(0,boss.hp-4); boss.hurt=8;
-  burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8});
-  if(boss.hp<=0){ const bx=boss.x,by=boss.y; boss=null; sfx("boss"); startSuperNova(bx,by); }
-  return true;
-}
-function hurtPlayer(){
-  if(!zenMode || hurtCool>0) return;
-  playerHp = Math.max(0, playerHp-20);
-  hurtCool = 45;
-  sfx("hurt");
-  for(let i=0;i<18;i++) burst.push({x:mouse.x,y:mouse.y,vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8,life:1,hue:0,r:3+Math.random()*5});
-  if(playerHp<=0){ sfx("die"); endZen(); }
-}
-function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*bg.width,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
-function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot||0);
   const s=b.s, k=b.kind;
@@ -569,360 +192,173 @@ function drawToy(c,b){
   }
   c.restore();
 }
-function drawSquid(){
-  step++;
-  if (blobT > 0) {
-    blobT = Math.max(0, blobT - 0.012);
-    if (blobT === 0) squidScale = SQUID_START;
+function statusFor(id){
+  if (FREE_TOYS.includes(id)) return "free";
+  if (canUse(id) && (PASS_BY_MONTH[currentMonth()]||[]).includes(id) && hasPass()) return "pass this month";
+  if (canUse(id)) return "owned";
+  const m = toyDropMonth(id);
+  if (m === currentMonth()) return "in this month's pass or $1";
+  if (m) return "drops " + m + " or $1 now";
+  return "$1 unlock";
+}
+function sparkleField(c, w, h, hue){
+  c.save();
+  c.globalCompositeOperation = "lighter";
+  for (let i=0;i<18;i++){
+    const x = (i*47 + hue)%w, y = (i*31 + hue*0.7)%h;
+    const r = 1 + (i%3);
+    c.fillStyle = `hsla(${(hue+i*20)%360},100%,70%,.55)`;
+    c.beginPath(); c.arc(x,y,r,0,7); c.fill();
   }
-  const jig = blobT > 0 ? (1 + 0.7*blobT + 0.18*Math.sin(step*0.55)*blobT) : 1;
-  const sc = squidScale * jig;
-  const skin = player.equippedCursor || "squid";
-  const spin = skin === "nebula" || skin === "aurora" ? 0.018 : skin === "lotus" || skin === "candy" ? 0.012 : skin === "prism" || skin === "plasma" ? 0.02 : skin === "ember" ? 0.01 : 0.004;
-  const radius=(13+5*Math.sin(step/10))*sc;
-  jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
-  if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
-  if (!window.cursorTrail) window.cursorTrail = [];
-  const trail = window.cursorTrail;
-  ctx.save(); ctx.globalCompositeOperation="lighter";
-  squid.forEach((arm,ai)=>{
-    const ang=2*Math.PI*ai/ARM_N+step*spin;
-    let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
-    arm.forEach((p,si)=>{
-      const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*sc;
-      p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35;
-      const rr = p.r*sc;
-      if (skin === "nebula") {
-        ctx.fillStyle=`hsla(${(ai*28+step*4+si*12)%360},100%,65%,.45)`;
-        ctx.beginPath(); ctx.arc(p.x,p.y,rr*(1.1+0.3*Math.sin(step/6+si)),0,7); ctx.fill();
-      } else if (skin === "comet") {
-        ctx.strokeStyle=`hsla(${38+si*8},100%,70%,${0.55-si*0.03})`;
-        ctx.lineWidth=Math.max(1.2,(rr*1.4)*(1-si/SEG));
-        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(p.x,p.y); ctx.stroke();
-        if (si===0){ ctx.fillStyle="#fff6c8"; ctx.beginPath(); ctx.arc(p.x,p.y,rr*1.6,0,7); ctx.fill(); }
-      } else if (skin === "lotus") {
-        if (si%3===0){
-          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(step*0.08+ai+si);
-          ctx.fillStyle=`hsla(${320+ai*8},90%,70%,.5)`;
-          ctx.beginPath(); ctx.ellipse(0,0,rr*1.8,rr*0.7,0,0,7); ctx.fill();
-          ctx.restore();
-        }
-      } else if (skin === "void") {
-        ctx.strokeStyle=`hsla(${280+ai*6},100%,60%,.4)`;
-        ctx.lineWidth=Math.max(1,rr*0.25);
-        ctx.beginPath(); ctx.arc(p.x,p.y,rr*(0.8+0.4*Math.sin(step/8+si)),0,7); ctx.stroke();
-        if (si===SEG-1){ ctx.fillStyle="rgba(8,0,16,.35)"; ctx.beginPath(); ctx.arc(p.x,p.y,rr*1.2,0,7); ctx.fill(); }
-      } else if (skin === "prism") {
-        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(step*0.1+si*0.4);
-        ctx.fillStyle=`hsla(${ai*40+step*3},100%,70%,.5)`;
-        ctx.beginPath(); ctx.moveTo(0,-rr*1.6); ctx.lineTo(rr,0); ctx.lineTo(0,rr*1.6); ctx.lineTo(-rr,0); ctx.closePath(); ctx.fill();
-        ctx.restore();
-      } else if (skin === "aurora") {
-        ctx.strokeStyle=`hsla(${140+ai*12+step*2},90%,65%,.45)`;
-        ctx.lineWidth=Math.max(1.2,rr*0.7);
-        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(p.x,p.y); ctx.stroke();
-        ctx.fillStyle=`hsla(${160+si*10},100%,70%,.4)`; ctx.beginPath(); ctx.arc(p.x,p.y,rr*0.9,0,7); ctx.fill();
-      } else if (skin === "ember") {
-        ctx.fillStyle=`hsla(${18+si*8},100%,60%,.5)`;
-        ctx.beginPath(); ctx.arc(p.x,p.y,rr*(1.05+0.25*Math.sin(step/5+si)),0,7); ctx.fill();
-      } else if (skin === "candy") {
-        ctx.fillStyle=`hsla(${(ai%2?330:200)+si*6},95%,68%,.5)`;
-        ctx.beginPath(); ctx.arc(p.x,p.y,rr*1.15,0,7); ctx.fill();
-      } else if (skin === "plasma") {
-        ctx.strokeStyle=`hsla(${50+ai*15+step*5},100%,65%,.5)`;
-        ctx.lineWidth=Math.max(1,rr*0.4);
-        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.quadraticCurveTo(p.x+Math.sin(step/4+si)*4,p.y,p.x,p.y); ctx.stroke();
-      } else {
-        ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`;
-        ctx.lineWidth=Math.max(1,rr*0.35);
-        ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.stroke();
-      }
-      if (si===SEG-1 && (skin==="aurora"||skin==="ember"||skin==="candy"||skin==="plasma"||skin==="comet") && step%3===ai%3 && trail.length<28){
-        const hue = skin==="ember"?22:skin==="candy"?(ai%2?330:200):skin==="plasma"?55:skin==="comet"?42:150+ai*10;
-        trail.push({x:p.x,y:p.y,vx:(Math.random()-.5)*0.8,vy:(Math.random()-.5)*0.8+.15,life:1,hue,r:2+Math.random()*2});
-      }
-      tx=p.x; ty=p.y;
-    });
-  });
-  for (let i=trail.length-1;i>=0;i--){
-    const t=trail[i]; t.x+=t.vx; t.y+=t.vy; t.life-=0.035;
-    ctx.fillStyle=`hsla(${t.hue},100%,70%,${t.life})`;
-    ctx.beginPath(); ctx.arc(t.x,t.y,t.r*t.life,0,7); ctx.fill();
-    if (t.life<=0) trail.splice(i,1);
-  }
-  ctx.restore();
+  c.restore();
 }
-function tickBits(){
-  const dens = +(document.getElementById("density")||{}).value || 70;
-  if (activeToys().length) {
-    const need = dens - bits.length;
-    const burstN = Math.min(18, Math.max(0, need));
-    for (let i=0;i<burstN;i++) spawnBit();
-  }
-  const capture=48+18*squidScale;
-  bits.forEach(b=>{
-    const dx=b.x-mouse.x, dy=b.y-mouse.y, dist=Math.hypot(dx,dy);
-    if(b.state==="fall"){
-      b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
-      if(dist<capture) b.state="suck";
-    } else if(b.state==="suck"){
-      b.x += (mouse.x - b.x) * 0.28;
-      b.y += (mouse.y - b.y) * 0.28;
-      b.s = Math.max(5, b.s * 0.9);
-      if(dist < 12*squidScale){
-        growFromEat(); b.state="eject"; sfx("spit");
-        if(zenMode&&boss){
-          const ang=Math.atan2(boss.y-mouse.y,boss.x-mouse.x);
-          const power=18+Math.random()*8; b.vx=Math.cos(ang)*power; b.vy=Math.sin(ang)*power; b.s=14;
-        } else {
-          let ang=jetAng;
-          if(!isFinite(ang) || Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<2) ang = Math.atan2(b.y-mouse.y,b.x-mouse.x);
-          const spd=10+Math.random()*6;
-          b.vx=Math.cos(ang)*spd; b.vy=Math.sin(ang)*spd; b.s=10;
-        }
-      }
-    } else if(b.state==="eject"){
-      b.x+=b.vx; b.y+=b.vy; b.vx*=0.985; b.vy*=0.985; b.s=Math.min(24,b.s*1.04); b.rot+=0.06;
-      if(zenMode&&hitBoss(b)) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall")||b);
-      else if(dist>(zenMode?380:150)){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
-    }
-    if(b.y>bg.height+50||b.x<-60||b.x>bg.width+60) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall"));
-  });
-  burst=burst.filter(p=>p.life>0);
-  burst.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vx*=0.98; p.vy*=0.98; p.life-=0.012; });
+function previewToy(cv, kind, hue){
+  const c = cv.getContext("2d");
+  const w = cv.width, h = cv.height;
+  c.clearRect(0,0,w,h);
+  c.fillStyle = "rgba(255,255,255,.08)";
+  c.beginPath(); c.arc(w/2,h/2,w*0.42,0,7); c.fill();
+  sparkleField(c,w,h,hue);
+  drawToy(c, { kind, x:w/2, y:h/2+6, s:72, hue, rot:0 });
 }
-(function loopSky(){
-  ctx.clearRect(0,0,bg.width,bg.height); tickBits(); tickMusic(); bits.forEach(b=>drawToy(ctx,b));
-  burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=p.white?`rgba(255,255,255,${p.life})`:`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
-  if(zenMode&&boss){
-    boss.x += boss.vx; boss.y += boss.vy; boss.rot += boss.spin;
-    const m = boss.s*0.45;
-    if(boss.x<m || boss.x>bg.width-m){ boss.vx*=-1; boss.x=Math.max(m,Math.min(bg.width-m,boss.x)); }
-    if(boss.y<m || boss.y>bg.height-m){ boss.vy*=-1; boss.y=Math.max(m,Math.min(bg.height-m,boss.y)); }
-    if(boss.hurt>0) boss.hurt--;
-    if(hurtCool>0) hurtCool--;
-    if(Math.hypot(boss.x-mouse.x, boss.y-mouse.y) < boss.s*0.42 + 18) hurtPlayer();
-    drawToy(ctx,boss);
-    ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90,8);
-    ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90*(boss.hp/boss.maxHp),8);
-  }
-  if(zenMode){
-    ctx.fillStyle="rgba(0,0,0,.5)"; ctx.fillRect(mouse.x-28, mouse.y-36, 56, 7);
-    ctx.fillStyle="#ff3b4e"; ctx.fillRect(mouse.x-28, mouse.y-36, 56*(playerHp/100), 7);
-    ctx.strokeStyle="rgba(255,255,255,.4)"; ctx.strokeRect(mouse.x-28, mouse.y-36, 56, 7);
-  }
-  drawSquid();
-  requestAnimationFrame(loopSky);
-})();
-const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
-function fmtAxisTime(t, tf){
-  const d = new Date(t);
-  if (tf==="1d" || tf==="1w") return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
-  if (tf==="1h" || tf==="2h" || tf==="4h") return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric"});
-  return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+function paint(){
+  const box = document.getElementById("grid");
+  box.innerHTML = TOYS.map(([id,label], i) => {
+    const own = canUse(id);
+    const on = own && (player.equippedToyIds||[]).includes(id);
+    const action = own
+      ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}></label>`
+      : `<button class="buy" data-buy="${id}">Unlock $1</button>`;
+    return `<article class="card${own?"":" locked"}">
+      <canvas width="180" height="180" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
+      <div class="name">${label}</div>
+      <span class="tag">${statusFor(id)}</span>
+      ${action}
+    </article>`;
+  }).join("");
+  box.querySelectorAll("canvas").forEach(cv => previewToy(cv, cv.dataset.kind, +cv.dataset.hue));
 }
-const slots = STARTERS.map((symbol,id) => ({id, symbol, tf:"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0}));
-document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
-  <section class="card" id="card-${s.id}">
-    <canvas id="cv-${s.id}"></canvas>
-    <div class="meta"><div>
-      <div class="pickers">
-        <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
-        <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id==="30m"?"selected":""}>${t.id}</option>`).join("")}</select>
-        <button type="button" data-fs="${s.id}">full screen</button>
-      </div></div>
-      <div><div class="px" id="px-${s.id}">${s.symbol}</div><div class="chg flat" id="chg-${s.id}"></div><div class="note" id="note-${s.id}"></div></div>
-    </div>
-  </section>`).join("");
-function isChartFs(id){ return document.fullscreenElement && document.fullscreenElement.id==="card-"+id; }
-function visibleBars(slot){
-  const src=slot.allBars||[];
-  const n=Math.max(12, Math.min(src.length||12, slot.view || 70));
-  return src.slice(-n);
+async function pullCloud(){
+  try {
+    const r = await fetch(API + "/me?player=" + encodeURIComponent(PLAYER_ID));
+    if (!r.ok) return;
+    const row = await r.json();
+    if (!row || !row.id) return;
+    player.passActive = !!row.pass_active;
+    player.passExpiresAt = row.pass_expires_at;
+    try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
+    try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
+    if ((player.ownedToyIds || []).length === TOYS.length) player.ownedToyIds = ["mushrooms"];
+    if (!player.ownedCursorIds) player.ownedCursorIds = ["squid"];
+    if (!player.equippedCursor) player.equippedCursor = "squid";
+    savePlayer();
+    paint();
+    paintCursors();
+  } catch(e){}
 }
-function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id), r=c.getBoundingClientRect();
-  const w=Math.max(240,Math.floor(r.width*devicePixelRatio)), h=Math.max(140,Math.floor(r.height*devicePixelRatio));
-  if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } }); }
-addEventListener("resize", sizeCanvases); addEventListener("fullscreenchange", sizeCanvases);
-function aggregate(bars,n){ const out=[]; for(let i=0;i<bars.length;i+=n){ const ch=bars.slice(i,i+n); if(!ch.length) continue;
-  out.push({t:ch[0].t, open:ch[0].open, close:ch.at(-1).close, high:Math.max(...ch.map(b=>b.high)), low:Math.min(...ch.map(b=>b.low))}); } return out; }
-function mergeBars(oldB,newB){ if(!oldB.length) return newB; const map=new Map(oldB.map(b=>[b.t,{...b}])); newB.forEach(b=>map.set(b.t,b)); return [...map.values()].sort((a,c)=>a.t-c.t); }
-function tfMs(id){ return ({ "1m":6e4,"5m":3e5,"10m":6e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"1d":864e5,"1w":6048e5 })[id] || 18e5; }
-function endpoints(symbol, interval, range){ return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`]; }
-async function fetchBars(symbol,tfId){
-  const tf=TFS.find(t=>t.id===tfId)||TFS[4];
-  for(const url of endpoints(symbol,tf.interval,tf.range)){
-    try{
-      const res=await fetch(url,{cache:"no-store"}); if(!res.ok) continue;
-      const json=await res.json(); const r=json.chart&&json.chart.result&&json.chart.result[0]; if(!r) continue;
-      const q=r.indicators.quote[0], bars=[];
-      for(let i=0;i<r.timestamp.length;i++){
-        if([q.open[i],q.close[i],q.high[i],q.low[i]].some(v=>v==null)) continue;
-        bars.push({t:r.timestamp[i]*1000, open:q.open[i], high:q.high[i], low:q.low[i], close:q.close[i]});
-      }
-      if(bars.length<6) continue;
-      const used=tf.group?aggregate(bars,tf.group):bars;
-      return { bars:used, price:r.meta.regularMarketPrice??used.at(-1).close, prev:r.meta.chartPreviousClose??used.at(-2)?.close??used[0].open };
-    }catch(e){}
-  }
-  throw new Error("no feed");
-}
-function applyLive(slot, price){
-  if (!price || !slot.allBars.length) return;
-  const last = slot.allBars.at(-1), bucket = tfMs(slot.tf), now = Date.now();
-  if (now - last.t >= bucket * 0.98) slot.allBars.push({ t: last.t + bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price });
-  else { last.close = price; last.high = Math.max(last.high, price); last.low = Math.min(last.low, price); }
-  slot.price = price; if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
-}
-function drawChart(slot){
-  const canvas=document.getElementById("cv-"+slot.id), c=canvas.getContext("2d");
-  const w=canvas.width,h=canvas.height; c.clearRect(0,0,w,h);
-  const bars=visibleBars(slot); if(!bars.length) return;
-  if (slot.showPx && slot.price) slot.showPx += (slot.price - slot.showPx) * 0.18;
-  const liveBars = bars.map((b,i) => i===bars.length-1 && slot.showPx ? {...b, close:slot.showPx, high:Math.max(b.high,slot.showPx), low:Math.min(b.low,slot.showPx)} : b);
-  const padL=64*devicePixelRatio,padR=12*devicePixelRatio,padT=16*devicePixelRatio,padB=30*devicePixelRatio;
-  let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
-  const span=max-min, plotH=h-padT-padB, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(3,gap*.62);
-  const yOf=px=>padT+(max-px)/span*plotH; slot.layout={padL,gap};
-  c.strokeStyle="rgba(180,140,255,.16)"; c.lineWidth=devicePixelRatio;
-  for(let i=0;i<5;i++){ const y=padT+(plotH/4)*i; c.beginPath(); c.moveTo(padL,y); c.lineTo(w-padR,y); c.stroke();
-    c.fillStyle="rgba(220,200,255,.75)"; c.font=`${11*devicePixelRatio}px Trebuchet MS`; c.fillText((max-span/4*i).toFixed(2),6*devicePixelRatio,y+4); }
-  liveBars.forEach((b,i)=>{
-    const x=padL+i*gap+gap/2, up=b.close>=b.open, col=up?"#7cff9a":"#ff5d9a";
-    c.strokeStyle=col; c.shadowColor=up?"rgba(80,255,160,.3)":"rgba(255,70,160,.3)"; c.shadowBlur=((i===liveBars.length-1)?12:7)*devicePixelRatio;
-    c.beginPath(); c.moveTo(x,yOf(b.high)); c.lineTo(x,yOf(b.low)); c.stroke();
-    const top=yOf(Math.max(b.open,b.close)), bot=yOf(Math.min(b.open,b.close));
-    c.fillStyle=col; c.fillRect(x-bodyW/2,top,bodyW,Math.max(2,bot-top)); c.shadowBlur=0;
-  });
-  const ticks = Math.min(5, liveBars.length);
-  c.fillStyle="rgba(220,200,255,.82)"; c.font=`${10*devicePixelRatio}px Trebuchet MS`; c.textAlign="center";
-  for(let i=0;i<ticks;i++){
-    const idx = ticks===1 ? 0 : Math.round(i*(liveBars.length-1)/(ticks-1));
-    const b = liveBars[idx]; if(!b||!b.t) continue;
-    c.fillText(fmtAxisTime(b.t, slot.tf), padL+idx*gap+gap/2, h-8*devicePixelRatio);
-  }
-  c.textAlign="left";
-}
-function paintMeta(slot){
-  const change=slot.price-slot.prev, pct=slot.prev?(change/slot.prev)*100:0;
-  document.getElementById("px-"+slot.id).textContent=`${slot.symbol}  ${fmt(slot.price||0)}`;
-  const chg=document.getElementById("chg-"+slot.id), sign=change>=0?"+":"";
-  chg.textContent=slot.price?`${sign}${change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"";
-  chg.className="chg "+(pct>0.01?"up":pct<-0.01?"down":"flat");
-  document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • live last candle`: `${slot.tf} • no live feed`;
-}
-function clock(){
-  document.getElementById("status").textContent = new Date().toLocaleTimeString();
-}
-function zoomSlot(i,dir){
-  const slot=slots[i], max=Math.max(12,slot.allBars.length);
-  slot.view=dir>0?Math.max(12,Math.round(slot.view*.78)):Math.min(max,Math.round(slot.view/0.78));
-}
-const LAYOUTS = { "1x1":1, "1x2":2, "1x3":3, "2x2":4 };
-function setLayout(name){
-  const stage=document.getElementById("grid");
-  stage.classList.remove("layout-1x1","layout-1x2","layout-1x3","layout-2x2");
-  stage.classList.add("layout-"+name);
-  const n = LAYOUTS[name] || 4;
-  slots.forEach(s => {
-    const card=document.getElementById("card-"+s.id);
-    if (card) card.classList.toggle("off", s.id >= n);
-  });
-  document.querySelectorAll("[data-layout]").forEach(b => b.classList.toggle("on", b.dataset.layout===name));
-  sizeCanvases();
-}
-function slotSymbol(i){
-  return (document.getElementById("sym-"+i).value||"SPY").trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12) || "SPY";
-}
-async function loadSlot(i, forceReset=false){
-  const symbol=slotSymbol(i), tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
-  try{
-    const data=await fetchBars(symbol,tf);
-    slots[i].allBars=(forceReset||slots[i].key!==key||!slots[i].allBars.length)?data.bars:mergeBars(slots[i].allBars,data.bars);
-    Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true});
-    applyLive(slots[i], data.price); paintMeta(slots[i]);
-  }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
-}
-async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
-async function boot(reset=false){ clock(); sizeCanvases(); await Promise.all(slots.map((_,i)=>loadSlot(i,reset))); }
-slots.forEach((_,i)=>{
-  document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
-  document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
-  document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
-  document.querySelector(`[data-fs="${i}"]`).addEventListener("click", async()=>{
-    const card=document.getElementById("card-"+i);
-    if(document.fullscreenElement===card) await document.exitFullscreen(); else await card.requestFullscreen();
-  });
-  const cv=document.getElementById("cv-"+i);
-  cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
-});
-document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
-// hide-charts removed
-document.getElementById("density").addEventListener("input", e => {
-  document.getElementById("densityVal").textContent = e.target.value;
-  player.toyDensity = Number(e.target.value);
+document.getElementById("grid").addEventListener("change", e => {
+  const id = e.target.dataset.eq;
+  if (!id) return;
+  const set = new Set(player.equippedToyIds || []);
+  if (e.target.checked) set.add(id); else set.delete(id);
+  if (!set.size) set.add("mushrooms");
+  player.equippedToyIds = [...set];
   savePlayer();
+  try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
-function paintSound(){
-  const s = document.getElementById("soundBtn");
-  const m = document.getElementById("musicBtn");
-  if (s){ s.textContent = soundOn ? "on" : "off"; s.classList.toggle("on", soundOn); }
-  if (m){ m.textContent = musicOn ? "on" : "off"; m.classList.toggle("on", musicOn); }
-}
-paintSound();
-document.getElementById("soundBtn").addEventListener("click", () => {
-  soundOn = !soundOn;
-  localStorage.setItem(SOUND_KEY, soundOn ? "1" : "0");
-  paintSound();
-  ensureAudio();
-});
-document.getElementById("musicBtn").addEventListener("click", () => {
-  musicOn = !musicOn;
-  localStorage.setItem(MUSIC_KEY, musicOn ? "1" : "0");
-  paintSound();
-  if (musicOn) startMusic();
-  else stopMusic();
-});
-document.addEventListener("pointerdown", () => { if (musicOn) startMusic(); }, { once:true });
-addEventListener("fullscreenchange", () => { sizeCanvases(); });
-function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
-document.getElementById("fullscreen").addEventListener("click", async()=>{
-  if(!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen();
-});
-document.getElementById("zen").addEventListener("click", ()=>{
-  zenMode = !zenMode;
-  document.body.classList.toggle("zen", zenMode);
-  document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
-  if (zenMode) { playerHp=100; hurtCool=0; spawnBoss(); }
-  else endZen();
-});
-document.addEventListener("mouseleave", () => { if (zenMode) endZen(); });
-window.addEventListener("blur", () => { if (zenMode) endZen(); });
-document.getElementById("legalBtn").addEventListener("click", () => {
-  document.getElementById("legal").classList.add("open");
-});
-document.getElementById("legalClose").addEventListener("click", () => {
-  document.getElementById("legal").classList.remove("open");
-});
-document.getElementById("buyPass").addEventListener("click", async () => {
-  const ok = confirm("Trippy Pass is $5/mo for 5 new falling trinkets while you watch the charts. Charts stay free and are not 100% accurate — not financial advice. OK = I agree to the Disclaimer.");
+document.getElementById("grid").addEventListener("click", async e => {
+  const id = e.target.dataset.buy;
+  if (!id) return;
+  const ok = confirm("Unlock " + id + " for $1? Charts stay free. Not financial advice.");
   if (!ok) return;
   try {
     const r = await fetch(API + "/buy", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify({ playerId: PLAYER_ID })
+      headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
+      body: JSON.stringify({ playerId: PLAYER_ID, sku: id, type: "toy" })
     });
     const data = await r.json();
     if (data.url) location.href = data.url;
-    else alert(data.error || "checkout failed");
-  } catch(e){ alert("checkout failed"); }
+    else alert(data.error || "Need a $1 Stripe price on the Worker first (STRIPE_TOY_PRICE).");
+  } catch(err){ alert("checkout failed"); }
 });
-boot(true); loop(); clock();
+function ownsCursor(id){ return true; }
+function previewCursor(cv, skin){
+  const c = cv.getContext("2d");
+  const w = cv.width, h = cv.height, t = Date.now()/400;
+  c.clearRect(0,0,w,h);
+  c.fillStyle = "rgba(255,255,255,.08)";
+  c.beginPath(); c.arc(w/2,h/2,w*0.42,0,7); c.fill();
+  c.save(); c.globalCompositeOperation="lighter";
+  const arms=8, segs=8;
+  for(let ai=0;ai<arms;ai++){
+    let x=w/2, y=h/2;
+    const ang=2*Math.PI*ai/arms+t*(skin==="prism"?1.4:skin==="nebula"?1.1:0.7);
+    x+=Math.cos(ang)*18; y+=Math.sin(ang)*18;
+    for(let si=0;si<segs;si++){
+      x+=Math.cos(ang+si*0.12)*6; y+=Math.sin(ang+si*0.12)*6;
+      const rr=5-si*0.4;
+      if(skin==="nebula"){ c.fillStyle=`hsla(${(ai*28+t*80+si*12)%360},100%,65%,.5)`; c.beginPath(); c.arc(x,y,rr,0,7); c.fill(); }
+      else if(skin==="comet"){ c.strokeStyle=`hsla(${38+si*8},100%,70%,.55)`; c.lineWidth=Math.max(1,rr); c.beginPath(); c.arc(x,y,rr*0.6,0,7); c.stroke(); }
+      else if(skin==="lotus"){ if(si%2===0){ c.save(); c.translate(x,y); c.rotate(t+ai); c.fillStyle=`hsla(${320+ai*8},90%,70%,.5)`; c.beginPath(); c.ellipse(0,0,rr*1.8,rr*0.6,0,0,7); c.fill(); c.restore(); } }
+      else if(skin==="void"){ c.strokeStyle=`hsla(${280+ai*6},100%,60%,.5)`; c.lineWidth=1.2; c.beginPath(); c.arc(x,y,rr*(0.8+0.3*Math.sin(t+si)),0,7); c.stroke(); }
+      else if(skin==="prism"){ c.save(); c.translate(x,y); c.rotate(t+si); c.fillStyle=`hsla(${ai*40+t*40},100%,70%,.5)`; c.beginPath(); c.moveTo(0,-rr*1.4); c.lineTo(rr,0); c.lineTo(0,rr*1.4); c.lineTo(-rr,0); c.closePath(); c.fill(); c.restore(); }
+      else if(skin==="aurora"){ c.strokeStyle=`hsla(${140+ai*12},90%,65%,.5)`; c.lineWidth=2; c.beginPath(); c.arc(x,y,rr,0,7); c.stroke(); }
+      else if(skin==="ember"){ c.fillStyle=`hsla(${18+si*8},100%,60%,.55)`; c.beginPath(); c.arc(x,y,rr,0,7); c.fill(); }
+      else if(skin==="candy"){ c.fillStyle=`hsla(${(ai%2?330:200)+si*6},95%,68%,.55)`; c.beginPath(); c.arc(x,y,rr*1.1,0,7); c.fill(); }
+      else if(skin==="plasma"){ c.strokeStyle=`hsla(${50+ai*15},100%,65%,.55)`; c.lineWidth=1.6; c.beginPath(); c.arc(x,y,rr,0,7); c.stroke(); }
+      else { c.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; c.lineWidth=1.4; c.beginPath(); c.arc(x,y,rr,0,7); c.stroke(); }
+    }
+  }
+  c.restore();
+}
+function paintCursors(){
+  const box = document.getElementById("cursors");
+  if (!box) return;
+  box.innerHTML = CURSORS.map(([id,label]) => {
+    const on = player.equippedCursor === id;
+    return `<article class="card">
+      <canvas width="180" height="180" data-cur="${id}"></canvas>
+      <div class="name">${label}</div>
+      <span class="tag">${on ? "equipped" : "free"}</span>
+      <label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>
+    </article>`;
+  }).join("");
+}
+document.getElementById("cursors").addEventListener("change", e => {
+  const id = e.target.dataset.cur;
+  if (!id) return;
+  player.equippedCursor = id;
+  savePlayer();
+  paintCursors();
+  try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
+});
+document.getElementById("cursors").addEventListener("click", async e => {
+  const id = e.target.dataset.buycur;
+  if (!id) return;
+  const ok = confirm("Unlock this cursor for $3? Charts stay free. Not financial advice.");
+  if (!ok) return;
+  try {
+    const r = await fetch(API + "/buy", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
+      body: JSON.stringify({ playerId: PLAYER_ID, sku: "cursor_"+id, type: "cursor" })
+    });
+    const data = await r.json();
+    if (data.url) location.href = data.url;
+    else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE).");
+  } catch(err){ alert("checkout failed"); }
+});
+paint();
+paintCursors();
 pullCloud();
-setInterval(clock,1000);
-setInterval(tickLive, 4000);
-setInterval(pushCloud, 30000);
+(function twinkle(){
+  document.querySelectorAll("#grid canvas[data-kind]").forEach(cv => {
+    previewToy(cv, cv.dataset.kind, (+cv.dataset.hue + Date.now()/40)%360);
+  });
+  document.querySelectorAll("#cursors canvas[data-cur]").forEach(cv => previewCursor(cv, cv.dataset.cur));
+  requestAnimationFrame(twinkle);
+})();
 </script>
 </body>
 </html>
