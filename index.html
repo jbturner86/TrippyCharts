@@ -404,18 +404,31 @@ const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.5, zenMode = false, boss = null, novaFX = 0, playerHp = 100, hurtCool = 0;
-const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16; // 0.5 = 100%, 1.0 = 200% then boom
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.5, zenMode = false, boss = null, blobT = 0, playerHp = 100, hurtCool = 0;
+const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
 const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
-function nova(){ sfx("nova"); for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); } eaten=0; player.eatenCycle=0; squidScale=SQUID_START; savePlayer(); }
+function sparkPops(x,y,n){
+  const count = Math.min(14, n||10);
+  for (let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2, sp=1.2+Math.random()*3.2;
+    burst.push({ x, y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:0, r:1.4+Math.random()*2.2, white:true });
+  }
+}
+function nova(){
+  sfx("nova");
+  blobT = 1;
+  sparkPops(mouse.x, mouse.y, 12);
+  eaten=0; player.eatenCycle=0; savePlayer();
+}
 function growFromEat(){
   eaten++;
   player.eaten = (player.eaten || 0) + 1;
   player.eatenCycle = eaten;
   savePlayer();
   sfx("eat");
+  if (blobT > 0) return;
   squidScale = Math.min(SQUID_MAX, squidScale + (SQUID_MAX - SQUID_START) / 40);
   if (squidScale >= SQUID_MAX - 0.001) nova();
 }
@@ -432,17 +445,16 @@ function spawnBoss(){
   };
 }
 function endZen(){
-  zenMode=false; boss=null; novaFX=0; playerHp=100; hurtCool=0;
+  zenMode=false; boss=null; blobT=0; playerHp=100; hurtCool=0;
   document.body.classList.remove("zen");
   const z=document.getElementById("zen");
   if(z) z.textContent="hide everything";
   document.getElementById("grid").classList.remove("hide");
 }
 function startSuperNova(x,y){
-  sfx("nova");
-  novaFX=1;
-  for(let i=0;i<220;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*18; burst.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:Math.random()*360,r:3+Math.random()*12}); }
-  setTimeout(()=>{ if(zenMode) spawnBoss(); }, 700);
+  sfx("boss");
+  sparkPops(x, y, 12);
+  setTimeout(()=>{ if(zenMode) spawnBoss(); }, 400);
 }
 function hitBoss(b){
   if(!boss) return false;
@@ -550,14 +562,20 @@ function drawToy(c,b){
 }
 function drawSquid(){
   step++;
-  const radius=(13+5*Math.sin(step/10))*squidScale;
+  if (blobT > 0) {
+    blobT = Math.max(0, blobT - 0.012);
+    if (blobT === 0) squidScale = SQUID_START;
+  }
+  const jig = blobT > 0 ? (1 + 0.7*blobT + 0.18*Math.sin(step*0.55)*blobT) : 1;
+  const sc = squidScale * jig;
+  const radius=(13+5*Math.sin(step/10))*sc;
   jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
   if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
   ctx.save(); ctx.globalCompositeOperation="lighter";
   squid.forEach((arm,ai)=>{
     const ang=2*Math.PI*ai/ARM_N+step*0.004;
     let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
-    arm.forEach((p)=>{ const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*squidScale; p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35; ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; ctx.lineWidth=Math.max(1,p.r*0.35*squidScale); ctx.beginPath(); ctx.arc(p.x,p.y,p.r*squidScale,0,7); ctx.stroke(); tx=p.x; ty=p.y; });
+    arm.forEach((p)=>{ const dx=p.x-tx, dy=p.y-ty, d=Math.hypot(dx,dy)||1, stick=4.5*sc; p.x=tx+dx/d*stick; p.y=ty+dy/d*stick+0.35; ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`; ctx.lineWidth=Math.max(1,p.r*0.35*sc); ctx.beginPath(); ctx.arc(p.x,p.y,p.r*sc,0,7); ctx.stroke(); tx=p.x; ty=p.y; });
   });
   ctx.restore();
 }
@@ -602,7 +620,7 @@ function tickBits(){
 }
 (function loopSky(){
   ctx.clearRect(0,0,bg.width,bg.height); tickBits(); tickMusic(); bits.forEach(b=>drawToy(ctx,b));
-  burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
+  burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=p.white?`rgba(255,255,255,${p.life})`:`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
   if(zenMode&&boss){
     boss.x += boss.vx; boss.y += boss.vy; boss.rot += boss.spin;
     const m = boss.s*0.45;
@@ -620,7 +638,6 @@ function tickBits(){
     ctx.fillStyle="#ff3b4e"; ctx.fillRect(mouse.x-28, mouse.y-36, 56*(playerHp/100), 7);
     ctx.strokeStyle="rgba(255,255,255,.4)"; ctx.strokeRect(mouse.x-28, mouse.y-36, 56, 7);
   }
-  if(novaFX>0){ novaFX=Math.min(1.2,novaFX+0.035); const g=ctx.createRadialGradient(innerWidth/2,innerHeight/2,10,innerWidth/2,innerHeight/2,Math.max(innerWidth,innerHeight)*novaFX); g.addColorStop(0,`hsla(${(step*8)%360},100%,70%,.85)`); g.addColorStop(.35,`hsla(${(step*8+80)%360},100%,60%,.55)`); g.addColorStop(.7,`hsla(${(step*8+160)%360},100%,50%,.28)`); g.addColorStop(1,"rgba(0,0,0,0)"); ctx.globalCompositeOperation="lighter"; ctx.fillStyle=g; ctx.fillRect(0,0,bg.width,bg.height); ctx.globalCompositeOperation="source-over"; if(novaFX>1.15) novaFX=0; }
   drawSquid();
   const cur = player.equippedCursor || "squid";
   if (cur && cur !== "squid") {
