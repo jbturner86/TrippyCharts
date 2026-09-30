@@ -6,7 +6,7 @@
   <title>TrippyCharts</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height:100%; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif; background:#07010e; overflow:hidden; cursor:none; }
+    html, body { height:100%; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif; background:#07010e; overflow:hidden; cursor:crosshair; }
     button, select, .chip, input { cursor:pointer; }
     #sky { position:fixed; inset:0; z-index:0; pointer-events:none;
       background: radial-gradient(ellipse at 12% 8%, rgba(255,60,180,.16), transparent 40%),
@@ -14,38 +14,37 @@
     #sky canvas { width:100%; height:100%; display:block; }
     .wrap { position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; }
     header { text-align:center; padding:10px 12px 6px; }
-    h1 { font-size:clamp(1.15rem,2.6vw,1.9rem); letter-spacing:.2em; text-transform:uppercase;
+    h1 { font-size:clamp(1.25rem,3vw,2.15rem); letter-spacing:.16em; text-transform:uppercase;
+      font-weight:900; font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
       background:linear-gradient(90deg,#7cff3a,#fff,#c44bff,#ff5d8f); background-size:220% auto;
-      -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 7s linear infinite; }
+      -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 7s linear infinite;
+      -webkit-text-stroke:1.4px rgba(255,255,255,.28); paint-order:stroke fill;
+      filter:drop-shadow(0 0 8px rgba(196,75,255,.55)); }
     @keyframes sheen { to { background-position:220% center; } }
     .status { margin-top:4px; color:#cbb6ff; font-size:.8rem; }
-    .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; }
+    .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
+    .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     button { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px;
       padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
     .board {
       flex:1 1 auto; min-height:0; display:grid;
-      grid-template-columns: minmax(120px,14%) minmax(0,1fr) minmax(120px,14%);
-      align-items:stretch; gap:8px; padding:0 8px 8px;
+      grid-template-columns: auto minmax(0,1fr) auto;
+      align-items:stretch; gap:6px; padding:0 4px 8px;
     }
-    .toys-col {
-      display:flex; flex-direction:column; justify-content:space-evenly;
-      gap:6px; min-height:0; overflow:auto;
-    }
-    .toys-left { align-items:flex-start; }
-    .toys-right { align-items:flex-end; }
-    .chip { display:inline-flex; width:max-content; max-width:100%; align-items:center; gap:6px;
+    .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
+    .toys-left { align-items:flex-end; padding-right:2px; }
+    .toys-right { align-items:flex-start; padding-left:2px; }
+    body.zen header, body.zen .dock-btns, body.zen .stage { display:none !important; }
+    body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; padding:0; }
+    .chip { display:inline-flex; width:max-content; align-items:center; gap:6px;
       background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14);
       border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
     .chip input { width:15px; height:15px; accent-color:#c44bff; }
-    .stage {
-      min-height:0; display:grid;
-      grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-      gap:12px; width:100%; height:100%;
-    }
+    .stage { min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:12px; width:100%; height:100%; }
     .stage.hide { display:none; }
-    .board.left { grid-template-columns: 0 minmax(0,1fr) minmax(120px,22%); }
-    .board.right { grid-template-columns: minmax(120px,22%) minmax(0,1fr) 0; }
+    .board.left { grid-template-columns: 0 minmax(0,1fr) auto; }
+    .board.right { grid-template-columns: auto minmax(0,1fr) 0; }
     .board.left .toys-left, .board.right .toys-right { visibility:hidden; }
     .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14);
       backdrop-filter:blur(3px); overflow:hidden; display:flex; flex-direction:column; }
@@ -59,18 +58,13 @@
     .note { font-size:.62rem; color:#b9a6dd; }
     .zoom { display:none; gap:5px; }
     .card:fullscreen .zoom, .card:-webkit-full-screen .zoom { display:flex; }
-    .card:fullscreen, .card:-webkit-full-screen { background:rgba(8,4,16,.86); border-radius:0; }
     @media (max-width:900px) {
       html,body { overflow:auto; cursor:auto; }
       .wrap { height:auto; min-height:100dvh; overflow:visible; }
       .board, .board.left, .board.right { display:flex; flex-direction:column; height:auto; }
-      .toys-col, .toys-left, .toys-right, .board.left .toys-left, .board.right .toys-right {
-        display:flex; flex-direction:row; flex-wrap:wrap; justify-content:center; align-items:center; visibility:visible;
-      }
-      .stage { grid-template-columns:1fr; grid-template-rows:none; height:auto; }
-      .card { min-height:280px; }
+      .toys-col, .toys-left, .toys-right { flex-direction:row; flex-wrap:wrap; justify-content:center; align-items:center; visibility:visible; }
+      .stage { grid-template-columns:1fr; height:auto; }
       .card canvas { height:230px; flex:none; }
-      .actions { position:sticky; bottom:0; background:rgba(7,1,14,.86); padding:8px; z-index:5; }
     }
   </style>
 </head>
@@ -82,11 +76,14 @@
       <p class="status" id="status"></p>
     </header>
     <div class="actions">
-      <button type="button" id="fullscreen">page full screen</button>
-      <button type="button" data-dock="left">charts left</button>
-      <button type="button" data-dock="center" class="on">charts middle</button>
-      <button type="button" data-dock="right">charts right</button>
-      <button type="button" id="toggleCharts">hide charts</button>
+      <span class="dock-btns">
+        <button type="button" id="fullscreen">page full screen</button>
+        <button type="button" data-dock="left">charts left</button>
+        <button type="button" data-dock="center" class="on">charts middle</button>
+        <button type="button" data-dock="right">charts right</button>
+        <button type="button" id="toggleCharts">hide charts</button>
+      </span>
+      <button type="button" id="zen">hide everything</button>
     </div>
     <div class="board center" id="board">
       <div class="toys-col toys-left" id="toysLeft"></div>
@@ -95,6 +92,7 @@
     </div>
   </div>
 <script>
+ <script>
 const TOYS = [
   ["mushrooms","Mushrooms",true],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
@@ -130,7 +128,7 @@ const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHe
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
-let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.5;
+let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.5, zenMode = false, boss = null;
 const SQUID_START = 0.5, SQUID_MAX = 1.0;
 const ARM_N = 16, SEG = 16;
 const squid = Array.from({length: ARM_N}, () =>
@@ -153,17 +151,21 @@ function growFromEat(){
     if (squidScale >= SQUID_MAX) nova();
   }
 }
-
+function spawnBoss(){
+  const kinds = activeToys().length ? activeToys() : TOYS.map(t=>t[0]);
+  boss = { kind:pick(kinds), x:innerWidth*0.5+(Math.random()-0.5)*innerWidth*0.35, y:innerHeight*0.38+Math.random()*innerHeight*0.2, s:170, hp:14, maxHp:14, rot:0, spin:(Math.random()-0.5)*.02, hue:Math.random()*360, hurt:0 };
+}
+function hitBoss(b){
+  if (!boss) return false;
+  if (Math.hypot(b.x-boss.x, b.y-boss.y) >= boss.s*0.48) return false;
+  boss.hp -= 1; boss.hurt = 8;
+  burst.push({ x:b.x, y:b.y, vx:(b.x-boss.x)*.08, vy:(b.y-boss.y)*.08, life:1, hue:boss.hue, r:6+Math.random()*8 });
+  if (boss.hp <= 0) spawnBoss();
+  return true;
+}
 function newBit(x, y, state){
   const kinds = activeToys(); if (!kinds.length && state!=="eject") return null;
-  return {
-    kind: kinds.length ? pick(kinds) : "sparkles",
-    x: x ?? Math.random()*bg.width, y: y ?? -30,
-    v: .45 + Math.random()*.7, drift: (Math.random()-.5)*.25,
-    vx:0, vy:0, s: 14 + Math.random()*18,
-    rot: Math.random()*6.28, spin: (Math.random()-.5)*.03,
-    hue: Math.random()*360, state: state || "fall", ang: 0
-  };
+  return { kind: kinds.length ? pick(kinds) : "sparkles", x: x ?? Math.random()*bg.width, y: y ?? -30, v:.45+Math.random()*.7, drift:(Math.random()-.5)*.25, vx:0, vy:0, s:14+Math.random()*18, rot:Math.random()*6.28, spin:(Math.random()-.5)*.03, hue:Math.random()*360, state: state || "fall", ang:0 };
 }
 function spawnBit(){ const b = newBit(); if (b) bits.push(b); }
 
@@ -237,16 +239,20 @@ function tickBits(){
         const side = Math.random() < 0.5 ? 0 : Math.PI;
         const spd = 11 + Math.random() * 7;
         b.state = "eject";
-        b.vx = Math.cos(jetAng + side) * spd;
-        b.vy = Math.sin(jetAng + side) * spd;
-        b.s = 8;
+        const shoot = zenMode ? (jetAng || 0) : (jetAng + side);
+        const power = zenMode ? (18 + Math.random()*8) : spd;
+        b.vx = Math.cos(shoot) * power;
+        b.vy = Math.sin(shoot) * power;
+        b.s = zenMode ? 12 : 8;
       }
     } else if (b.state === "eject") {
+      if (zenMode) { b.vx *= 1.015; b.vy *= 1.015; }
       b.x += b.vx; b.y += b.vy;
-      b.vx *= 0.992; b.vy *= 0.992;
+      b.vx *= zenMode ? 0.999 : 0.992; b.vy *= zenMode ? 0.999 : 0.992;
       b.s = Math.min(22, b.s * 1.03);
       b.rot += 0.12;
-      if (dist > 170) { b.state = "fall"; b.v = .5 + Math.random()*.4; b.drift = b.vx * 0.08; }
+      if (zenMode && hitBoss(b)) { Object.assign(b, newBit(Math.random()*bg.width, -30, "fall")||b); }
+      else if (dist > (zenMode? 420 : 170)) { b.state = "fall"; b.v = .5 + Math.random()*.4; b.drift = b.vx * 0.08; }
     }
     if (b.y > bg.height + 50 || b.x < -60 || b.x > bg.width + 60) {
       Object.assign(b, newBit(Math.random()*bg.width, -30, "fall"));
@@ -266,6 +272,16 @@ function tickBits(){
     ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill();
     ctx.globalCompositeOperation = "source-over";
   });
+  if (zenMode && boss) {
+    boss.rot += boss.spin;
+    if (boss.hurt>0) boss.hurt--;
+    drawToy(ctx, boss);
+    const w = 90, h = 8;
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.fillRect(boss.x-w/2, boss.y-boss.s*0.62, w, h);
+    ctx.fillStyle = boss.hurt ? "#ff5d8f" : "#7cff3a";
+    ctx.fillRect(boss.x-w/2, boss.y-boss.s*0.62, w*(boss.hp/boss.maxHp), h);
+  }
   drawSquid();
   requestAnimationFrame(loopSky);
 })();
@@ -302,9 +318,7 @@ addEventListener("resize", sizeCanvases); addEventListener("fullscreenchange", s
 function aggregate(bars,n){ const out=[]; for(let i=0;i<bars.length;i+=n){ const ch=bars.slice(i,i+n); if(!ch.length) continue;
   out.push({t:ch[0].t, open:ch[0].open, close:ch.at(-1).close, high:Math.max(...ch.map(b=>b.high)), low:Math.min(...ch.map(b=>b.low))}); } return out; }
 function mergeBars(oldB,newB){ if(!oldB.length) return newB; const map=new Map(oldB.map(b=>[b.t,{...b}])); newB.forEach(b=>map.set(b.t,b)); return [...map.values()].sort((a,c)=>a.t-c.t); }
-function tfMs(id){
-  return ({ "1m":6e4,"5m":3e5,"10m":6e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"1d":864e5,"1w":6048e5 })[id] || 18e5;
-}
+function tfMs(id){ return ({ "1m":6e4,"5m":3e5,"10m":6e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"1d":864e5,"1w":6048e5 })[id] || 18e5; }
 function endpoints(symbol, interval, range){
   return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`];
 }
@@ -337,9 +351,7 @@ function applyLive(slot, price){
   if (now - last.t >= bucket * 0.98) {
     slot.allBars.push({ t: last.t + bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price });
   } else {
-    last.close = price;
-    last.high = Math.max(last.high, price);
-    last.low = Math.min(last.low, price);
+    last.close = price; last.high = Math.max(last.high, price); last.low = Math.min(last.low, price);
   }
   slot.price = price;
   if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
@@ -359,8 +371,7 @@ function drawChart(slot){
     c.fillStyle="rgba(220,200,255,.75)"; c.font=`${11*devicePixelRatio}px Trebuchet MS`; c.fillText((max-span/4*i).toFixed(2),6*devicePixelRatio,y+4); }
   liveBars.forEach((b,i)=>{
     const x=padL+i*gap+gap/2, up=b.close>=b.open, col=up?"#7cff9a":"#ff5d9a";
-    const live = i===liveBars.length-1;
-    c.strokeStyle=col; c.shadowColor=up?"rgba(80,255,160,.3)":"rgba(255,70,160,.3)"; c.shadowBlur=(live?12:7)*devicePixelRatio;
+    c.strokeStyle=col; c.shadowColor=up?"rgba(80,255,160,.3)":"rgba(255,70,160,.3)"; c.shadowBlur=((i===liveBars.length-1)?12:7)*devicePixelRatio;
     c.beginPath(); c.moveTo(x,yOf(b.high)); c.lineTo(x,yOf(b.low)); c.stroke();
     const top=yOf(Math.max(b.open,b.close)), bot=yOf(Math.min(b.open,b.close));
     c.fillStyle=col; c.fillRect(x-bodyW/2,top,bodyW,Math.max(2,bot-top)); c.shadowBlur=0;
@@ -370,8 +381,7 @@ function drawChart(slot){
   for(let i=0;i<ticks;i++){
     const idx = ticks===1 ? 0 : Math.round(i*(liveBars.length-1)/(ticks-1));
     const b = liveBars[idx]; if(!b||!b.t) continue;
-    const x=padL+idx*gap+gap/2;
-    c.fillText(fmtAxisTime(b.t, slot.tf), x, h-8*devicePixelRatio);
+    c.fillText(fmtAxisTime(b.t, slot.tf), padL+idx*gap+gap/2, h-8*devicePixelRatio);
   }
   c.textAlign="left";
   if(slot.hover!=null && liveBars[slot.hover]){
@@ -394,8 +404,7 @@ function paintMeta(slot){
   document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • live last candle`: `${slot.tf} • no live feed`;
 }
 function clock(){
-  const eatenLine = `eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%`;
-  document.getElementById("status").textContent = `${new Date().toLocaleTimeString()}   ${eatenLine}`;
+  document.getElementById("status").textContent = `${new Date().toLocaleTimeString()}   eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%`;
 }
 function zoomSlot(i,dir){ if(!isChartFs(i)) return; const slot=slots[i], max=Math.max(12,slot.allBars.length);
   slot.view=dir>0?Math.max(12,Math.round(slot.view*.72)):Math.min(max,Math.round(slot.view/.72)); }
@@ -405,8 +414,7 @@ async function loadSlot(i, forceReset=false){
     const data=await fetchBars(symbol,tf);
     slots[i].allBars=(forceReset||slots[i].key!==key||!slots[i].allBars.length)?data.bars:mergeBars(slots[i].allBars,data.bars);
     Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true});
-    applyLive(slots[i], data.price);
-    paintMeta(slots[i]);
+    applyLive(slots[i], data.price); paintMeta(slots[i]);
   }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
 }
 async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
@@ -430,10 +438,8 @@ slots.forEach((_,i)=>{
 document.querySelectorAll("[data-z]").forEach(btn=>btn.addEventListener("click",()=>zoomSlot(+btn.dataset.z,+btn.dataset.d)));
 document.querySelectorAll("[data-dock]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
-    const board=document.getElementById("board");
-    const stage=document.getElementById("grid");
-    board.classList.remove("left","right","center");
-    board.classList.add(btn.dataset.dock);
+    const board=document.getElementById("board"), stage=document.getElementById("grid");
+    board.classList.remove("left","right","center"); board.classList.add(btn.dataset.dock);
     stage.classList.remove("hide");
     document.querySelectorAll("[data-dock]").forEach(b=>b.classList.toggle("on", b===btn));
     document.getElementById("toggleCharts").textContent="hide charts";
@@ -448,6 +454,12 @@ document.getElementById("toggleCharts").addEventListener("click", ()=>{
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
   if(!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen();
+});
+document.getElementById("zen").addEventListener("click", ()=>{
+  zenMode = !zenMode;
+  document.body.classList.toggle("zen", zenMode);
+  document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
+  if (zenMode) spawnBoss(); else boss = null;
 });
 boot(true); loop(); clock();
 setInterval(clock,1000);
