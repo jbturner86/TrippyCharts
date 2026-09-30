@@ -103,37 +103,78 @@ function ownedToys(){
 function canUse(id){ return ownedToys().includes(id); }
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot||0);
-  const s=b.s; c.fillStyle=`hsl(${b.hue},85%,65%)`; c.strokeStyle=`hsl(${b.hue},90%,80%)`; c.lineWidth=1.4;
-  if(b.kind==="mushrooms"){ c.fillStyle="#f3e2b8"; c.fillRect(-s*.1,0,s*.2,s*.55); c.fillStyle=`hsl(${b.hue},80%,58%)`; c.beginPath(); c.ellipse(0,0,s*.42,s*.26,0,0,7); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.12,-s*.04,s*.07,0,7); c.fill(); }
-  else if(b.kind==="stars"){ c.beginPath(); for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566; c.lineTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5); c.lineTo(Math.cos(a+.628)*s*.2,Math.sin(a+.628)*s*.2);} c.closePath(); c.fill(); }
-  else if(b.kind==="moons"){ c.beginPath(); c.arc(0,0,s*.38,0,7); c.fill(); c.globalCompositeOperation="destination-out"; c.beginPath(); c.arc(s*.16,-s*.08,s*.3,0,7); c.fill(); c.globalCompositeOperation="source-over"; }
-  else if(b.kind==="leaves"){
-    c.save();
-    const drawLeaflet=(ang,len,wid)=>{
-      c.save(); c.rotate(ang);
-      c.beginPath(); c.moveTo(0,0);
-      for(let t=0;t<=1.001;t+=0.04){ const y=-len*t; const edge=Math.sin(t*Math.PI)*wid*(0.55+0.45*Math.abs(Math.sin(t*Math.PI*7))); c.lineTo(edge,y); }
-      for(let t=1;t>=0;t-=0.04){ const y=-len*t; const edge=Math.sin(t*Math.PI)*wid*(0.55+0.45*Math.abs(Math.sin(t*Math.PI*7))); c.lineTo(-edge,y); }
-      c.closePath(); c.fillStyle="#3fae3a"; c.fill(); c.strokeStyle="#1d5c22"; c.lineWidth=Math.max(1,s*0.03); c.stroke();
-      c.beginPath(); c.moveTo(0,0); c.lineTo(0,-len*0.92); c.stroke(); c.restore();
-    };
-    drawLeaflet(0,s*.55,s*.16); drawLeaflet(-0.42,s*.48,s*.13); drawLeaflet(0.42,s*.48,s*.13);
-    drawLeaflet(-0.85,s*.36,s*.1); drawLeaflet(0.85,s*.36,s*.1); drawLeaflet(-1.22,s*.22,s*.07); drawLeaflet(1.22,s*.22,s*.07);
-    c.fillStyle="#2f8a32"; c.fillRect(-s*.03,0,s*.06,s*.22); c.restore();
+  const s=b.s, k=b.kind;
+  c.lineJoin="round"; c.lineCap="round";
+  const stroke=()=>{ c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1.2,s*0.06); c.stroke(); };
+  if(k==="mushrooms"){
+    c.fillStyle="#f3d7a8"; c.beginPath(); c.roundRect(-s*.12,s*.02,s*.24,s*.42,s*.06); c.fill(); stroke();
+    c.fillStyle="#6b4dff"; c.beginPath(); c.ellipse(0,-s*.02,s*.42,s*.28,0,Math.PI,0,true); c.fill(); stroke();
+    c.fillStyle="#4ad6c8"; [[-s*.16,-s*.08,s*.09],[s*.1,-s*.14,s*.08],[s*.18,-s*.02,s*.07],[-s*.02,-s*.16,s*.06]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
+  } else if(k==="moons"){
+    c.fillStyle="#d9d3c6"; c.beginPath(); c.arc(0,0,s*.4,0,7); c.fill(); stroke();
+    c.fillStyle="#b9b2a4"; [[-s*.1,-s*.08,s*.08],[s*.14,s*.06,s*.06],[-s*.16,s*.14,s*.05],[s*.02,-s*.2,s*.04]].forEach(([x,y,r])=>{ c.beginPath(); c.arc(x,y,r,0,7); c.fill(); });
+  } else if(k==="leaves"){
+    const leaflet=(ang,len,wid)=>{ c.save(); c.rotate(ang); c.fillStyle="#4caf46"; c.beginPath(); c.moveTo(0,0);
+      for(let t=0;t<=1.01;t+=0.05){ const y=-len*t, e=Math.sin(t*Math.PI)*wid*(0.6+0.4*Math.abs(Math.sin(t*Math.PI*6))); c.lineTo(e,y); }
+      for(let t=1;t>=0;t-=0.05){ const y=-len*t, e=Math.sin(t*Math.PI)*wid*(0.6+0.4*Math.abs(Math.sin(t*Math.PI*6))); c.lineTo(-e,y); }
+      c.closePath(); c.fill(); c.strokeStyle="#2e7a32"; c.lineWidth=Math.max(1,s*0.03); c.stroke();
+      c.beginPath(); c.moveTo(0,0); c.lineTo(0,-len*.9); c.stroke(); c.restore(); };
+    leaflet(0,s*.52,s*.15); leaflet(-.4,s*.44,s*.12); leaflet(.4,s*.44,s*.12); leaflet(-.82,s*.32,s*.09); leaflet(.82,s*.32,s*.09); leaflet(-1.2,s*.2,s*.06); leaflet(1.2,s*.2,s*.06);
+    c.fillStyle="#3d8f3a"; c.fillRect(-s*.025,0,s*.05,s*.2);
+  } else if(k==="flowers"){
+    const cols=["#5aa0ff","#ff6db3","#5aa0ff","#ff6db3"];
+    for(let i=0;i<4;i++){ c.fillStyle=cols[i]; c.beginPath(); c.ellipse(Math.cos(i*1.57)*s*.2,Math.sin(i*1.57)*s*.2,s*.16,s*.2,i*1.57,0,7); c.fill(); stroke(); }
+    c.fillStyle="#ffd24a"; c.beginPath(); c.arc(0,0,s*.12,0,7); c.fill(); stroke();
+  } else if(k==="butterflies"){
+    c.fillStyle="#7a6bff"; c.beginPath(); c.ellipse(-s*.2,-s*.04,s*.2,s*.26,-.35,0,7); c.fill(); stroke();
+    c.fillStyle="#ff7ad1"; c.beginPath(); c.ellipse(-s*.16,s*.16,s*.14,s*.16,-.2,0,7); c.fill();
+    c.fillStyle="#7a6bff"; c.beginPath(); c.ellipse(s*.2,-s*.04,s*.2,s*.26,.35,0,7); c.fill(); stroke();
+    c.fillStyle="#ff7ad1"; c.beginPath(); c.ellipse(s*.16,s*.16,s*.14,s*.16,.2,0,7); c.fill();
+    c.strokeStyle="#2a2040"; c.lineWidth=Math.max(1,s*0.05); c.beginPath(); c.moveTo(0,-s*.22); c.lineTo(0,s*.22); c.stroke();
+  } else if(k==="frogs"){
+    c.fillStyle="#7dce4a"; c.beginPath(); c.ellipse(0,s*.08,s*.32,s*.24,0,0,7); c.fill(); stroke();
+    c.beginPath(); c.arc(-s*.14,-s*.1,s*.13,0,7); c.fill(); stroke(); c.beginPath(); c.arc(s*.14,-s*.1,s*.13,0,7); c.fill(); stroke();
+    c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.14,-s*.1,s*.07,0,7); c.fill(); c.beginPath(); c.arc(s*.14,-s*.1,s*.07,0,7); c.fill();
+    c.fillStyle="#2a2040"; c.beginPath(); c.arc(-s*.13,-s*.1,s*.035,0,7); c.fill(); c.beginPath(); c.arc(s*.13,-s*.1,s*.035,0,7); c.fill();
+    c.strokeStyle="#2a2040"; c.beginPath(); c.arc(0,s*.12,s*.1,0.2,Math.PI-0.2); c.stroke();
+  } else if(k==="cats"){
+    c.fillStyle="#3b4a66"; c.beginPath(); c.arc(0,s*.04,s*.3,0,7); c.fill(); stroke();
+    c.beginPath(); c.moveTo(-s*.26,-s*.02); c.lineTo(-s*.12,-s*.42); c.lineTo(-s*.02,-s*.08); c.fill(); stroke();
+    c.beginPath(); c.moveTo(s*.26,-s*.02); c.lineTo(s*.12,-s*.42); c.lineTo(s*.02,-s*.08); c.fill(); stroke();
+    c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.1,s*.02,s*.06,0,7); c.fill(); c.beginPath(); c.arc(s*.1,s*.02,s*.06,0,7); c.fill();
+    c.fillStyle="#7ad7ff"; c.beginPath(); c.arc(-s*.1,s*.02,s*.03,0,7); c.fill(); c.beginPath(); c.arc(s*.1,s*.02,s*.03,0,7); c.fill();
+  } else if(k==="aliens"){
+    c.fillStyle="#6ed8a0"; c.beginPath(); c.ellipse(0,0,s*.3,s*.36,0,0,7); c.fill(); stroke();
+    c.fillStyle="#2a2040"; c.beginPath(); c.ellipse(-s*.1,-s*.02,s*.09,s*.16,-.25,0,7); c.fill(); c.beginPath(); c.ellipse(s*.1,-s*.02,s*.09,s*.16,.25,0,7); c.fill();
+  } else if(k==="planets"){
+    c.fillStyle="#c46bff"; c.beginPath(); c.arc(0,0,s*.26,0,7); c.fill();
+    c.fillStyle="#ff7ad1"; c.beginPath(); c.ellipse(0,-s*.04,s*.24,s*.08,0,0,7); c.fill();
+    c.strokeStyle="#7ad7ff"; c.lineWidth=Math.max(2,s*0.08); c.beginPath(); c.ellipse(0,0,s*.4,s*.12,.45,0,7); c.stroke();
+    c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1,s*0.04); c.beginPath(); c.arc(0,0,s*.26,0,7); c.stroke();
+  } else if(k==="dice"){
+    c.fillStyle="#f4f0ff"; c.beginPath(); c.roundRect(-s*.24,-s*.24,s*.48,s*.48,s*.08); c.fill(); stroke();
+    c.fillStyle="#3bb7a8"; c.font=`bold ${Math.max(10,s*.28)}px Trebuchet MS`; c.textAlign="center"; c.textBaseline="middle";
+    c.fillText("7",-s*.08,-s*.08); c.fillText("5",s*.1,s*.12);
+  } else if(k==="peace"){
+    c.fillStyle="#ffc09a"; c.beginPath(); c.moveTo(-s*.08,s*.32); c.lineTo(-s*.16,-s*.02); c.lineTo(-s*.02,-s*.38); c.lineTo(s*.1,-s*.38); c.lineTo(s*.08,-s*.02); c.lineTo(s*.22,-s*.28); c.lineTo(s*.32,-s*.18); c.lineTo(s*.16,s*.04); c.lineTo(s*.12,s*.32); c.closePath(); c.fill(); stroke();
+    c.strokeStyle="#2a2040"; c.lineWidth=Math.max(1.2,s*0.05);
+    c.beginPath(); c.moveTo(s*.02,-s*.34); c.lineTo(s*.02,-s*.08); c.moveTo(s*.02,-s*.16); c.lineTo(-s*.08,-s*.02); c.moveTo(s*.02,-s*.16); c.lineTo(s*.14,-s*.02); c.stroke();
+  } else if(k==="sparkles" || k==="stars"){
+    const grd=c.createRadialGradient(0,0,0,0,0,s*.42); grd.addColorStop(0,"#fff"); grd.addColorStop(.35,"#ff9ad8"); grd.addColorStop(1,"#7ad7ff");
+    c.fillStyle=grd; c.beginPath();
+    for(let i=0;i<8;i++){ const a=-Math.PI/2+i*Math.PI/4, r=i%2?s*.16:s*.46; c.lineTo(Math.cos(a)*r,Math.sin(a)*r); }
+    c.closePath(); c.fill(); stroke();
+  } else if(k==="hearts"){
+    c.fillStyle="#ff5d8f"; c.beginPath(); c.moveTo(0,s*.28); c.bezierCurveTo(-s*.5,-s*.02,-s*.18,-s*.42,0,-s*.1); c.bezierCurveTo(s*.18,-s*.42,s*.5,-s*.02,0,s*.28); c.fill(); stroke();
+  } else if(k==="skulls"){
+    c.fillStyle="#efe6ff"; c.beginPath(); c.arc(0,-s*.06,s*.28,0,7); c.fill(); c.fillRect(-s*.18,s*.04,s*.36,s*.16); stroke();
+    c.fillStyle="#2a2040"; c.beginPath(); c.arc(-s*.09,-s*.06,s*.07,0,7); c.fill(); c.beginPath(); c.arc(s*.09,-s*.06,s*.07,0,7); c.fill();
+  } else if(k==="crystals"){
+    c.fillStyle="#7ad7ff"; c.beginPath(); c.moveTo(0,-s*.48); c.lineTo(s*.22,0); c.lineTo(0,s*.4); c.lineTo(-s*.22,0); c.closePath(); c.fill(); stroke();
+    c.fillStyle="rgba(255,255,255,.45)"; c.beginPath(); c.moveTo(0,-s*.48); c.lineTo(s*.08,-s*.04); c.lineTo(0,s*.1); c.closePath(); c.fill();
+  } else if(k==="clouds"){
+    c.fillStyle="#efe6ff"; c.beginPath(); c.arc(-s*.16,0,s*.16,0,7); c.arc(0,-s*.08,s*.2,0,7); c.arc(s*.16,0,s*.16,0,7); c.fill(); stroke();
   }
-  else if(b.kind==="skulls"){ c.beginPath(); c.arc(0,-s*.05,s*.28,0,7); c.fill(); c.fillRect(-s*.18,s*.05,s*.36,s*.16); c.fillStyle="#14010c"; c.beginPath(); c.arc(-s*.09,-s*.06,s*.07,0,7); c.fill(); c.beginPath(); c.arc(s*.09,-s*.06,s*.07,0,7); c.fill(); }
-  else if(b.kind==="hearts"){ c.beginPath(); c.moveTo(0,s*.28); c.bezierCurveTo(-s*.5,-s*.05,-s*.18,-s*.4,0,-s*.12); c.bezierCurveTo(s*.18,-s*.4,s*.5,-s*.05,0,s*.28); c.fill(); }
-  else if(b.kind==="flowers"){ for(let i=0;i<6;i++){ c.beginPath(); c.ellipse(Math.cos(i)*s*.18,Math.sin(i)*s*.18,s*.12,s*.18,i,0,7); c.fill(); } c.fillStyle="#fff59a"; c.beginPath(); c.arc(0,0,s*.1,0,7); c.fill(); }
-  else if(b.kind==="butterflies"){ c.beginPath(); c.ellipse(-s*.18,0,s*.2,s*.28,-.4,0,7); c.ellipse(s*.18,0,s*.2,s*.28,.4,0,7); c.fill(); }
-  else if(b.kind==="aliens"){ c.beginPath(); c.ellipse(0,0,s*.28,s*.36,0,0,7); c.fill(); c.fillStyle="#111"; c.beginPath(); c.ellipse(-s*.1,0,s*.08,s*.14,-.3,0,7); c.fill(); c.beginPath(); c.ellipse(s*.1,0,s*.08,s*.14,.3,0,7); c.fill(); }
-  else if(b.kind==="frogs"){ c.beginPath(); c.ellipse(0,s*.05,s*.32,s*.24,0,0,7); c.fill(); c.beginPath(); c.arc(-s*.12,-s*.1,s*.12,0,7); c.fill(); c.beginPath(); c.arc(s*.12,-s*.1,s*.12,0,7); c.fill(); c.fillStyle="#111"; c.beginPath(); c.arc(-s*.12,-s*.1,s*.04,0,7); c.fill(); c.beginPath(); c.arc(s*.12,-s*.1,s*.04,0,7); c.fill(); }
-  else if(b.kind==="cats"){ c.beginPath(); c.arc(0,0,s*.28,0,7); c.fill(); c.beginPath(); c.moveTo(-s*.22,-s*.1); c.lineTo(-s*.08,-s*.42); c.lineTo(0,-s*.12); c.fill(); c.beginPath(); c.moveTo(s*.22,-s*.1); c.lineTo(s*.08,-s*.42); c.lineTo(0,-s*.12); c.fill(); c.fillStyle="#111"; c.beginPath(); c.arc(-s*.08,0,s*.04,0,7); c.fill(); c.beginPath(); c.arc(s*.08,0,s*.04,0,7); c.fill(); }
-  else if(b.kind==="crystals"){ c.beginPath(); c.moveTo(0,-s*.45); c.lineTo(s*.22,0); c.lineTo(0,s*.4); c.lineTo(-s*.22,0); c.closePath(); c.fill(); }
-  else if(b.kind==="planets"){ c.beginPath(); c.arc(0,0,s*.28,0,7); c.fill(); c.strokeStyle="#fff"; c.beginPath(); c.ellipse(0,0,s*.42,s*.12,.4,0,7); c.stroke(); }
-  else if(b.kind==="clouds"){ c.beginPath(); c.arc(-s*.16,0,s*.16,0,7); c.arc(0,-s*.08,s*.2,0,7); c.arc(s*.16,0,s*.16,0,7); c.fill(); }
-  else if(b.kind==="dice"){ c.fillRect(-s*.22,-s*.22,s*.44,s*.44); c.fillStyle="#111"; c.beginPath(); c.arc(0,0,s*.05,0,7); c.fill(); }
-  else if(b.kind==="peace"){ c.beginPath(); c.arc(0,0,s*.32,0,7); c.stroke(); c.beginPath(); c.moveTo(0,-s*.32); c.lineTo(0,s*.32); c.moveTo(0,0); c.lineTo(-s*.22,s*.2); c.moveTo(0,0); c.lineTo(s*.22,s*.2); c.stroke(); }
-  else { c.beginPath(); c.moveTo(0,-s*.4); c.lineTo(s*.08,-s*.08); c.lineTo(s*.4,0); c.lineTo(s*.08,s*.08); c.lineTo(0,s*.4); c.lineTo(-s*.08,s*.08); c.lineTo(-s*.4,0); c.lineTo(-s*.08,-s*.08); c.closePath(); c.fill(); }
   c.restore();
 }
 function statusFor(id){
@@ -160,14 +201,10 @@ function previewToy(cv, kind, hue){
   const c = cv.getContext("2d");
   const w = cv.width, h = cv.height;
   c.clearRect(0,0,w,h);
-  const g = c.createRadialGradient(w/2,h/2,8,w/2,h/2,w*0.55);
-  g.addColorStop(0, `hsla(${hue},90%,60%,.35)`);
-  g.addColorStop(1, "rgba(0,0,0,0)");
-  c.fillStyle = g; c.fillRect(0,0,w,h);
+  c.fillStyle = "rgba(255,255,255,.08)";
+  c.beginPath(); c.arc(w/2,h/2,w*0.42,0,7); c.fill();
   sparkleField(c,w,h,hue);
-  drawToy(c, { kind, x:w/2, y:h/2+8, s:58, hue, rot:0 });
-  drawToy(c, { kind, x:w*0.22, y:h*0.28, s:22, hue:(hue+80)%360, rot:-0.4 });
-  drawToy(c, { kind, x:w*0.78, y:h*0.3, s:18, hue:(hue+160)%360, rot:0.5 });
+  drawToy(c, { kind, x:w/2, y:h/2+6, s:72, hue, rot:0 });
 }
 function paint(){
   const box = document.getElementById("grid");
