@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Toy Store — TrippyCharts</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { min-height:100dvh; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif;
+      background:radial-gradient(ellipse at 20% 0%, rgba(255,60,180,.18), transparent 42%), #07010e; }
+    header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 18px 8px; flex-wrap:wrap; }
+    h1 { font-family:"Baloo 2", Impact, sans-serif; font-size:clamp(1.4rem,3vw,2rem); letter-spacing:.04em; }
+    a.back { color:#04140a; background:#b7ffd2; text-decoration:none; border-radius:999px; padding:8px 14px; font-weight:800; }
+    .lead { padding:0 18px 14px; color:#cbb6ff; max-width:720px; }
+    h2 { padding:8px 18px 6px; font-family:"Baloo 2", sans-serif; font-size:1.15rem; letter-spacing:.04em; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; padding:10px 16px 18px; }
+    .card { background:rgba(18,8,28,.82); border:1px solid rgba(255,255,255,.16); border-radius:18px; padding:10px; text-align:center; }
+    .card.locked canvas { filter:grayscale(.75) brightness(.7); }
+    canvas { width:120px; height:120px; display:block; margin:0 auto 8px; }
+    .name { font-family:"Baloo 2", sans-serif; font-size:1.05rem; }
+    .tag { display:block; margin:4px 0 8px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#b9a6dd; }
+    .card button, .card label { width:100%; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.07); color:#efe6ff; padding:7px 8px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+    .card button.buy { background:#b7ffd2; color:#04140a; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.9rem; }
+    .card label { display:flex; gap:6px; align-items:center; justify-content:center; }
+    .note { padding:0 18px 24px; color:#9e8cc4; font-size:.75rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Toy Store</h1>
+    <a class="back" href="index.html">← back to charts</a>
+  </header>
+  <p class="lead">Pick what rains on the charts. Mushrooms are free. Pass unlocks 5 this month. Anything else is $1 to unlock forever. Cursors are $3 — right now Squid is the free one.</p>
+  <h2>Falling toys</h2>
+  <div class="grid" id="grid"></div>
+  <h2>Cursors</h2>
+  <p class="lead">These ride with your pointer on the chart page. Squid is included. More skins are $3.</p>
+  <div class="grid" id="cursors"></div>
+  <p class="note">$1 toys and $3 cursors need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error.</p>
+<script>
+const TOYS = [
+  ["mushrooms","Mushrooms"],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
+  ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
+  ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
+  ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"]
+];
+const FREE_TOYS = ["mushrooms"];
+const PASS_BY_MONTH = {
+  "2026-09": ["stars","moons","leaves","flowers","hearts"],
+  "2026-10": ["skulls","aliens","butterflies","crystals","frogs"],
+  "2026-11": ["cats","planets","clouds","dice","peace"]
+};
+const SAVE_KEY = "trippy_player_v1";
+const API = "https://trippy-quote.j-bradturner.workers.dev";
+function currentMonth(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+}
+function passToys(){ return PASS_BY_MONTH[currentMonth()] || PASS_BY_MONTH["2026-09"]; }
+function toyDropMonth(id){
+  for (const [m, list] of Object.entries(PASS_BY_MONTH)) if (list.includes(id)) return m;
+  return null;
+}
+const CURSORS = [
+  ["squid","Squid",0],
+  ["mushrooms","Mushroom pointer",300],
+  ["aliens","Alien pointer",300],
+  ["crystals","Crystal pointer",300],
+  ["sparkles","Spark pointer",300]
+];
+function defaultPlayer(){
+  return { xp:0, eaten:0, eatenCycle:0, toyDensity:70, ownedToyIds:["mushrooms"], equippedToyIds:["mushrooms"], passActive:false, passExpiresAt:null, ownedCursorIds:["squid"], equippedCursor:"squid" };
+}
+function loadPlayer(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return defaultPlayer();
+    const p = { ...defaultPlayer(), ...JSON.parse(raw) };
+    if ((p.ownedToyIds || []).length === TOYS.length) p.ownedToyIds = ["mushrooms"];
+    return p;
+  } catch(e){ return defaultPlayer(); }
+}
+function savePlayer(){ localStorage.setItem(SAVE_KEY, JSON.stringify(player)); }
+let player = loadPlayer();
+function getPlayerId(){
+  let id = localStorage.getItem("trippy_id");
+  if (!id) { id = "p_" + Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem("trippy_id", id); }
+  return id;
+}
+const PLAYER_ID = getPlayerId();
+function hasPass(){
+  if (!player.passActive) return false;
+  if (!player.passExpiresAt) return true;
+  return Date.now() < player.passExpiresAt;
+}
+function ownedToys(){
+  const extra = hasPass() ? passToys() : [];
+  const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
+  return [...new Set([...FREE_TOYS, ...own, ...extra])];
+}
+function canUse(id){ return ownedToys().includes(id); }
+function drawToy(c,b){
+  c.save(); c.translate(b.x,b.y); c.rotate(b.rot||0);
+  const s=b.s; c.fillStyle=`hsl(${b.hue},85%,65%)`; c.strokeStyle=`hsl(${b.hue},90%,80%)`; c.lineWidth=1.4;
+  if(b.kind==="mushrooms"){ c.fillStyle="#f3e2b8"; c.fillRect(-s*.1,0,s*.2,s*.55); c.fillStyle=`hsl(${b.hue},80%,58%)`; c.beginPath(); c.ellipse(0,0,s*.42,s*.26,0,0,7); c.fill(); c.fillStyle="#fff"; c.beginPath(); c.arc(-s*.12,-s*.04,s*.07,0,7); c.fill(); }
+  else if(b.kind==="stars"){ c.beginPath(); for(let i=0;i<5;i++){const a=-Math.PI/2+i*1.2566; c.lineTo(Math.cos(a)*s*.5,Math.sin(a)*s*.5); c.lineTo(Math.cos(a+.628)*s*.2,Math.sin(a+.628)*s*.2);} c.closePath(); c.fill(); }
+  else if(b.kind==="moons"){ c.beginPath(); c.arc(0,0,s*.38,0,7); c.fill(); c.globalCompositeOperation="destination-out"; c.beginPath(); c.arc(s*.16,-s*.08,s*.3,0,7); c.fill(); c.globalCompositeOperation="source-over"; }
+  else if(b.kind==="leaves"){ c.beginPath(); for(let i=-2;i<=2;i++) c.ellipse(i*s*.12,Math.abs(i)*s*.04,s*.08,s*.28,i*.45,0,7); c.fill(); }
+  else if(b.kind==="skulls"){ c.beginPath(); c.arc(0,-s*.05,s*.28,0,7); c.fill(); c.fillRect(-s*.18,s*.05,s*.36,s*.16); c.fillStyle="#14010c"; c.beginPath(); c.arc(-s*.09,-s*.06,s*.07,0,7); c.fill(); c.beginPath(); c.arc(s*.09,-s*.06,s*.07,0,7); c.fill(); }
+  else if(b.kind==="hearts"){ c.beginPath(); c.moveTo(0,s*.28); c.bezierCurveTo(-s*.5,-s*.05,-s*.18,-s*.4,0,-s*.12); c.bezierCurveTo(s*.18,-s*.4,s*.5,-s*.05,0,s*.28); c.fill(); }
+  else if(b.kind==="flowers"){ for(let i=0;i<6;i++){ c.beginPath(); c.ellipse(Math.cos(i)*s*.18,Math.sin(i)*s*.18,s*.12,s*.18,i,0,7); c.fill(); } c.fillStyle="#fff59a"; c.beginPath(); c.arc(0,0,s*.1,0,7); c.fill(); }
+  else if(b.kind==="butterflies"){ c.beginPath(); c.ellipse(-s*.18,0,s*.2,s*.28,-.4,0,7); c.ellipse(s*.18,0,s*.2,s*.28,.4,0,7); c.fill(); }
+  else if(b.kind==="aliens"){ c.beginPath(); c.ellipse(0,0,s*.28,s*.36,0,0,7); c.fill(); c.fillStyle="#111"; c.beginPath(); c.ellipse(-s*.1,0,s*.08,s*.14,-.3,0,7); c.fill(); c.beginPath(); c.ellipse(s*.1,0,s*.08,s*.14,.3,0,7); c.fill(); }
+  else if(b.kind==="frogs"){ c.beginPath(); c.ellipse(0,s*.05,s*.32,s*.24,0,0,7); c.fill(); c.beginPath(); c.arc(-s*.12,-s*.1,s*.12,0,7); c.fill(); c.beginPath(); c.arc(s*.12,-s*.1,s*.12,0,7); c.fill(); c.fillStyle="#111"; c.beginPath(); c.arc(-s*.12,-s*.1,s*.04,0,7); c.fill(); c.beginPath(); c.arc(s*.12,-s*.1,s*.04,0,7); c.fill(); }
+  else if(b.kind==="cats"){ c.beginPath(); c.arc(0,0,s*.28,0,7); c.fill(); c.beginPath(); c.moveTo(-s*.22,-s*.1); c.lineTo(-s*.08,-s*.42); c.lineTo(0,-s*.12); c.fill(); c.beginPath(); c.moveTo(s*.22,-s*.1); c.lineTo(s*.08,-s*.42); c.lineTo(0,-s*.12); c.fill(); c.fillStyle="#111"; c.beginPath(); c.arc(-s*.08,0,s*.04,0,7); c.fill(); c.beginPath(); c.arc(s*.08,0,s*.04,0,7); c.fill(); }
+  else if(b.kind==="crystals"){ c.beginPath(); c.moveTo(0,-s*.45); c.lineTo(s*.22,0); c.lineTo(0,s*.4); c.lineTo(-s*.22,0); c.closePath(); c.fill(); }
+  else if(b.kind==="planets"){ c.beginPath(); c.arc(0,0,s*.28,0,7); c.fill(); c.strokeStyle="#fff"; c.beginPath(); c.ellipse(0,0,s*.42,s*.12,.4,0,7); c.stroke(); }
+  else if(b.kind==="clouds"){ c.beginPath(); c.arc(-s*.16,0,s*.16,0,7); c.arc(0,-s*.08,s*.2,0,7); c.arc(s*.16,0,s*.16,0,7); c.fill(); }
+  else if(b.kind==="dice"){ c.fillRect(-s*.22,-s*.22,s*.44,s*.44); c.fillStyle="#111"; c.beginPath(); c.arc(0,0,s*.05,0,7); c.fill(); }
+  else if(b.kind==="peace"){ c.beginPath(); c.arc(0,0,s*.32,0,7); c.stroke(); c.beginPath(); c.moveTo(0,-s*.32); c.lineTo(0,s*.32); c.moveTo(0,0); c.lineTo(-s*.22,s*.2); c.moveTo(0,0); c.lineTo(s*.22,s*.2); c.stroke(); }
+  else { c.beginPath(); c.moveTo(0,-s*.4); c.lineTo(s*.08,-s*.08); c.lineTo(s*.4,0); c.lineTo(s*.08,s*.08); c.lineTo(0,s*.4); c.lineTo(-s*.08,s*.08); c.lineTo(-s*.4,0); c.lineTo(-s*.08,-s*.08); c.closePath(); c.fill(); }
+  c.restore();
+}
+function statusFor(id){
+  if (FREE_TOYS.includes(id)) return "free";
+  if (canUse(id) && (PASS_BY_MONTH[currentMonth()]||[]).includes(id) && hasPass()) return "pass this month";
+  if (canUse(id)) return "owned";
+  const m = toyDropMonth(id);
+  if (m === currentMonth()) return "in this month's pass or $1";
+  if (m) return "drops " + m + " or $1 now";
+  return "$1 unlock";
+}
+function paint(){
+  const box = document.getElementById("grid");
+  box.innerHTML = TOYS.map(([id,label], i) => {
+    const own = canUse(id);
+    const on = own && (player.equippedToyIds||[]).includes(id);
+    const action = own
+      ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}> rain this</label>`
+      : `<button class="buy" data-buy="${id}">Unlock $1</button>`;
+    return `<article class="card${own?"":" locked"}">
+      <canvas width="160" height="160" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
+      <div class="name">${label}</div>
+      <span class="tag">${statusFor(id)}</span>
+      ${action}
+    </article>`;
+  }).join("");
+  box.querySelectorAll("canvas").forEach(cv => {
+    const c = cv.getContext("2d");
+    c.clearRect(0,0,160,160);
+    drawToy(c, { kind: cv.dataset.kind, x:80, y:88, s:70, hue:+cv.dataset.hue, rot:0 });
+  });
+}
+async function pullCloud(){
+  try {
+    const r = await fetch(API + "/me?player=" + encodeURIComponent(PLAYER_ID));
+    if (!r.ok) return;
+    const row = await r.json();
+    if (!row || !row.id) return;
+    player.passActive = !!row.pass_active;
+    player.passExpiresAt = row.pass_expires_at;
+    try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
+    try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
+    if ((player.ownedToyIds || []).length === TOYS.length) player.ownedToyIds = ["mushrooms"];
+    if (!player.ownedCursorIds) player.ownedCursorIds = ["squid"];
+    if (!player.equippedCursor) player.equippedCursor = "squid";
+    savePlayer();
+    paint();
+    paintCursors();
+  } catch(e){}
+}
+document.getElementById("grid").addEventListener("change", e => {
+  const id = e.target.dataset.eq;
+  if (!id) return;
+  const set = new Set(player.equippedToyIds || []);
+  if (e.target.checked) set.add(id); else set.delete(id);
+  if (!set.size) set.add("mushrooms");
+  player.equippedToyIds = [...set];
+  savePlayer();
+});
+document.getElementById("grid").addEventListener("click", async e => {
+  const id = e.target.dataset.buy;
+  if (!id) return;
+  const ok = confirm("Unlock " + id + " for $1? Charts stay free. Not financial advice.");
+  if (!ok) return;
+  try {
+    const r = await fetch(API + "/buy", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
+      body: JSON.stringify({ playerId: PLAYER_ID, sku: id, type: "toy" })
+    });
+    const data = await r.json();
+    if (data.url) location.href = data.url;
+    else alert(data.error || "Need a $1 Stripe price on the Worker first (STRIPE_TOY_PRICE).");
+  } catch(err){ alert("checkout failed"); }
+});
+function ownsCursor(id){
+  return id === "squid" || (player.ownedCursorIds || ["squid"]).includes(id);
+}
+function paintCursors(){
+  const box = document.getElementById("cursors");
+  if (!box) return;
+  box.innerHTML = CURSORS.map(([id,label,cents], i) => {
+    const own = ownsCursor(id);
+    const on = player.equippedCursor === id;
+    const action = own
+      ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}> use this</label>`
+      : `<button class="buy" data-buycur="${id}">Unlock $3</button>`;
+    const kind = id === "squid" ? "aliens" : id;
+    return `<article class="card${own?"":" locked"}">
+      <canvas width="160" height="160" data-kind="${kind}" data-hue="${(i*70)%360}"></canvas>
+      <div class="name">${label}</div>
+      <span class="tag">${own ? (on ? "equipped" : "owned") : "$3 cursor"}</span>
+      ${action}
+    </article>`;
+  }).join("");
+  box.querySelectorAll("canvas").forEach(cv => {
+    const c = cv.getContext("2d");
+    c.clearRect(0,0,160,160);
+    drawToy(c, { kind: cv.dataset.kind, x:80, y:88, s:70, hue:+cv.dataset.hue, rot:0 });
+  });
+}
+document.getElementById("cursors").addEventListener("change", e => {
+  const id = e.target.dataset.cur;
+  if (!id) return;
+  player.equippedCursor = id;
+  savePlayer();
+  paintCursors();
+});
+document.getElementById("cursors").addEventListener("click", async e => {
+  const id = e.target.dataset.buycur;
+  if (!id) return;
+  const ok = confirm("Unlock this cursor for $3? Charts stay free. Not financial advice.");
+  if (!ok) return;
+  try {
+    const r = await fetch(API + "/buy", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
+      body: JSON.stringify({ playerId: PLAYER_ID, sku: "cursor_"+id, type: "cursor" })
+    });
+    const data = await r.json();
+    if (data.url) location.href = data.url;
+    else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE).");
+  } catch(err){ alert("checkout failed"); }
+});
+paint();
+paintCursors();
+pullCloud();
+</script>
+</body>
+</html>
