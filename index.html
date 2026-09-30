@@ -41,10 +41,7 @@
     .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
     .toys-left { align-items:flex-end; }
     .toys-right { align-items:flex-start; }
-    #legalBtn {
-      position:fixed; left:50%; bottom:10px; transform:translateX(-50%); z-index:9;
-      background:rgba(12,6,22,.82);
-    }
+    #legalBtn { background:rgba(12,6,22,.82); }
     body.zen header, body.zen .dock-btns, body.zen .stage, body.zen .toys-col, body.zen .density-box, body.zen #store, body.zen #legal, body.zen #buyPass, body.zen #legalBtn { display:none !important; }
     body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
     .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
@@ -137,8 +134,8 @@
       </span>
       <button type="button" id="fullscreen">full screen</button>
       <button type="button" id="zen">hide everything</button>
+      <button type="button" id="legalBtn">disclaimer</button>
     </div>
-    <button type="button" id="legalBtn">disclaimer</button>
     <aside id="legal">
       <h2>Disclaimer</h2>
       <p>TrippyCharts is an entertainment and visualization toy. It is not a broker, adviser, exchange, or data vendor.</p>
@@ -581,10 +578,12 @@ function drawSquid(){
   const jig = blobT > 0 ? (1 + 0.7*blobT + 0.18*Math.sin(step*0.55)*blobT) : 1;
   const sc = squidScale * jig;
   const skin = player.equippedCursor || "squid";
-  const spin = skin === "nebula" ? 0.018 : skin === "lotus" ? 0.012 : skin === "prism" ? 0.02 : 0.004;
+  const spin = skin === "nebula" || skin === "aurora" ? 0.018 : skin === "lotus" || skin === "candy" ? 0.012 : skin === "prism" || skin === "plasma" ? 0.02 : skin === "ember" ? 0.01 : 0.004;
   const radius=(13+5*Math.sin(step/10))*sc;
   jetAng=Math.atan2(mouse.y-mouse.py,mouse.x-mouse.px);
   if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
+  if (!window.cursorTrail) window.cursorTrail = [];
+  const trail = window.cursorTrail;
   ctx.save(); ctx.globalCompositeOperation="lighter";
   squid.forEach((arm,ai)=>{
     const ang=2*Math.PI*ai/ARM_N+step*spin;
@@ -618,14 +617,39 @@ function drawSquid(){
         ctx.fillStyle=`hsla(${ai*40+step*3},100%,70%,.5)`;
         ctx.beginPath(); ctx.moveTo(0,-rr*1.6); ctx.lineTo(rr,0); ctx.lineTo(0,rr*1.6); ctx.lineTo(-rr,0); ctx.closePath(); ctx.fill();
         ctx.restore();
+      } else if (skin === "aurora") {
+        ctx.strokeStyle=`hsla(${140+ai*12+step*2},90%,65%,.45)`;
+        ctx.lineWidth=Math.max(1.2,rr*0.7);
+        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(p.x,p.y); ctx.stroke();
+        ctx.fillStyle=`hsla(${160+si*10},100%,70%,.4)`; ctx.beginPath(); ctx.arc(p.x,p.y,rr*0.9,0,7); ctx.fill();
+      } else if (skin === "ember") {
+        ctx.fillStyle=`hsla(${18+si*8},100%,60%,.5)`;
+        ctx.beginPath(); ctx.arc(p.x,p.y,rr*(1.05+0.25*Math.sin(step/5+si)),0,7); ctx.fill();
+      } else if (skin === "candy") {
+        ctx.fillStyle=`hsla(${(ai%2?330:200)+si*6},95%,68%,.5)`;
+        ctx.beginPath(); ctx.arc(p.x,p.y,rr*1.15,0,7); ctx.fill();
+      } else if (skin === "plasma") {
+        ctx.strokeStyle=`hsla(${50+ai*15+step*5},100%,65%,.5)`;
+        ctx.lineWidth=Math.max(1,rr*0.4);
+        ctx.beginPath(); ctx.moveTo(tx,ty); ctx.quadraticCurveTo(p.x+Math.sin(step/4+si)*4,p.y,p.x,p.y); ctx.stroke();
       } else {
         ctx.strokeStyle=`hsla(${190+ai*8},100%,58%,.5)`;
         ctx.lineWidth=Math.max(1,rr*0.35);
         ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.stroke();
       }
+      if (si===SEG-1 && (skin==="aurora"||skin==="ember"||skin==="candy"||skin==="plasma"||skin==="comet") && step%3===ai%3 && trail.length<28){
+        const hue = skin==="ember"?22:skin==="candy"?(ai%2?330:200):skin==="plasma"?55:skin==="comet"?42:150+ai*10;
+        trail.push({x:p.x,y:p.y,vx:(Math.random()-.5)*0.8,vy:(Math.random()-.5)*0.8+.15,life:1,hue,r:2+Math.random()*2});
+      }
       tx=p.x; ty=p.y;
     });
   });
+  for (let i=trail.length-1;i>=0;i--){
+    const t=trail[i]; t.x+=t.vx; t.y+=t.vy; t.life-=0.035;
+    ctx.fillStyle=`hsla(${t.hue},100%,70%,${t.life})`;
+    ctx.beginPath(); ctx.arc(t.x,t.y,t.r*t.life,0,7); ctx.fill();
+    if (t.life<=0) trail.splice(i,1);
+  }
   ctx.restore();
 }
 function tickBits(){
