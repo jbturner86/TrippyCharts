@@ -138,7 +138,29 @@ const GROUPS = [
     ["XLV","Healthcare ETF"],["IBB","Biotech ETF"]
   ]}
 ];
-function isPhone(){ return matchMedia("(max-width:900px)").matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
+const SAVE_KEY = "trippy_player_v1";
+function defaultPlayer(){
+  return {
+    xp: 0, eaten: 0, eatenCycle: 0,
+    toyDensity: 20,
+    ownedToyIds: ["mushrooms"],
+    equippedToyIds: ["mushrooms"],
+    passActive: false,
+    passExpiresAt: null
+  };
+}
+function loadPlayer(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return defaultPlayer();
+    return { ...defaultPlayer(), ...JSON.parse(raw) };
+  } catch(e){ return defaultPlayer(); }
+}
+function savePlayer(){
+  localStorage.setItem(SAVE_KEY, JSON.stringify(player));
+}
+let player = loadPlayer();
+  function isPhone(){ return matchMedia("(max-width:900px)").matches || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent); }
 function syncPhone(){ document.body.classList.toggle("phone", isPhone()); }
 syncPhone(); addEventListener("resize", syncPhone);
 let unlocked = Math.max(1, Math.min(TOYS.length, +(localStorage.getItem("tc_unlocked")||1)));
