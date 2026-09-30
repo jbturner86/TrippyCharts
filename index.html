@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TrippyCharts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height:100%; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif; background:#07010e; overflow:hidden; cursor:crosshair; }
@@ -16,30 +18,47 @@
     header { text-align:center; padding:10px 12px 6px; }
     h1 { font-size:clamp(1.25rem,3vw,2.15rem); letter-spacing:.16em; text-transform:uppercase; font-weight:900;
       font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
-      background:linear-gradient(90deg,#7cff3a,#fff,#c44bff,#ff5d8f); background-size:220% auto;
-      -webkit-background-clip:text; background-clip:text; color:transparent; animation:sheen 7s linear infinite;
-      -webkit-text-stroke:1.4px rgba(255,255,255,.28); filter:drop-shadow(0 0 8px rgba(196,75,255,.55)); }
+      color:#f3e9ff;
+      -webkit-text-stroke:1px #1a0724;
+      text-shadow:
+        -1px -1px 0 #12061c, 1px -1px 0 #12061c, -1px 1px 0 #12061c, 1px 1px 0 #12061c,
+        0 0 10px rgba(196,75,255,.35);
+    }
     @keyframes sheen { to { background-position:220% center; } }
     .status { margin-top:4px; color:#cbb6ff; font-size:.8rem; }
     .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
     .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-    button { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; }
+    button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
     .density-box { position:fixed; top:10px; left:12px; z-index:6; width:220px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
     body.zen .density-box { display:none; }
-    .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: auto minmax(0,1fr) auto; gap:6px; padding:0 4px 8px; }
+    .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: minmax(0,1fr); gap:6px; padding:0 10px 8px; }
     .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
     .toys-left { align-items:flex-end; }
     .toys-right { align-items:flex-start; }
-    body.zen header, body.zen .dock-btns, body.zen .stage { display:none !important; }
+    #legalBtn {
+      position:fixed; left:50%; bottom:10px; transform:translateX(-50%); z-index:9;
+      background:rgba(12,6,22,.82);
+    }
+    body.zen header, body.zen .dock-btns, body.zen .stage, body.zen .toys-col, body.zen .density-box, body.zen #store, body.zen #legal, body.zen #buyPass, body.zen #legalBtn { display:none !important; }
     body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; }
     .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
     .chip input { width:15px; height:15px; accent-color:#c44bff; }
     .chip.locked { opacity:.38; filter:grayscale(.6); }
     .chip.locked input { pointer-events:none; }
     #passBadge { display:none; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:#7cff3a; border:1px solid rgba(124,255,58,.4); border-radius:999px; padding:6px 11px; }
+    #store {
+      display:none; position:fixed; right:12px; top:70px; z-index:8; width:min(320px,92vw);
+      max-height:calc(100dvh - 90px); overflow:auto; padding:12px;
+      background:rgba(12,6,22,.94); border:1px solid rgba(196,75,255,.45); border-radius:16px;
+    }
+    #store h2 { font-size:.8rem; letter-spacing:.12em; text-transform:uppercase; margin-bottom:8px; color:#e9d7ff; }
+    #store .row { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.08); font-size:.78rem; }
+    #store .tag { font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; color:#b9a6dd; }
+    #store.open { display:block; }
+    body.zen #store { display:none !important; }
     .stage { min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:12px; width:100%; height:100%; }
     .stage.hide { display:none; }
     .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; }
@@ -52,6 +71,29 @@
     .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
     .note { font-size:.62rem; color:#b9a6dd; }
     .zoom { display:none; }
+    #buyPass {
+      position:fixed; top:12px; right:14px; z-index:10; max-width:150px;
+      padding:14px 16px 16px; font-family:"Baloo 2", system-ui, sans-serif; font-weight:800;
+      letter-spacing:.01em; text-transform:none; font-size:.8rem; line-height:1.15;
+      text-align:center; color:#12331c; background:radial-gradient(circle at 30% 25%, #fff, #c8ffd9 42%, #8ef0b0);
+      border:3px solid #fff; border-radius:70% 60% 65% 75% / 60% 70% 55% 65%;
+      box-shadow:0 0 10px #b7ffd2, 0 0 22px rgba(180,255,210,.7), 0 0 40px rgba(255,255,255,.25);
+      animation:passGlow 1.8s ease-in-out infinite;
+    }
+    @keyframes passGlow {
+      0%,100% { box-shadow:0 0 8px #b7ffd2, 0 0 16px rgba(180,255,210,.55); }
+      50% { box-shadow:0 0 16px #fff, 0 0 28px #b7ffd2, 0 0 48px rgba(255,255,255,.35); }
+    }
+    #legal {
+      display:none; position:fixed; inset:8% 8%; z-index:12; overflow:auto;
+      background:rgba(10,6,18,.97); border:1px solid rgba(255,255,255,.2); border-radius:16px;
+      padding:18px 20px; color:#e8dcff; font-size:.82rem; line-height:1.45;
+    }
+    #legal.open { display:block; }
+    #legal h2 { margin:0 0 10px; letter-spacing:.08em; text-transform:uppercase; }
+    #legal h3 { margin:14px 0 6px; font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; color:#cbb6ff; }
+    #legal p { margin:0 0 8px; color:#d7c7ff; }
+    #legalClose { margin-top:12px; }
     @media (max-width:900px) {
       html,body { overflow:auto; cursor:auto; }
       .wrap { height:auto; min-height:100dvh; overflow:visible; }
@@ -65,6 +107,7 @@
 </head>
 <body>
   <div id="sky"><canvas id="bg"></canvas></div>
+  <button type="button" id="buyPass" title="Five new falling trinkets every month while you watch the charts">🍄 New Toys Every Month!<br>Only $5 a month!</button>
   <div class="wrap">
     <header><h1>TrippyCharts</h1><p class="status" id="status"></p></header>
     <div class="density-box">
@@ -73,17 +116,39 @@
     </div>
     <div class="actions">
       <span class="dock-btns">
-        <button type="button" id="fullscreen">page full screen</button>
+        <button type="button" id="fullscreen">full screen</button>
         <button type="button" id="toggleCharts">hide charts</button>
-        <button type="button" id="buyPass">buy pass $5</button>
         <span id="passBadge">pass on</span>
+        <a href="toys.html" id="storeBtn" class="page-link">Toy Store</a>
       </span>
       <button type="button" id="zen">hide everything</button>
     </div>
+    <button type="button" id="legalBtn">disclaimer</button>
+    <aside id="legal">
+      <h2>Disclaimer</h2>
+      <p>TrippyCharts is an entertainment and visualization toy. It is not a broker, adviser, exchange, or data vendor.</p>
+      <h3>Not financial advice</h3>
+      <p>Nothing on this site is investment, tax, or trading advice. Do your own research. You can lose money trading. We do not promise profits, signals, or “alpha.”</p>
+      <h3>Charts are imperfect</h3>
+      <p>Prices and candles are pulled from third-party public sources (including Yahoo Finance-style endpoints). Data can be delayed, missing, aggregated wrong, or plotted on the wrong timeframe. After-hours prints may not match a 30-minute candle. Live last-candle animation is a visual estimate, not an official print. Do not place orders from these charts. Confirm every number on your broker.</p>
+      <h3>Outages and changes</h3>
+      <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
+      <h3>Pass and store</h3>
+      <p>Payments are for cosmetic toys, drops, and save slots — not market data. Subscriptions renew until you cancel in Stripe. Test charges in sandbox are not real. Refunds follow Stripe and applicable law. Monthly toy lineups can change.</p>
+      <h3>As-is</h3>
+      <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
+      <h3>You agree</h3>
+      <p>By using the site or clicking Buy Pass you agree to this disclaimer. If you do not agree, don’t use the charts or pay.</p>
+      <p style="opacity:.7">This text is not legal advice. A Colorado attorney can tighten it before Live charges.</p>
+      <button type="button" id="legalClose">close</button>
+    </aside>
+    <aside id="store">
+      <h2>Charm store</h2>
+      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Pass unlocks 5 this month. The rest drop later or will be $1 each.</p>
+      <div id="storeList"></div>
+    </aside>
     <div class="board center" id="board">
-      <div class="toys-col toys-left" id="toysLeft"></div>
       <main class="stage" id="grid"></main>
-      <div class="toys-col toys-right" id="toysRight"></div>
     </div>
   </div>
 <script>
@@ -111,17 +176,21 @@ function defaultPlayer(){
   return {
     xp: 0, eaten: 0, eatenCycle: 0,
     toyDensity: 70,
-    ownedToyIds: TOYS.map(t => t[0]),
+    ownedToyIds: ["mushrooms"],
     equippedToyIds: ["mushrooms"],
     passActive: false,
-    passExpiresAt: null
+    passExpiresAt: null,
+    ownedCursorIds: ["squid"],
+    equippedCursor: "squid"
   };
 }
 function loadPlayer(){
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultPlayer();
-    return { ...defaultPlayer(), ...JSON.parse(raw) };
+    const p = { ...defaultPlayer(), ...JSON.parse(raw) };
+    if ((p.ownedToyIds || []).length === TOYS.length) p.ownedToyIds = ["mushrooms"];
+    return p;
   } catch(e){ return defaultPlayer(); }
 }
 function savePlayer(){
@@ -164,6 +233,7 @@ async function pullCloud(){
     }
     paintToys();
     paintPass();
+    paintStore();
   } catch(e){}
 }
 async function pushCloud(){
@@ -180,15 +250,34 @@ window.addEventListener("visibilitychange", () => {
 });
 
 const mid = Math.ceil(TOYS.length/2);
+const FREE_TOYS = ["mushrooms"];
+const PASS_BY_MONTH = {
+  "2026-09": ["stars","moons","leaves","flowers","hearts"],
+  "2026-10": ["skulls","aliens","butterflies","crystals","frogs"],
+  "2026-11": ["cats","planets","clouds","dice","peace"]
+};
+function currentMonth(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
+}
+function passToys(){
+  return PASS_BY_MONTH[currentMonth()] || PASS_BY_MONTH["2026-09"];
+}
+function toyDropMonth(id){
+  for (const [m, list] of Object.entries(PASS_BY_MONTH)) {
+    if (list.includes(id)) return m;
+  }
+  return null;
+}
 function hasPass(){
   if (!player.passActive) return false;
   if (!player.passExpiresAt) return true;
   return Date.now() < player.passExpiresAt;
 }
 function ownedToys(){
-  if (hasPass()) return TOYS.map(t => t[0]);
-  const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : ["mushrooms"];
-  return own.includes("mushrooms") ? own : ["mushrooms", ...own];
+  const extra = hasPass() ? passToys() : [];
+  const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
+  return [...new Set([...FREE_TOYS, ...own, ...extra])];
 }
 function canUse(id){ return ownedToys().includes(id); }
 function toyChecked(id){
@@ -196,14 +285,7 @@ function toyChecked(id){
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
   return id === "mushrooms";
 }
-function paintToys(){
-  const html = (id,label) => {
-    const lock = !canUse(id);
-    return `<label class="chip${lock?" locked":""}" title="${lock?"Buy the $5 pass to unlock":""}"><input type="checkbox" data-toy="${id}" ${toyChecked(id)?"checked":""} ${lock?"disabled":""}>${label}${lock?" 🔒":""}</label>`;
-  };
-  document.getElementById("toysLeft").innerHTML = TOYS.slice(0,mid).map(([id,label]) => html(id,label)).join("");
-  document.getElementById("toysRight").innerHTML = TOYS.slice(mid).map(([id,label]) => html(id,label)).join("");
-}
+function paintToys(){}
 function paintPass(){
   const on = hasPass();
   const badge = document.getElementById("passBadge");
@@ -211,19 +293,32 @@ function paintPass(){
   if (badge) badge.style.display = on ? "inline-flex" : "none";
   if (buy) buy.style.display = on ? "none" : "";
 }
+function paintStore(){
+  const box = document.getElementById("storeList");
+  if (!box) return;
+  const month = currentMonth();
+  box.innerHTML = TOYS.map(([id,label]) => {
+    let tag = "later drop";
+    if (FREE_TOYS.includes(id)) tag = "free";
+    else if ((PASS_BY_MONTH[month]||[]).includes(id)) tag = hasPass() ? "unlocked this month" : "this month with pass";
+    else {
+      const m = toyDropMonth(id);
+      tag = m ? ("drops " + m) : "later drop";
+    }
+    return `<div class="row"><span>${label}</span><span class="tag">${tag}</span></div>`;
+  }).join("");
+}
 paintToys();
 paintPass();
+paintStore();
 document.getElementById("density").value = player.toyDensity || 70;
 document.getElementById("densityVal").textContent = document.getElementById("density").value;
 
-function activeToys(){ return [...document.querySelectorAll("[data-toy]:checked")].map(el => el.dataset.toy); }
+function activeToys(){
+  const eq = (player.equippedToyIds || []).filter(canUse);
+  return eq.length ? eq : ["mushrooms"];
+}
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
-document.getElementById("board").addEventListener("change", () => {
-  const kinds = activeToys();
-  player.equippedToyIds = kinds.slice();
-  savePlayer();
-  bits.forEach(b => { if (kinds.length) b.kind = pick(kinds); });
-});
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
@@ -316,7 +411,12 @@ function tickBits(){
   burst.forEach(p=>{ ctx.globalCompositeOperation="lighter"; ctx.fillStyle=`hsla(${p.hue},100%,60%,${p.life})`; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.4+p.life),0,7); ctx.fill(); ctx.globalCompositeOperation="source-over"; });
   if(zenMode&&boss){ boss.rot+=boss.spin; if(boss.hurt>0) boss.hurt--; drawToy(ctx,boss); ctx.fillStyle="rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90,8); ctx.fillStyle=boss.hurt?"#ff5d8f":"#7cff3a"; ctx.fillRect(boss.x-45,boss.y-boss.s*0.62,90*(boss.hp/boss.maxHp),8); }
   if(novaFX>0){ novaFX=Math.min(1.2,novaFX+0.035); const g=ctx.createRadialGradient(innerWidth/2,innerHeight/2,10,innerWidth/2,innerHeight/2,Math.max(innerWidth,innerHeight)*novaFX); g.addColorStop(0,`hsla(${(step*8)%360},100%,70%,.85)`); g.addColorStop(.35,`hsla(${(step*8+80)%360},100%,60%,.55)`); g.addColorStop(.7,`hsla(${(step*8+160)%360},100%,50%,.28)`); g.addColorStop(1,"rgba(0,0,0,0)"); ctx.globalCompositeOperation="lighter"; ctx.fillStyle=g; ctx.fillRect(0,0,bg.width,bg.height); ctx.globalCompositeOperation="source-over"; if(novaFX>1.15) novaFX=0; }
-  drawSquid(); requestAnimationFrame(loopSky);
+  drawSquid();
+  const cur = player.equippedCursor || "squid";
+  if (cur && cur !== "squid") {
+    drawToy(ctx, { kind: cur === "spark" ? "sparkles" : cur, x: mouse.x + 18, y: mouse.y + 18, s: 22, hue: (step*3)%360, rot: step*0.04 });
+  }
+  requestAnimationFrame(loopSky);
 })();
 const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
 function fmtAxisTime(t, tf){
@@ -455,7 +555,15 @@ document.getElementById("zen").addEventListener("click", ()=>{
   document.getElementById("zen").textContent = zenMode ? "show everything" : "hide everything";
   if (zenMode) spawnBoss(); else boss = null;
 });
+document.getElementById("legalBtn").addEventListener("click", () => {
+  document.getElementById("legal").classList.add("open");
+});
+document.getElementById("legalClose").addEventListener("click", () => {
+  document.getElementById("legal").classList.remove("open");
+});
 document.getElementById("buyPass").addEventListener("click", async () => {
+  const ok = confirm("Trippy Pass is $5/mo for 5 new falling trinkets while you watch the charts. Charts stay free and are not 100% accurate — not financial advice. OK = I agree to the Disclaimer.");
+  if (!ok) return;
   try {
     const r = await fetch(API + "/buy", {
       method: "POST",
