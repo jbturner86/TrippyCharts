@@ -27,27 +27,20 @@
     button { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px;
       padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
-    .board {
-      flex:1 1 auto; min-height:0; display:grid;
-      grid-template-columns: auto minmax(0,1fr) auto;
-      align-items:stretch; gap:6px; padding:0 4px 8px;
-    }
+    .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: auto minmax(0,1fr) auto; align-items:stretch; gap:6px; padding:0 4px 8px; }
     .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
     .toys-left { align-items:flex-end; padding-right:2px; }
     .toys-right { align-items:flex-start; padding-left:2px; }
     body.zen header, body.zen .dock-btns, body.zen .stage { display:none !important; }
     body.zen .actions { position:fixed; top:10px; left:50%; transform:translateX(-50%); z-index:5; padding:0; }
-    .chip { display:inline-flex; width:max-content; align-items:center; gap:6px;
-      background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14);
-      border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
+    .chip { display:inline-flex; width:max-content; align-items:center; gap:6px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:5px 10px; font-size:.72rem; white-space:nowrap; }
     .chip input { width:15px; height:15px; accent-color:#c44bff; }
     .stage { min-height:0; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:12px; width:100%; height:100%; }
     .stage.hide { display:none; }
     .board.left { grid-template-columns: 0 minmax(0,1fr) auto; }
     .board.right { grid-template-columns: auto minmax(0,1fr) 0; }
     .board.left .toys-left, .board.right .toys-right { visibility:hidden; }
-    .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14);
-      backdrop-filter:blur(3px); overflow:hidden; display:flex; flex-direction:column; }
+    .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.46); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(3px); overflow:hidden; display:flex; flex-direction:column; }
     .card canvas { display:block; width:100%; flex:1 1 auto; min-height:0; }
     .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:7px 9px 9px; }
     .group-name { font-size:1rem; letter-spacing:.08em; text-transform:uppercase; color:#efe6ff; margin-bottom:5px; font-weight:700; }
@@ -92,7 +85,6 @@
     </div>
   </div>
 <script>
- <script>
 const TOYS = [
   ["mushrooms","Mushrooms",true],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
@@ -111,7 +103,6 @@ const GROUPS = [
   {title:"Financials", names:[["JPM","JPMorgan"],["BAC","Bank of America"],["V","Visa"],["MA","Mastercard"],["WFC","Wells Fargo"],["GS","Goldman Sachs"],["MS","Morgan Stanley"],["BLK","BlackRock"],["SCHW","Charles Schwab"],["C","Citigroup"]]},
   {title:"Healthcare", names:[["UNH","UnitedHealth"],["LLY","Eli Lilly"],["JNJ","Johnson & Johnson"],["ABBV","AbbVie"],["MRK","Merck"],["PFE","Pfizer"],["ABT","Abbott"],["TMO","Thermo Fisher"],["AMGN","Amgen"],["ISRG","Intuitive Surgical"]]}
 ];
-
 const mid = Math.ceil(TOYS.length/2);
 document.getElementById("toysLeft").innerHTML = TOYS.slice(0,mid).map(([id,label,on]) =>
   `<label class="chip"><input type="checkbox" data-toy="${id}" ${on?"checked":""}>${label}</label>`).join("");
@@ -123,34 +114,19 @@ document.getElementById("board").addEventListener("change", () => {
   const kinds = activeToys();
   bits.forEach(b => { if (kinds.length) b.kind = pick(kinds); });
 });
-
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
 addEventListener("mousemove", e => { mouse.px = mouse.x; mouse.py = mouse.y; mouse.x = e.clientX; mouse.y = e.clientY; });
-
 const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
 let bits = [], burst = [], step = 0, jetAng = 0, eaten = 0, squidScale = 0.5, zenMode = false, boss = null;
-const SQUID_START = 0.5, SQUID_MAX = 1.0;
-const ARM_N = 16, SEG = 16;
-const squid = Array.from({length: ARM_N}, () =>
-  Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) }))
-);
+const SQUID_START = 0.5, SQUID_MAX = 1.0, ARM_N = 16, SEG = 16;
+const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
 function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
 addEventListener("resize", resizeBg); resizeBg();
-
 function nova(){
-  for (let i=0;i<120;i++){
-    const a = Math.random()*Math.PI*2, sp = 3+Math.random()*14;
-    burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 });
-  }
+  for (let i=0;i<120;i++){ const a=Math.random()*Math.PI*2, sp=3+Math.random()*14; burst.push({ x:mouse.x, y:mouse.y, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, life:1, hue:Math.random()*360, r:2+Math.random()*6 }); }
   eaten = 0; squidScale = SQUID_START;
 }
-function growFromEat(){
-  eaten++;
-  if (eaten > 0 && eaten % 15 === 0) {
-    squidScale = Math.min(SQUID_MAX, squidScale * 1.05);
-    if (squidScale >= SQUID_MAX) nova();
-  }
-}
+function growFromEat(){ eaten++; if (eaten>0 && eaten%15===0){ squidScale=Math.min(SQUID_MAX, squidScale*1.05); if (squidScale>=SQUID_MAX) nova(); } }
 function spawnBoss(){
   const kinds = activeToys().length ? activeToys() : TOYS.map(t=>t[0]);
   boss = { kind:pick(kinds), x:innerWidth*0.5+(Math.random()-0.5)*innerWidth*0.35, y:innerHeight*0.38+Math.random()*innerHeight*0.2, s:170, hp:14, maxHp:14, rot:0, spin:(Math.random()-0.5)*.02, hue:Math.random()*360, hurt:0 };
@@ -168,7 +144,6 @@ function newBit(x, y, state){
   return { kind: kinds.length ? pick(kinds) : "sparkles", x: x ?? Math.random()*bg.width, y: y ?? -30, v:.45+Math.random()*.7, drift:(Math.random()-.5)*.25, vx:0, vy:0, s:14+Math.random()*18, rot:Math.random()*6.28, spin:(Math.random()-.5)*.03, hue:Math.random()*360, state: state || "fall", ang:0 };
 }
 function spawnBit(){ const b = newBit(); if (b) bits.push(b); }
-
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot);
   const s=b.s; c.fillStyle=`hsl(${b.hue},85%,65%)`; c.strokeStyle=`hsl(${b.hue},90%,80%)`; c.lineWidth=1.4;
@@ -192,7 +167,6 @@ function drawToy(c,b){
   else { c.beginPath(); c.arc(0,0,s*.25,0,7); c.fill(); }
   c.restore();
 }
-
 function drawSquid(){
   step++;
   const radius = (13 + 5*Math.sin(step/10)) * squidScale;
@@ -201,14 +175,10 @@ function drawSquid(){
   ctx.save(); ctx.globalCompositeOperation = "lighter";
   squid.forEach((arm, ai) => {
     const ang = 2*Math.PI*ai/ARM_N + step*0.004;
-    let tx = mouse.x + radius*Math.cos(ang);
-    let ty = mouse.y + radius*Math.sin(ang);
+    let tx = mouse.x + radius*Math.cos(ang), ty = mouse.y + radius*Math.sin(ang);
     arm.forEach((p) => {
-      const dx = p.x - tx, dy = p.y - ty;
-      const d = Math.hypot(dx, dy) || 1;
-      const stick = 4.5 * squidScale;
-      p.x = tx + dx / d * stick;
-      p.y = ty + dy / d * stick + 0.35;
+      const dx = p.x - tx, dy = p.y - ty, d = Math.hypot(dx, dy) || 1, stick = 4.5 * squidScale;
+      p.x = tx + dx / d * stick; p.y = ty + dy / d * stick + 0.35;
       ctx.strokeStyle = `hsla(${190+ai*8}, 100%, 58%, .5)`;
       ctx.lineWidth = Math.max(1, p.r * 0.35 * squidScale);
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r * squidScale, 0, 7); ctx.stroke();
@@ -217,51 +187,40 @@ function drawSquid(){
   });
   ctx.restore();
 }
-
 function tickBits(){
   if (bits.length < 70 && activeToys().length) spawnBit();
   const capture = 40 + 20 * squidScale;
   bits.forEach(b => {
-    const dx = b.x - mouse.x, dy = b.y - mouse.y;
-    const dist = Math.hypot(dx, dy);
+    const dx = b.x - mouse.x, dy = b.y - mouse.y, dist = Math.hypot(dx, dy);
     if (b.state === "fall") {
       b.y += b.v; b.x += b.drift; b.rot += b.spin;
       if (dist < capture) { b.state = "suck"; b.ang = Math.atan2(dy, dx); }
     } else if (b.state === "suck") {
       b.ang += 0.085;
       const nd = Math.max(0, dist - 0.55);
-      b.x = mouse.x + Math.cos(b.ang) * nd;
-      b.y = mouse.y + Math.sin(b.ang) * nd;
-      b.s = Math.max(6, b.s * 0.995);
-      b.rot += 0.08;
+      b.x = mouse.x + Math.cos(b.ang) * nd; b.y = mouse.y + Math.sin(b.ang) * nd;
+      b.s = Math.max(6, b.s * 0.995); b.rot += 0.08;
       if (nd < 8 * squidScale) {
         growFromEat();
-        const side = Math.random() < 0.5 ? 0 : Math.PI;
-        const spd = 11 + Math.random() * 7;
+        const side = Math.random() < 0.5 ? 0 : Math.PI, spd = 11 + Math.random() * 7;
         b.state = "eject";
         const shoot = zenMode ? (jetAng || 0) : (jetAng + side);
         const power = zenMode ? (18 + Math.random()*8) : spd;
-        b.vx = Math.cos(shoot) * power;
-        b.vy = Math.sin(shoot) * power;
-        b.s = zenMode ? 12 : 8;
+        b.vx = Math.cos(shoot) * power; b.vy = Math.sin(shoot) * power; b.s = zenMode ? 12 : 8;
       }
     } else if (b.state === "eject") {
       if (zenMode) { b.vx *= 1.015; b.vy *= 1.015; }
       b.x += b.vx; b.y += b.vy;
       b.vx *= zenMode ? 0.999 : 0.992; b.vy *= zenMode ? 0.999 : 0.992;
-      b.s = Math.min(22, b.s * 1.03);
-      b.rot += 0.12;
+      b.s = Math.min(22, b.s * 1.03); b.rot += 0.12;
       if (zenMode && hitBoss(b)) { Object.assign(b, newBit(Math.random()*bg.width, -30, "fall")||b); }
       else if (dist > (zenMode? 420 : 170)) { b.state = "fall"; b.v = .5 + Math.random()*.4; b.drift = b.vx * 0.08; }
     }
-    if (b.y > bg.height + 50 || b.x < -60 || b.x > bg.width + 60) {
-      Object.assign(b, newBit(Math.random()*bg.width, -30, "fall"));
-    }
+    if (b.y > bg.height + 50 || b.x < -60 || b.x > bg.width + 60) Object.assign(b, newBit(Math.random()*bg.width, -30, "fall"));
   });
   burst = burst.filter(p => p.life > 0);
   burst.forEach(p => { p.x += p.vx; p.y += p.vy; p.vx *= 0.98; p.vy *= 0.98; p.life -= 0.012; });
 }
-
 (function loopSky(){
   ctx.clearRect(0,0,bg.width,bg.height);
   tickBits();
@@ -273,19 +232,14 @@ function tickBits(){
     ctx.globalCompositeOperation = "source-over";
   });
   if (zenMode && boss) {
-    boss.rot += boss.spin;
-    if (boss.hurt>0) boss.hurt--;
+    boss.rot += boss.spin; if (boss.hurt>0) boss.hurt--;
     drawToy(ctx, boss);
-    const w = 90, h = 8;
-    ctx.fillStyle = "rgba(0,0,0,.45)";
-    ctx.fillRect(boss.x-w/2, boss.y-boss.s*0.62, w, h);
-    ctx.fillStyle = boss.hurt ? "#ff5d8f" : "#7cff3a";
-    ctx.fillRect(boss.x-w/2, boss.y-boss.s*0.62, w*(boss.hp/boss.maxHp), h);
+    ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(boss.x-45, boss.y-boss.s*0.62, 90, 8);
+    ctx.fillStyle = boss.hurt ? "#ff5d8f" : "#7cff3a"; ctx.fillRect(boss.x-45, boss.y-boss.s*0.62, 90*(boss.hp/boss.maxHp), 8);
   }
   drawSquid();
   requestAnimationFrame(loopSky);
 })();
-
 const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
 function fmtAxisTime(t, tf){
   const d = new Date(t);
@@ -308,7 +262,6 @@ document.getElementById("grid").innerHTML = slots.map(s=>`
       <div><div class="px" id="px-${s.id}">${s.symbol}</div><div class="chg flat" id="chg-${s.id}"></div><div class="note" id="note-${s.id}"></div></div>
     </div>
   </section>`).join("");
-
 function isChartFs(id){ return document.fullscreenElement && document.fullscreenElement.id==="card-"+id; }
 function visibleBars(slot){ const src=slot.allBars||[]; const n=isChartFs(slot.id)?slot.view:Math.min(70,src.length); return src.slice(-Math.max(12,Math.min(src.length||12,n))); }
 function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id), r=c.getBoundingClientRect();
@@ -319,18 +272,13 @@ function aggregate(bars,n){ const out=[]; for(let i=0;i<bars.length;i+=n){ const
   out.push({t:ch[0].t, open:ch[0].open, close:ch.at(-1).close, high:Math.max(...ch.map(b=>b.high)), low:Math.min(...ch.map(b=>b.low))}); } return out; }
 function mergeBars(oldB,newB){ if(!oldB.length) return newB; const map=new Map(oldB.map(b=>[b.t,{...b}])); newB.forEach(b=>map.set(b.t,b)); return [...map.values()].sort((a,c)=>a.t-c.t); }
 function tfMs(id){ return ({ "1m":6e4,"5m":3e5,"10m":6e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"1d":864e5,"1w":6048e5 })[id] || 18e5; }
-function endpoints(symbol, interval, range){
-  return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`];
-}
+function endpoints(symbol, interval, range){ return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`]; }
 async function fetchBars(symbol,tfId){
   const tf=TFS.find(t=>t.id===tfId)||TFS[4];
   for(const url of endpoints(symbol,tf.interval,tf.range)){
     try{
-      const res=await fetch(url,{cache:"no-store"});
-      if(!res.ok) continue;
-      const json=await res.json();
-      const r=json.chart&&json.chart.result&&json.chart.result[0];
-      if(!r) continue;
+      const res=await fetch(url,{cache:"no-store"}); if(!res.ok) continue;
+      const json=await res.json(); const r=json.chart&&json.chart.result&&json.chart.result[0]; if(!r) continue;
       const q=r.indicators.quote[0], bars=[];
       for(let i=0;i<r.timestamp.length;i++){
         if([q.open[i],q.close[i],q.high[i],q.low[i]].some(v=>v==null)) continue;
@@ -345,16 +293,10 @@ async function fetchBars(symbol,tfId){
 }
 function applyLive(slot, price){
   if (!price || !slot.allBars.length) return;
-  const last = slot.allBars.at(-1);
-  const bucket = tfMs(slot.tf);
-  const now = Date.now();
-  if (now - last.t >= bucket * 0.98) {
-    slot.allBars.push({ t: last.t + bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price });
-  } else {
-    last.close = price; last.high = Math.max(last.high, price); last.low = Math.min(last.low, price);
-  }
-  slot.price = price;
-  if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
+  const last = slot.allBars.at(-1), bucket = tfMs(slot.tf), now = Date.now();
+  if (now - last.t >= bucket * 0.98) slot.allBars.push({ t: last.t + bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price });
+  else { last.close = price; last.high = Math.max(last.high, price); last.low = Math.min(last.low, price); }
+  slot.price = price; if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
 }
 function drawChart(slot){
   const canvas=document.getElementById("cv-"+slot.id), c=canvas.getContext("2d");
@@ -403,11 +345,8 @@ function paintMeta(slot){
   chg.className="chg "+(pct>0.01?"up":pct<-0.01?"down":"flat");
   document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • live last candle`: `${slot.tf} • no live feed`;
 }
-function clock(){
-  document.getElementById("status").textContent = `${new Date().toLocaleTimeString()}   eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%`;
-}
-function zoomSlot(i,dir){ if(!isChartFs(i)) return; const slot=slots[i], max=Math.max(12,slot.allBars.length);
-  slot.view=dir>0?Math.max(12,Math.round(slot.view*.72)):Math.min(max,Math.round(slot.view/.72)); }
+function clock(){ document.getElementById("status").textContent = `${new Date().toLocaleTimeString()}   eaten ${eaten%15}/15  size ${(squidScale*100).toFixed(0)}%`; }
+function zoomSlot(i,dir){ if(!isChartFs(i)) return; const slot=slots[i], max=Math.max(12,slot.allBars.length); slot.view=dir>0?Math.max(12,Math.round(slot.view*.72)):Math.min(max,Math.round(slot.view/.72)); }
 async function loadSlot(i, forceReset=false){
   const symbol=document.getElementById("in-"+i).value, tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
@@ -430,7 +369,7 @@ slots.forEach((_,i)=>{
   canvas.addEventListener("mousemove", e=>{
     const slot=slots[i], L=slot.layout, bars=visibleBars(slot); if(!L||!bars.length) return;
     const rect=canvas.getBoundingClientRect(), x=(e.clientX-rect.left)/rect.width*canvas.width;
-    const idx=Math.floor((x-L.padL)/L.gap); slot.hover=(idx>=0&&idx<bars.length)?idx:null;
+    slot.hover = (()=>{ const idx=Math.floor((x-L.padL)/L.gap); return (idx>=0&&idx<bars.length)?idx:null; })();
   });
   canvas.addEventListener("mouseleave",()=>{ slots[i].hover=null; });
   canvas.addEventListener("wheel", e=>{ if(!isChartFs(i)) return; e.preventDefault(); zoomSlot(i,e.deltaY<0?1:-1); }, {passive:false});
@@ -448,8 +387,7 @@ document.querySelectorAll("[data-dock]").forEach(btn=>{
 });
 document.getElementById("toggleCharts").addEventListener("click", ()=>{
   const stage=document.getElementById("grid"), btn=document.getElementById("toggleCharts");
-  const hidden=stage.classList.toggle("hide");
-  btn.textContent = hidden ? "show charts" : "hide charts";
+  btn.textContent = stage.classList.toggle("hide") ? "show charts" : "hide charts";
 });
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
