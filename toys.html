@@ -249,6 +249,7 @@ document.getElementById("grid").addEventListener("change", e => {
   if (!set.size) set.add("mushrooms");
   player.equippedToyIds = [...set];
   savePlayer();
+  try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
 document.getElementById("grid").addEventListener("click", async e => {
   const id = e.target.dataset.buy;
@@ -294,6 +295,7 @@ document.getElementById("cursors").addEventListener("change", e => {
   player.equippedCursor = id;
   savePlayer();
   paintCursors();
+  try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
 document.getElementById("cursors").addEventListener("click", async e => {
   const id = e.target.dataset.buycur;
