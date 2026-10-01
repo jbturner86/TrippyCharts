@@ -985,14 +985,23 @@ function applyLive(slot, price){
   if (!price || !slot.allBars.length) return;
   const bucket = tfMs(slot.tf);
   const last = slot.allBars[slot.allBars.length - 1];
-  const steps = Math.floor((Date.now() - last.t) / bucket);
-  if (steps <= 0) {
+  const steps = Math.max(0, Math.floor((Date.now() - last.t) / bucket));
+  if (steps === 0) {
     last.close = price;
     last.high = Math.max(last.high, price);
     last.low = Math.min(last.low, price);
+    last.live = true;
   } else {
     const t = last.t + steps * bucket;
-    slot.allBars.push({ t, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price, vol: 0 });
+    const prev = slot.allBars.find(b => b.live && b.t === t);
+    if (prev) {
+      prev.close = price;
+      prev.high = Math.max(prev.high, price);
+      prev.low = Math.min(prev.low, price);
+      slot.allBars = slot.allBars.filter(b => b.t !== t).concat(prev);
+    } else {
+      slot.allBars.push({ t, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price, vol: 0, live: true });
+    }
   }
   slot.price = price;
   if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
@@ -1314,7 +1323,7 @@ document.getElementById("legalClose").addEventListener("click", () => {
 boot(true); loop(); clock();
 pullCloud();
 setInterval(clock,1000);
-setInterval(tickLive, 4000);
+setInterval(tickLive, 1500);
 setInterval(pushCloud, 30000);
 </script>
 </body>
