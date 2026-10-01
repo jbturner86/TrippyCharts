@@ -984,14 +984,15 @@ async function fetchBars(symbol,tfId){
 function applyLive(slot, price){
   if (!price || !slot.allBars.length) return;
   const bucket = tfMs(slot.tf);
-  const start = Math.floor(Date.now() / bucket) * bucket;
-  const last = slot.allBars.at(-1);
-  if (last.t >= start) {
+  const last = slot.allBars[slot.allBars.length - 1];
+  const steps = Math.floor((Date.now() - last.t) / bucket);
+  if (steps <= 0) {
     last.close = price;
     last.high = Math.max(last.high, price);
     last.low = Math.min(last.low, price);
   } else {
-    slot.allBars.push({ t: start, open: price, high: price, low: price, close: price, vol: 0 });
+    const t = last.t + steps * bucket;
+    slot.allBars.push({ t, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price, vol: 0 });
   }
   slot.price = price;
   if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
@@ -1010,7 +1011,7 @@ function drawChart(slot){
   if (slot.showPx && slot.price) slot.showPx += (slot.price - slot.showPx) * 0.18;
   const liveBars = bars.map((b,i) => i===bars.length-1 && slot.showPx ? {...b, close:slot.showPx, high:Math.max(b.high,slot.showPx), low:Math.min(b.low,slot.showPx)} : b);
   const dpr=devicePixelRatio||1;
-  const padL=10*dpr, padR=58*dpr, padT=8*dpr, padB=22*dpr, volH=Math.max(22*dpr, h*0.16);
+  const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=0;
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
   const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
   const yOf=px=>padT+(max-px)/span*plotH;
@@ -1024,15 +1025,12 @@ function drawChart(slot){
     c.fillStyle="rgba(210,210,220,.7)"; c.font=`${10*dpr}px Trebuchet MS`; c.textAlign="left";
     c.fillText(fmtPx(px), w-padR+6*dpr, y+3*dpr);
   }
-  const maxVol=Math.max(1,...liveBars.map(b=>b.vol||0));
   liveBars.forEach((b,i)=>{
     const x=padL+i*gap+gap/2, up=b.close>=b.open, col=up?upCol:dnCol;
     c.strokeStyle=col; c.lineWidth=Math.max(1,dpr);
     c.beginPath(); c.moveTo(x,yOf(b.high)); c.lineTo(x,yOf(b.low)); c.stroke();
     const top=yOf(Math.max(b.open,b.close)), bot=yOf(Math.min(b.open,b.close));
     c.fillStyle=col; c.fillRect(x-bodyW/2,top,bodyW,Math.max(2*dpr,bot-top));
-    const vh=((b.vol||0)/maxVol)*volH*0.86;
-    c.globalAlpha=0.55; c.fillRect(x-bodyW/2, h-padB-vh, bodyW, Math.max(1,vh)); c.globalAlpha=1;
   });
   const lastY=yOf(last.close);
   c.setLineDash([4*dpr,4*dpr]); c.strokeStyle=lastUp?upCol:dnCol; c.lineWidth=dpr;
@@ -1080,7 +1078,7 @@ function drawChart(slot){
 function paintOhlc(slot, b){
   const el=document.getElementById("ohlc-"+slot.id); if(!el||!b) return;
   const up=b.close>=b.open;
-  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b><span>Vol ${fmtVol(b.vol||0)}</span>`;
+  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b>`;
 }
 function sessionLabel(state){
   const s = (state||"").toUpperCase();
@@ -1154,7 +1152,7 @@ async function loadSlot(i, forceReset=false){
   const symbol=slotSymbol(i), tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
     const data=await fetchBars(symbol,tf);
-    slots[i].allBars=(forceReset||slots[i].key!==key||!slots[i].allBars.length)?data.bars:mergeBars(slots[i].allBars,data.bars);
+    slots[i].allBars = data.bars.slice();
     Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true,state:data.state||""});
     applyLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); rememberTicker(symbol);
   }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
