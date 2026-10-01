@@ -983,10 +983,18 @@ async function fetchBars(symbol,tfId){
 }
 function applyLive(slot, price){
   if (!price || !slot.allBars.length) return;
-  const last = slot.allBars.at(-1), bucket = tfMs(slot.tf), now = Date.now();
-  if (now - last.t >= bucket * 0.98) slot.allBars.push({ t: last.t + bucket, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price, vol: last.vol||0 });
-  else { last.close = price; last.high = Math.max(last.high, price); last.low = Math.min(last.low, price); }
-  slot.price = price; if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
+  const bucket = tfMs(slot.tf);
+  const start = Math.floor(Date.now() / bucket) * bucket;
+  const last = slot.allBars.at(-1);
+  if (last.t >= start) {
+    last.close = price;
+    last.high = Math.max(last.high, price);
+    last.low = Math.min(last.low, price);
+  } else {
+    slot.allBars.push({ t: start, open: price, high: price, low: price, close: price, vol: 0 });
+  }
+  slot.price = price;
+  if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
 }
 function fmtPx(n){ return (n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtVol(n){
