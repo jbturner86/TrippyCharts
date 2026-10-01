@@ -1037,12 +1037,18 @@ function drawChart(slot){
   const lastY=yOf(last.close);
   c.setLineDash([4*dpr,4*dpr]); c.strokeStyle=lastUp?upCol:dnCol; c.lineWidth=dpr;
   c.beginPath(); c.moveTo(padL,lastY); c.lineTo(w-padR,lastY); c.stroke(); c.setLineDash([]);
-  const pillW=52*dpr, pillH=16*dpr, pillX=w-padR+3*dpr, pillY=lastY-pillH/2;
+  const left = tfMs(slot.tf) - (Date.now() % tfMs(slot.tf));
+  const tot = Math.max(0, Math.floor(left/1000));
+  const hh = Math.floor(tot/3600), mm = Math.floor((tot%3600)/60), ss = tot%60;
+  const timer = hh ? `${hh}:${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}` : `${String(mm).padStart(2,"0")}:${String(ss).padStart(2,"0")}`;
+  const pillW=58*dpr, pillH=28*dpr, pillX=w-padR+3*dpr, pillY=lastY-pillH/2;
   c.fillStyle=lastUp?upCol:dnCol; c.beginPath();
-  if (c.roundRect) c.roundRect(pillX,pillY,pillW,pillH,4*dpr); else c.rect(pillX,pillY,pillW,pillH);
+  if (c.roundRect) c.roundRect(pillX,pillY,pillW,pillH,5*dpr); else c.rect(pillX,pillY,pillW,pillH);
   c.fill();
   c.fillStyle="#111"; c.font=`700 ${10*dpr}px Trebuchet MS`; c.textAlign="center";
-  c.fillText(fmtPx(last.close), pillX+pillW/2, lastY+3.5*dpr);
+  c.fillText(fmtPx(last.close), pillX+pillW/2, pillY+12*dpr);
+  c.font=`600 ${9*dpr}px Trebuchet MS`;
+  c.fillText(timer, pillX+pillW/2, pillY+23*dpr);
   const ticks = Math.min(5, liveBars.length);
   c.fillStyle="rgba(200,200,210,.75)"; c.font=`${9*dpr}px Trebuchet MS`; c.textAlign="center";
   for(let i=0;i<ticks;i++){
