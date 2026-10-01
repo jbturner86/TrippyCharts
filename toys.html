@@ -31,7 +31,7 @@
     <h1>Toy Store</h1>
     <a class="back" href="index.html">← back to charts</a>
   </header>
-  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. October pass drop is a new set: jellyfish, robots, lightning, ghosts, eyes. Anything else is $1 forever.</p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. October pass drop is a new set: jellyfish, robots, lightning, ghosts, eyes. Anything else is $1 forever. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
@@ -106,6 +106,10 @@ function ownedToys(){
   return [...new Set([...FREE_TOYS, ...own, ...extra])];
 }
 function canUse(id){ return ownedToys().includes(id); }
+function cleanEquipped(){
+  const ok = (player.equippedToyIds || []).filter(canUse);
+  player.equippedToyIds = (ok.length ? ok : ["mushrooms"]).slice(0,5);
+}
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot||0);
   const s=b.s, k=b.kind;
@@ -239,6 +243,9 @@ function previewToy(cv, kind, hue){
   drawToy(c, { kind, x:w/2, y:h/2+6, s:72, hue, rot:0 });
 }
 function paint(){
+  cleanEquipped();
+  const rain = document.getElementById("rainCount");
+  if (rain) rain.textContent = "Raining " + (player.equippedToyIds||[]).length + " / 5";
   const box = document.getElementById("grid");
   box.innerHTML = TOYS.map(([id,label], i) => {
     const own = canUse(id);
@@ -277,15 +284,24 @@ async function pullCloud(){
 }
 document.getElementById("grid").addEventListener("change", e => {
   const id = e.target.dataset.eq;
-  if (!id) return;
-  const set = new Set(player.equippedToyIds || []);
+  if (!id || !canUse(id)) { e.target.checked = false; return; }
+  cleanEquipped();
+  let set = player.equippedToyIds.slice();
   if (e.target.checked) {
-    if (set.size >= 5) { e.target.checked = false; alert("Max 5 toys raining at once."); return; }
-    set.add(id);
-  } else set.delete(id);
-  if (!set.size) set.add("mushrooms");
-  player.equippedToyIds = [...set].slice(0,5);
+    if (!set.includes(id)) {
+      if (set.length >= 5) {
+        const drop = set.find(x => x !== "mushrooms" && x !== id) || set[0];
+        set = set.filter(x => x !== drop);
+      }
+      set.push(id);
+    }
+  } else {
+    set = set.filter(x => x !== id);
+  }
+  if (!set.length) set = ["mushrooms"];
+  player.equippedToyIds = set.slice(0,5);
   savePlayer();
+  paint();
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
 document.getElementById("grid").addEventListener("click", async e => {
