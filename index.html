@@ -1063,6 +1063,29 @@ function setLayout(name){
 function saveSlotPrefs(){
   localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf}))));
 }
+const USED_KEY = "trippy_used_tickers";
+function loadUsedTickers(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(USED_KEY)||"[]");
+    if (Array.isArray(raw)) return raw.map(s=>String(s).toUpperCase()).filter(Boolean).slice(0,30);
+  } catch(e){}
+  return [];
+}
+let usedTickers = loadUsedTickers();
+function paintTickerList(){
+  const box = document.getElementById("tickers");
+  if (!box) return;
+  const seen = new Set();
+  const all = [...usedTickers, ...SUGGESTS].filter(s => { if(seen.has(s)) return false; seen.add(s); return true; });
+  box.innerHTML = all.map(s=>`<option value="${s}">`).join("");
+}
+function rememberTicker(sym){
+  const s = (sym||"").toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12);
+  if (!s) return;
+  usedTickers = [s, ...usedTickers.filter(x=>x!==s)].slice(0,30);
+  localStorage.setItem(USED_KEY, JSON.stringify(usedTickers));
+  paintTickerList();
+}
 function slotSymbol(i){
   return (document.getElementById("sym-"+i).value||"SPY").trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12) || "SPY";
 }
@@ -1072,7 +1095,7 @@ async function loadSlot(i, forceReset=false){
     const data=await fetchBars(symbol,tf);
     slots[i].allBars=(forceReset||slots[i].key!==key||!slots[i].allBars.length)?data.bars:mergeBars(slots[i].allBars,data.bars);
     Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true,state:data.state||""});
-    applyLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs();
+    applyLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); rememberTicker(symbol);
   }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
 }
 async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
@@ -1086,6 +1109,7 @@ async function boot(reset=false){
     setTimeout(()=>{ tip.textContent=""; localStorage.setItem(TIP_KEY,"1"); }, 8000);
   }
   await Promise.all(slots.map((_,i)=>loadSlot(i,reset)));
+  paintTickerList();
 }
 slots.forEach((_,i)=>{
   document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
