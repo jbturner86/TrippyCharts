@@ -271,6 +271,13 @@ async function pullCloud(){
     player.passActive = !!row.pass_active;
     player.passExpiresAt = row.pass_expires_at;
     try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
+    const rawOwn = player.ownedToyIds || [];
+    player.ownedCursorIds = ["squid", ...(player.ownedCursorIds||[])];
+    rawOwn.forEach(x => {
+      if (String(x).startsWith("cursor:")) player.ownedCursorIds.push(String(x).replace(/^cursor_?/, "").replace(/^cursor:/,""));
+    });
+    player.ownedToyIds = rawOwn.filter(x => !String(x).startsWith("cursor"));
+    player.ownedCursorIds = [...new Set(player.ownedCursorIds)];
     try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
     player.equippedToyIds = (player.equippedToyIds||[]).slice(0,5);
     if (!player.equippedToyIds.length) player.equippedToyIds = ["mushrooms"];
