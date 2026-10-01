@@ -191,7 +191,6 @@
         <button type="button" id="scoresBtn">high scores</button>
       </span>
       <button type="button" id="fullscreen">play game</button>
-      <button type="button" id="zen">hide everything</button>
       <button type="button" id="legalBtn">disclaimer</button>
     </div>
     <aside id="legal">
@@ -201,7 +200,7 @@
       <p>TrippyCharts is built for a desktop or laptop browser with a mouse. Phones and tablets will look wrong, miss the cursor toy, and make the game nearly unplayable. Use a computer.</p>
       <h3>How to play</h3>
       <p>Toys fall in the background. Move your mouse so the cursor (the squid) eats them; it grows, then blobs and resets. Toy Store: pick up to 5 falling toys. Density slider sets how many fall. Cursor / SFX / Music toggles are top-left.</p>
-      <p>Hide Everything or page Full Screen starts game mode: charts hide, a boss toy floats around. Suck toys and spit them into the boss. Each hit is 1 point. After the 3rd boss kill a second boss appears, then another after the 4th, and so on. You have one life bar. Getting touched costs 20%. When you die, enter a name for high scores. Full Screen locks the pointer on the page. Hide Everything keeps running if the mouse leaves the window.</p>
+      <p>Play Game starts game mode fullscreen: charts hide, a boss toy floats around. Suck toys and spit them into the boss. Each hit is 1 point. After the 3rd boss kill a second boss appears, then another after the 4th, and so on. You have one life bar. Getting touched costs 20%. When you die, enter a name for high scores. Esc leaves the game.</p>
       <h3>Not financial advice</h3>
       <p>Nothing on this site is investment, tax, or trading advice. Do your own research. You can lose money trading. We do not promise profits, signals, or “alpha.”</p>
       <h3>Charts are imperfect</h3>
@@ -1353,6 +1352,7 @@ addEventListener("fullscreenchange", () => {
   if (!document.fullscreenElement) {
     if (chartMaxId != null) clearChartMax();
     if (chartsFs) leaveChartsFs();
+    if (zenMode) endZen();
   }
 });
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
@@ -1363,10 +1363,6 @@ document.getElementById("fullscreen").addEventListener("click", async()=>{
     startZen();
     tryLockPointer();
   } else await document.exitFullscreen();
-});
-document.getElementById("zen").addEventListener("click", ()=>{
-  if (zenMode) endZen();
-  else startZen();
 });
 document.addEventListener("mouseleave", () => {});
 window.addEventListener("blur", () => {});
