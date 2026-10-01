@@ -31,11 +31,11 @@
     <h1>Toy Store</h1>
     <a class="back" href="index.html">← back to charts</a>
   </header>
-  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. October pass drop is a new set: jellyfish, robots, lightning, ghosts, eyes. Anything else is $1 forever. <b id="rainCount">Raining 1 / 5</b></p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Everything else is $1. Cursors are $3. No subscription. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
-  <p class="lead">These ride with your pointer. Squid is free. The rest need Trippy Pass or $3 each.</p>
+  <p class="lead">These ride with your pointer. Squid is free. The rest are $3 each.</p>
   <div class="grid" id="cursors"></div>
   <p class="note">$1 toys and $3 cursors need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error.</p>
 <script>
@@ -95,15 +95,10 @@ function getPlayerId(){
   return id;
 }
 const PLAYER_ID = getPlayerId();
-function hasPass(){
-  if (!player.passActive) return false;
-  if (!player.passExpiresAt) return true;
-  return Date.now() < player.passExpiresAt;
-}
+function hasPass(){ return false; }
 function ownedToys(){
-  const extra = hasPass() ? passToys() : [];
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
-  return [...new Set([...FREE_TOYS, ...own, ...extra])];
+  return [...new Set([...FREE_TOYS, ...own])];
 }
 function canUse(id){ return ownedToys().includes(id); }
 function cleanEquipped(){
@@ -215,11 +210,7 @@ function drawToy(c,b){
 }
 function statusFor(id){
   if (FREE_TOYS.includes(id)) return "free";
-  if (canUse(id) && (PASS_BY_MONTH[currentMonth()]||[]).includes(id) && hasPass()) return "pass this month";
   if (canUse(id)) return "owned";
-  const m = toyDropMonth(id);
-  if (m === currentMonth()) return "in this month's pass or $1";
-  if (m) return "drops " + m + " or $1 now";
   return "$1 unlock";
 }
 function sparkleField(c, w, h, hue){
@@ -331,8 +322,7 @@ document.getElementById("grid").addEventListener("click", async e => {
 });
 function ownsCursor(id){
   if (id === "squid") return true;
-  if ((player.ownedCursorIds || []).includes(id)) return true;
-  return hasPass();
+  return (player.ownedCursorIds || []).includes(id);
 }
 function previewCursor(cv, skin){
   const c = cv.getContext("2d");
@@ -375,7 +365,7 @@ function paintCursors(){
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-cur="${id}"></canvas>
       <div class="name">${label}</div>
-      <span class="tag">${id==="squid"?"free": own ? (on?"equipped":"unlocked") : "pass or $3"}</span>
+      <span class="tag">${id==="squid"?"free": own ? (on?"equipped":"unlocked") : "$3"}</span>
       ${action}
     </article>`;
   }).join("");
