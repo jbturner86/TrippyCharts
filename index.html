@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrippyCharts</title>
+  <title>TrippyCharts — psychedelic charts + toy rain</title>
+  <meta name="description" content="TrippyCharts is a desktop toy: live-ish candlestick charts with falling trinkets and a squid cursor. Not a broker. Not financial advice." />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="apple-touch-icon" href="favicon-180.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
   <style>
@@ -39,6 +42,11 @@
     button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
     .density-box { position:fixed; top:12px; left:12px; z-index:6; width:248px; padding:8px 10px; border-radius:12px; background:rgba(18,8,28,.72); border:1px solid rgba(255,160,60,.55); }
+    .density-box.collapsed { width:auto; padding:6px 8px; }
+    .density-box.collapsed .toys-body { display:none; }
+    #toysToggle { width:100%; justify-content:center; margin-bottom:6px; }
+    .hint { margin-top:4px; color:#9e8cc4; font-size:.68rem; letter-spacing:.04em; }
+    #cancelBtn { display:none; }
     .sound-row { display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:4px; flex-wrap:wrap; }
     #soundBtn, #musicBtn, #cursorBtn { padding:4px 8px; font-size:.58rem; letter-spacing:.06em; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
@@ -136,10 +144,13 @@
       <div>
         <h1>TrippyCharts</h1>
         <p class="status" id="status"></p>
+        <p class="hint" id="firstTip"></p>
       </div>
       <img class="logo" src="logo.png" alt="">
     </header>
-    <div class="density-box">
+    <div class="density-box collapsed" id="toysPanel">
+      <button type="button" id="toysToggle">toys</button>
+      <div class="toys-body">
       <label for="density">toy density <span id="densityVal">70</span></label>
       <input type="range" id="density" min="0" max="400" value="70">
       <div class="sound-row">
@@ -149,6 +160,7 @@
         <button type="button" id="musicBtn">on</button>
         <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">cursor</span>
         <button type="button" id="cursorBtn">on</button>
+      </div>
       </div>
     </div>
     <div class="actions">
@@ -193,7 +205,7 @@
     </aside>
     <aside id="scores">
       <h2>High scores</h2>
-      <p class="tag">Hits = points. Shared board when the Worker /scores route is live; otherwise this device.</p>
+      <p class="tag">Hits = points. Shared board for everyone.</p>
       <table><thead><tr><th>#</th><th>Name</th><th>Score</th></tr></thead><tbody id="scoreRows"></tbody></table>
       <button type="button" id="scoresClose">close</button>
     </aside>
@@ -230,6 +242,20 @@ const TFS = [
   {id:"1d",interval:"1d",range:"6mo"},{id:"1w",interval:"1wk",range:"2y"}
 ];
 const STARTERS = ["SPY","QQQ","NVDA","IWM"];
+const SLOT_KEY = "trippy_slots_v1";
+const LAYOUT_KEY = "trippy_layout";
+const TIP_KEY = "trippy_seen_tip";
+function loadSavedSlots(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(SLOT_KEY)||"[]");
+    if (!Array.isArray(raw) || !raw.length) return STARTERS.map(s=>({symbol:s,tf:"30m"}));
+    return [0,1,2,3].map(i => ({
+      symbol: (raw[i]&&raw[i].symbol)||STARTERS[i],
+      tf: (raw[i]&&raw[i].tf)||"30m"
+    }));
+  } catch(e){ return STARTERS.map(s=>({symbol:s,tf:"30m"})); }
+}
+const savedSlots = loadSavedSlots();
 const SUGGESTS = ["SPY","QQQ","IWM","DIA","AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AMD","AVGO","PLTR","JPM","V","UNH","LLY","GLD","SLV","TLT","BTC-USD","ETH-USD"];
 
 const SAVE_KEY = "trippy_player_v1";
@@ -438,6 +464,8 @@ function paintPass(){
   const buy = document.getElementById("buyPass");
   if (badge) badge.style.display = on ? "inline-flex" : "none";
   if (buy) buy.style.display = on ? "none" : "";
+  const cancel = document.getElementById("cancelBtn");
+  if (cancel) cancel.style.display = on ? "inline-flex" : "none";
   document.body.classList.toggle("pass-on", on);
 }
 function paintStore(){
@@ -856,13 +884,13 @@ function fmtAxisTime(t, tf){
   if (tf==="1h" || tf==="2h" || tf==="4h") return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric"});
   return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
-const slots = STARTERS.map((symbol,id) => ({id, symbol, tf:"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0}));
+const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
 document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
   <section class="card" id="card-${s.id}">
     <div class="chart-head">
       <div class="pickers">
         <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
-        <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id==="30m"?"selected":""}>${t.id}</option>`).join("")}</select>
+        <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id===s.tf?"selected":""}>${t.id}</option>`).join("")}</select>
         <button type="button" data-fs="${s.id}">full screen</button>
       </div>
       <div class="ohlc" id="ohlc-${s.id}"></div>
@@ -896,11 +924,12 @@ async function fetchBars(symbol,tfId){
       const q=r.indicators.quote[0], bars=[];
       for(let i=0;i<r.timestamp.length;i++){
         if([q.open[i],q.close[i],q.high[i],q.low[i]].some(v=>v==null)) continue;
-        bars.push({t:r.timestamp[i]*1000, open:q.open[i], high:q.high[i], low:q.low[i], close:q.close[i], vol:q.volume?q.volume[i]:0});
+        const volArr = q.volume || [];
+        bars.push({t:r.timestamp[i]*1000, open:q.open[i], high:q.high[i], low:q.low[i], close:q.close[i], vol:Number(volArr[i]||0)});
       }
       if(bars.length<6) continue;
       const used=tf.group?aggregate(bars,tf.group):bars;
-      return { bars:used, price:r.meta.regularMarketPrice??used.at(-1).close, prev:r.meta.chartPreviousClose??used.at(-2)?.close??used[0].open };
+      return { bars:used, price:r.meta.regularMarketPrice??used.at(-1).close, prev:r.meta.chartPreviousClose??used.at(-2)?.close??used[0].open, state:r.meta.marketState||"" };
     }catch(e){}
   }
   throw new Error("no feed");
@@ -992,13 +1021,21 @@ function paintOhlc(slot, b){
   const up=b.close>=b.open;
   el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b><span>Vol ${fmtVol(b.vol||0)}</span>`;
 }
+function sessionLabel(state){
+  const s = (state||"").toUpperCase();
+  if (s==="PRE") return "pre";
+  if (s==="POST" || s==="POSTPOST") return "AH";
+  if (s==="CLOSED" || s==="PREPRE") return "closed";
+  if (s==="REGULAR") return "live last candle";
+  return "live last candle";
+}
 function paintMeta(slot){
   const change=slot.price-slot.prev, pct=slot.prev?(change/slot.prev)*100:0;
   document.getElementById("px-"+slot.id).textContent=`${slot.symbol}  ${fmt(slot.price||0)}`;
   const chg=document.getElementById("chg-"+slot.id), sign=change>=0?"+":"";
   chg.textContent=slot.price?`${sign}${change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"";
   chg.className="chg "+(pct>0.01?"up":pct<-0.01?"down":"flat");
-  document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • live last candle`: `${slot.tf} • no live feed`;
+  document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • ${sessionLabel(slot.state)}`: `${slot.tf} • no live feed`;
 }
 function clock(){
   document.getElementById("status").textContent = new Date().toLocaleTimeString();
@@ -1018,7 +1055,13 @@ function setLayout(name){
     if (card) card.classList.toggle("off", s.id >= n);
   });
   document.querySelectorAll("[data-layout]").forEach(b => b.classList.toggle("on", b.dataset.layout===name));
+  const pick=document.getElementById("layoutPick");
+  if (pick) pick.value = name;
+  localStorage.setItem(LAYOUT_KEY, name);
   sizeCanvases();
+}
+function saveSlotPrefs(){
+  localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf}))));
 }
 function slotSymbol(i){
   return (document.getElementById("sym-"+i).value||"SPY").trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12) || "SPY";
@@ -1028,12 +1071,22 @@ async function loadSlot(i, forceReset=false){
   try{
     const data=await fetchBars(symbol,tf);
     slots[i].allBars=(forceReset||slots[i].key!==key||!slots[i].allBars.length)?data.bars:mergeBars(slots[i].allBars,data.bars);
-    Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true});
-    applyLive(slots[i], data.price); paintMeta(slots[i]);
+    Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true,state:data.state||""});
+    applyLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs();
   }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
 }
 async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
-async function boot(reset=false){ clock(); sizeCanvases(); await Promise.all(slots.map((_,i)=>loadSlot(i,reset))); }
+async function boot(reset=false){
+  clock();
+  setLayout(localStorage.getItem(LAYOUT_KEY) || "2x2");
+  sizeCanvases();
+  const tip=document.getElementById("firstTip");
+  if (tip && !localStorage.getItem(TIP_KEY)) {
+    tip.textContent = "Desktop + mouse. Hide Everything = game.";
+    setTimeout(()=>{ tip.textContent=""; localStorage.setItem(TIP_KEY,"1"); }, 8000);
+  }
+  await Promise.all(slots.map((_,i)=>loadSlot(i,reset)));
+}
 slots.forEach((_,i)=>{
   document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
@@ -1051,6 +1104,9 @@ slots.forEach((_,i)=>{
   cv.addEventListener("mouseleave", () => { slots[i].hover=null; });
 });
 document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
+document.getElementById("toysToggle").addEventListener("click", () => {
+  document.getElementById("toysPanel").classList.toggle("collapsed");
+});
 // hide-charts removed
 document.getElementById("density").addEventListener("input", e => {
   document.getElementById("densityVal").textContent = e.target.value;
