@@ -35,7 +35,7 @@
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
-  <p class="lead">These ride with your pointer on the chart page. Squid is included. More skins are $3.</p>
+  <p class="lead">These ride with your pointer. Squid is free. The rest need Trippy Pass or $3 each.</p>
   <div class="grid" id="cursors"></div>
   <p class="note">$1 toys and $3 cursors need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error.</p>
 <script>
@@ -304,7 +304,11 @@ document.getElementById("grid").addEventListener("click", async e => {
     else alert(data.error || "Need a $1 Stripe price on the Worker first (STRIPE_TOY_PRICE).");
   } catch(err){ alert("checkout failed"); }
 });
-function ownsCursor(id){ return true; }
+function ownsCursor(id){
+  if (id === "squid") return true;
+  if ((player.ownedCursorIds || []).includes(id)) return true;
+  return hasPass();
+}
 function previewCursor(cv, skin){
   const c = cv.getContext("2d");
   const w = cv.width, h = cv.height, t = Date.now()/400;
@@ -338,18 +342,22 @@ function paintCursors(){
   const box = document.getElementById("cursors");
   if (!box) return;
   box.innerHTML = CURSORS.map(([id,label]) => {
-    const on = player.equippedCursor === id;
-    return `<article class="card">
+    const own = ownsCursor(id);
+    const on = own && player.equippedCursor === id;
+    const action = own
+      ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>`
+      : `<button class="buy" data-buycur="${id}">Unlock $3</button>`;
+    return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-cur="${id}"></canvas>
       <div class="name">${label}</div>
-      <span class="tag">${on ? "equipped" : "free"}</span>
-      <label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>
+      <span class="tag">${id==="squid"?"free": own ? (on?"equipped":"unlocked") : "pass or $3"}</span>
+      ${action}
     </article>`;
   }).join("");
 }
 document.getElementById("cursors").addEventListener("change", e => {
   const id = e.target.dataset.cur;
-  if (!id) return;
+  if (!id || !ownsCursor(id)) return;
   player.equippedCursor = id;
   savePlayer();
   paintCursors();
