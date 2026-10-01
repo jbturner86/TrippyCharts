@@ -581,6 +581,10 @@ function tryLockPointer(){
 }
 function startZen(){
   zenMode=true; bosses=[]; gameScore=0; bossKills=0; playerHp=100; hurtCool=0; blobT=0;
+  cursorOn = true;
+  localStorage.setItem(CURSOR_KEY, "1");
+  if (!player.equippedCursor) player.equippedCursor = "squid";
+  paintSound();
   document.body.classList.add("zen");
   const z=document.getElementById("zen");
   if(z) z.textContent="show everything";
@@ -781,7 +785,7 @@ function drawToy(c,b){
   c.restore();
 }
 function drawSquid(){
-  if (!cursorOn) return;
+  if (!cursorOn && !zenMode) return;
   step++;
   if (blobT > 0) {
     blobT = Math.max(0, blobT - 0.012);
@@ -884,7 +888,7 @@ function tickBits(){
     const dx=b.x-mouse.x, dy=b.y-mouse.y, dist=Math.hypot(dx,dy);
     if(b.state==="fall"){
       b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
-      if(cursorOn && dist<capture) b.state="suck";
+      if((cursorOn || zenMode) && dist<capture) b.state="suck";
     } else if(b.state==="suck"){
       b.x += (mouse.x - b.x) * 0.28;
       b.y += (mouse.y - b.y) * 0.28;
