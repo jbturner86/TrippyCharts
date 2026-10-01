@@ -983,7 +983,7 @@ async function toggleChartMax(i){
   sizeCanvases();
 }
 function visibleBars(slot){
-  const src=slot.allBars||[];
+  const src=series(slot);
   const n=Math.max(12, Math.min(src.length||12, slot.view || 70));
   return src.slice(-n);
 }
@@ -1010,35 +1010,43 @@ async function fetchBars(symbol,tfId){
       }
       if(bars.length<6) continue;
       const used=tf.group?aggregate(bars,tf.group):bars;
-      return { bars:used, price:r.meta.regularMarketPrice??used.at(-1).close, prev:r.meta.chartPreviousClose??used.at(-2)?.close??used[0].open, state:r.meta.marketState||"" };
+      const meta=r.meta||{};
+      const state=(meta.marketState||"").toUpperCase();
+      let price=meta.regularMarketPrice;
+      if (state==="PRE" && meta.preMarketPrice) price=meta.preMarketPrice;
+      if ((state==="POST"||state==="POSTPOST") && meta.postMarketPrice) price=meta.postMarketPrice;
+      if (!price) price=used.at(-1).close;
+      return { bars:used, price, prev:meta.chartPreviousClose??used.at(-2)?.close??used[0].open, state };
     }catch(e){}
   }
   throw new Error("no feed");
 }
-function applyLive(slot, price){
-  if (!price || !slot.allBars.length) return;
-  const bucket = tfMs(slot.tf);
-  const last = slot.allBars[slot.allBars.length - 1];
-  const steps = Math.max(0, Math.floor((Date.now() - last.t) / bucket));
-  if (steps === 0) {
-    last.close = price;
-    last.high = Math.max(last.high, price);
-    last.low = Math.min(last.low, price);
-    last.live = true;
+function bucketStart(tf, t){
+  const b = tfMs(tf);
+  return Math.floor(t / b) * b;
+}
+function ensureLive(slot, price){
+  if (!price) return;
+  const start = bucketStart(slot.tf, Date.now());
+  const prevClose = slot.allBars.length ? slot.allBars.at(-1).close : price;
+  if (!slot.liveBar || slot.liveBar.t !== start) {
+    slot.liveBar = { t: start, open: prevClose, high: Math.max(prevClose, price), low: Math.min(prevClose, price), close: price, live: true };
   } else {
-    const t = last.t + steps * bucket;
-    const prev = slot.allBars.find(b => b.live && b.t === t);
-    if (prev) {
-      prev.close = price;
-      prev.high = Math.max(prev.high, price);
-      prev.low = Math.min(prev.low, price);
-      slot.allBars = slot.allBars.filter(b => b.t !== t).concat(prev);
-    } else {
-      slot.allBars.push({ t, open: last.close, high: Math.max(last.close, price), low: Math.min(last.close, price), close: price, vol: 0, live: true });
-    }
+    slot.liveBar.close = price;
+    slot.liveBar.high = Math.max(slot.liveBar.high, price);
+    slot.liveBar.low = Math.min(slot.liveBar.low, price);
   }
   slot.price = price;
   if (slot.showPx == null || slot.showPx === 0) slot.showPx = price;
+}
+function series(slot){
+  const hist = (slot.allBars||[]).filter(b => !slot.liveBar || b.t < slot.liveBar.t);
+  return slot.liveBar ? hist.concat([slot.liveBar]) : hist;
+}
+function visibleBars(slot){
+  const src=series(slot);
+  const n=Math.max(12, Math.min(src.length||12, slot.view || 70));
+  return src.slice(-n);
 }
 function fmtPx(n){ return (n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtVol(n){
@@ -1052,7 +1060,12 @@ function drawChart(slot){
   const w=canvas.width,h=canvas.height; c.clearRect(0,0,w,h);
   const bars=visibleBars(slot); if(!bars.length) return;
   if (slot.showPx && slot.price) slot.showPx += (slot.price - slot.showPx) * 0.18;
-  const liveBars = bars.map((b,i) => i===bars.length-1 && slot.showPx ? {...b, close:slot.showPx, high:Math.max(b.high,slot.showPx), low:Math.min(b.low,slot.showPx)} : b);
+  if (slot.liveBar && slot.showPx) {
+    slot.liveBar.close = slot.showPx;
+    slot.liveBar.high = Math.max(slot.liveBar.high, slot.showPx);
+    slot.liveBar.low = Math.min(slot.liveBar.low, slot.showPx);
+  }
+  const liveBars = bars;
   const dpr=devicePixelRatio||1;
   const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=0;
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
@@ -1073,7 +1086,8 @@ function drawChart(slot){
     c.strokeStyle=col; c.lineWidth=Math.max(1,dpr);
     c.beginPath(); c.moveTo(x,yOf(b.high)); c.lineTo(x,yOf(b.low)); c.stroke();
     const top=yOf(Math.max(b.open,b.close)), bot=yOf(Math.min(b.open,b.close));
-    c.fillStyle=col; c.fillRect(x-bodyW/2,top,bodyW,Math.max(2*dpr,bot-top));
+    const body = i===liveBars.length-1 ? Math.max(3.2*dpr, gap*.72) : bodyW;
+    c.fillStyle=col; c.fillRect(x-body/2,top,body,Math.max(2*dpr,bot-top));
   });
   const lastY=yOf(last.close);
   c.setLineDash([4*dpr,4*dpr]); c.strokeStyle=lastUp?upCol:dnCol; c.lineWidth=dpr;
@@ -1195,9 +1209,15 @@ async function loadSlot(i, forceReset=false){
   const symbol=slotSymbol(i), tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
     const data=await fetchBars(symbol,tf);
-    slots[i].allBars = data.bars.slice();
+    if (forceReset || slots[i].key!==key) slots[i].liveBar = null;
+    const start = bucketStart(tf, Date.now());
+    slots[i].allBars = data.bars.filter(b => b.t < start);
+    const yahooNow = data.bars.find(b => b.t >= start);
+    if (yahooNow && !slots[i].liveBar) {
+      slots[i].liveBar = { t: start, open: yahooNow.open, high: yahooNow.high, low: yahooNow.low, close: yahooNow.close, live: true };
+    }
     Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true,state:data.state||""});
-    applyLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); rememberTicker(symbol);
+    ensureLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); rememberTicker(symbol);
   }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
 }
 async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
