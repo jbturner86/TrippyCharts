@@ -84,10 +84,16 @@
     .card.off { display:none; }
     .card { min-height:0; border-radius:16px; background:rgba(10,6,20,.55); border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; }
     .card.chart-max {
-      position:fixed; inset:64px 12px 12px; z-index:4;
-      background:rgba(10,6,20,.42);
-      box-shadow:0 0 0 1px rgba(255,255,255,.12);
+      position:fixed; inset:0; z-index:4;
+      background:transparent; border:none; border-radius:0;
+      box-shadow:none;
     }
+    body.chart-max header,
+    body.chart-max .actions,
+    body.chart-max .density-box,
+    body.chart-max .card:not(.chart-max) { display:none !important; }
+    body.chart-max .stage { display:block; }
+    body.chart-max .card.chart-max .chart-head { position:absolute; top:10px; left:10px; z-index:5; }
     .card canvas { display:block; width:100%; flex:1 1 auto; min-height:0; }
     .chart-head { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:7px 10px 0; }
     .ohlc { font-variant-numeric:tabular-nums; font-size:.72rem; color:#d7c7ff; letter-spacing:.02em; }
@@ -952,16 +958,28 @@ document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.m
       <div><div class="px" id="px-${s.id}">${s.symbol}</div><div class="chg flat" id="chg-${s.id}"></div><div class="note" id="note-${s.id}"></div></div>
     </div>
   </section>`).join("");
-function isChartFs(id){ return document.getElementById("card-"+id)?.classList.contains("chart-max"); }
-function toggleChartMax(i){
-  const card = document.getElementById("card-"+i);
-  const on = card.classList.contains("chart-max");
+let chartMaxId = null;
+function isChartFs(id){ return chartMaxId === id; }
+function clearChartMax(){
+  chartMaxId = null;
+  document.body.classList.remove("chart-max");
   document.querySelectorAll(".card.chart-max").forEach(el => el.classList.remove("chart-max"));
   document.querySelectorAll("[data-fs]").forEach(b => b.textContent = "full screen");
-  if (!on) {
-    card.classList.add("chart-max");
-    document.querySelector(`[data-fs="${i}"]`).textContent = "back";
+  sizeCanvases();
+}
+async function toggleChartMax(i){
+  if (chartMaxId === i) {
+    clearChartMax();
+    if (document.fullscreenElement && !zenMode) await document.exitFullscreen();
+    return;
   }
+  chartMaxId = i;
+  document.body.classList.add("chart-max");
+  document.querySelectorAll(".card").forEach(el => el.classList.toggle("chart-max", el.id === "card-"+i));
+  document.querySelectorAll("[data-fs]").forEach(b => b.textContent = "full screen");
+  const btn = document.querySelector(`[data-fs="${i}"]`);
+  if (btn) btn.textContent = "back";
+  if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
   sizeCanvases();
 }
 function visibleBars(slot){
@@ -1297,10 +1315,11 @@ async function submitScore(){
 }
 addEventListener("fullscreenchange", () => {
   sizeCanvases();
+  if (!document.fullscreenElement && chartMaxId != null) clearChartMax();
   if (pageFs()) {
-    if (!zenMode) startZen();
-    else tryLockPointer();
-  } else if (zenMode) {
+    if (chartMaxId == null && !zenMode) startZen();
+    else if (chartMaxId == null) tryLockPointer();
+  } else if (zenMode && chartMaxId == null) {
     endZen();
   }
 });
