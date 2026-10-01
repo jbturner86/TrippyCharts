@@ -52,7 +52,13 @@
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
-    body.zen .density-box { display:none; }
+    body.charts-fs header,
+    body.charts-fs .actions,
+    body.charts-fs .density-box { display:none !important; }
+    body.charts-fs .wrap, body.charts-fs .board, body.charts-fs .stage { height:100vh; height:100dvh; min-height:0; }
+    body.charts-fs .board { padding:8px; }
+    body.charts-fs .stage { gap:8px; }
+    body.charts-fs .card { background:rgba(10,6,20,.28); }
     .board { flex:1 1 auto; min-height:0; display:grid; grid-template-columns: minmax(0,1fr); gap:6px; padding:0 10px 8px; }
     .toys-col { display:flex; flex-direction:column; justify-content:space-evenly; gap:6px; width:max-content; }
     .toys-left { align-items:flex-end; }
@@ -184,7 +190,7 @@
         <a href="toys.html" id="storeBtn" class="page-link">Toy Store</a>
         <button type="button" id="scoresBtn">high scores</button>
       </span>
-      <button type="button" id="fullscreen">full screen</button>
+      <button type="button" id="fullscreen">play game</button>
       <button type="button" id="zen">hide everything</button>
       <button type="button" id="legalBtn">disclaimer</button>
     </div>
@@ -556,6 +562,20 @@ function fillBosses(){ while (bosses.length < wantedBossCount()) spawnBoss(); }
 function pageFs(){
   const el = document.fullscreenElement;
   return el === document.documentElement || el === document.body;
+}
+let chartsFs = false;
+function enterChartsFs(){
+  chartsFs = true;
+  if (chartMaxId != null) clearChartMax();
+  document.body.classList.add("charts-fs");
+  document.querySelectorAll("[data-fs]").forEach(b => b.textContent = "back");
+  sizeCanvases();
+}
+function leaveChartsFs(){
+  chartsFs = false;
+  document.body.classList.remove("charts-fs");
+  document.querySelectorAll("[data-fs]").forEach(b => b.textContent = "full screen");
+  sizeCanvases();
 }
 function tryLockPointer(){
   try { document.documentElement.requestPointerLock(); } catch(e){}
@@ -967,18 +987,13 @@ function clearChartMax(){
   document.querySelectorAll("[data-fs]").forEach(b => b.textContent = "full screen");
   sizeCanvases();
 }
-async function toggleChartMax(i){
-  if (chartMaxId === i) {
-    clearChartMax();
+async function toggleChartMax(){
+  if (chartsFs) {
+    leaveChartsFs();
     if (document.fullscreenElement && !zenMode) await document.exitFullscreen();
     return;
   }
-  chartMaxId = i;
-  document.body.classList.add("chart-max");
-  document.querySelectorAll(".card").forEach(el => el.classList.toggle("chart-max", el.id === "card-"+i));
-  document.querySelectorAll("[data-fs]").forEach(b => b.textContent = "full screen");
-  const btn = document.querySelector(`[data-fs="${i}"]`);
-  if (btn) btn.textContent = "back";
+  enterChartsFs();
   if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
   sizeCanvases();
 }
@@ -1237,7 +1252,7 @@ slots.forEach((_,i)=>{
   document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
   document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
-  document.querySelector(`[data-fs="${i}"]`).addEventListener("click", () => toggleChartMax(i));
+  document.querySelector(`[data-fs="${i}"]`).addEventListener("click", () => toggleChartMax());
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
   cv.addEventListener("mousemove", e => {
@@ -1335,17 +1350,15 @@ async function submitScore(){
 }
 addEventListener("fullscreenchange", () => {
   sizeCanvases();
-  if (!document.fullscreenElement && chartMaxId != null) clearChartMax();
-  if (pageFs()) {
-    if (chartMaxId == null && !zenMode) startZen();
-    else if (chartMaxId == null) tryLockPointer();
-  } else if (zenMode && chartMaxId == null) {
-    endZen();
+  if (!document.fullscreenElement) {
+    if (chartMaxId != null) clearChartMax();
+    if (chartsFs) leaveChartsFs();
   }
 });
 function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
-  if(!document.fullscreenElement) {
+  if (!document.fullscreenElement) {
+    if (chartsFs) leaveChartsFs();
     await document.documentElement.requestFullscreen();
     startZen();
     tryLockPointer();
