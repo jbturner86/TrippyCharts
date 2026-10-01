@@ -138,7 +138,6 @@
 </head>
 <body>
   <div id="sky"><canvas id="bg"></canvas></div>
-  <button type="button" id="buyPass" title="Five new falling trinkets every month while you watch the charts"><img src="pass-blob.png" alt="New Toys Every Month! Only $5 a month!"></button>
   <div class="wrap">
     <header>
       <div>
@@ -171,14 +170,12 @@
           <option value="1x3">1 × 3</option>
           <option value="2x2" selected>2 × 2</option>
         </select>
-        <span id="passBadge">pass on</span>
         <a href="toys.html" id="storeBtn" class="page-link">Toy Store</a>
         <button type="button" id="scoresBtn">high scores</button>
       </span>
       <button type="button" id="fullscreen">full screen</button>
       <button type="button" id="zen">hide everything</button>
       <button type="button" id="legalBtn">disclaimer</button>
-      <button type="button" id="cancelBtn">cancel subscription</button>
     </div>
     <aside id="legal">
       <h2>Disclaimer</h2>
@@ -194,8 +191,8 @@
       <p>Prices and candles are pulled from third-party public sources (including Yahoo Finance-style endpoints). Data can be delayed, missing, aggregated wrong, or plotted on the wrong timeframe. After-hours prints may not match a 30-minute candle. Live last-candle animation is a visual estimate, not an official print. Do not place orders from these charts. Confirm every number on your broker.</p>
       <h3>Outages and changes</h3>
       <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
-      <h3>Pass and store</h3>
-      <p>Payments are for cosmetic toys, cursor skins, drops, and save slots — not market data. Extra cursors need the monthly Pass or a $3 unlock. Subscriptions renew until you cancel. Cancel anytime; access stays through the paid period. No prorated refunds. Test charges in sandbox are not real. Monthly toy lineups can change.</p>
+      <h3>Store</h3>
+      <p>Payments are for cosmetic toys and cursor skins — not market data. Toys are $1 each. Extra cursors are $3 each. Mushrooms and the squid cursor stay free. No subscription. No refunds on one-off unlocks. Test charges in sandbox are not real.</p>
       <h3>As-is</h3>
       <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
       <h3>You agree</h3>
@@ -441,15 +438,10 @@ function toyDropMonth(id){
   }
   return null;
 }
-function hasPass(){
-  if (!player.passActive) return false;
-  if (!player.passExpiresAt) return true;
-  return Date.now() < player.passExpiresAt;
-}
+function hasPass(){ return false; }
 function ownedToys(){
-  const extra = hasPass() ? passToys() : [];
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
-  return [...new Set([...FREE_TOYS, ...own, ...extra])];
+  return [...new Set([...FREE_TOYS, ...own])];
 }
 function canUse(id){ return ownedToys().includes(id); }
 function toyChecked(id){
@@ -1251,34 +1243,6 @@ document.getElementById("legalBtn").addEventListener("click", () => {
 });
 document.getElementById("legalClose").addEventListener("click", () => {
   document.getElementById("legal").classList.remove("open");
-});
-document.getElementById("cancelBtn").addEventListener("click", async () => {
-  const ok = confirm("Cancel Trippy Pass? It stays on through the period you already paid. No prorated refunds.");
-  if (!ok) return;
-  try {
-    const r = await fetch(API + "/portal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify({ playerId: PLAYER_ID, action: "cancel" })
-    });
-    const data = await r.json().catch(()=>({}));
-    if (data.url) location.href = data.url;
-    else alert(data.error || "Open Stripe → Billing to cancel. No prorated refunds. Or add a /portal route on the Worker.");
-  } catch(e){ alert("Open Stripe billing to cancel. No prorated refunds."); }
-});
-document.getElementById("buyPass").addEventListener("click", async () => {
-  const ok = confirm("Trippy Pass is $5/mo for 5 new falling trinkets while you watch the charts. Charts stay free and are not 100% accurate — not financial advice. OK = I agree to the Disclaimer.");
-  if (!ok) return;
-  try {
-    const r = await fetch(API + "/buy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify({ playerId: PLAYER_ID })
-    });
-    const data = await r.json();
-    if (data.url) location.href = data.url;
-    else alert(data.error || "checkout failed");
-  } catch(e){ alert("checkout failed"); }
 });
 boot(true); loop(); clock();
 pullCloud();
