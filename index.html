@@ -1190,8 +1190,13 @@ function tickBits(){
     tickMusic();
     bits.forEach(b=>{
       try{
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.scale(2, 2);
+        ctx.translate(-b.x, -b.y);
         if(zenMode && b.homing) drawToyOutline(ctx, b);
         else drawToy(ctx,b);
+        ctx.restore();
       }catch(e){}
     });
     burst.forEach(p=>{
