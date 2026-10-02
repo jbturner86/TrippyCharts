@@ -485,7 +485,7 @@ function toyChecked(id){
   return id === "mushrooms";
 }
 const CURSORS = [["squid","Aqua Squid"],["nebula","Nebula Bloom"],["comet","Comet Tail"],["lotus","Spin Lotus"],["void","Void Ring"],["prism","Prism Shard"],["aurora","Aurora Trail"],["ember","Ember Drift"],["candy","Candy Orbit"],["plasma","Plasma Lash"],["worm","Color Snake"],["shenron","Green Worm"],["hole","Black Hole"]];
-const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["void","Void"],["ghost","Ghost"],["ink","Ink"],["lava","Lava lamp"]];
+const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"]];
 const CURSOR_COL = {squid:"#7ee8ff",nebula:"#c44bff",comet:"#ffe14a",lotus:"#ff8ad4",void:"#9b8cff",prism:"#ffffff",aurora:"#7cff3a",ember:"#ff7a3a",candy:"#ff5d8f",plasma:"#5ad7ff",worm:"#ff4ad2",shenron:"#3dcf5a",hole:"#d7c7ff"};
 function drawCursorChip(cv, id){
   const c = cv.getContext("2d");
@@ -498,7 +498,7 @@ function drawCursorChip(cv, id){
 function drawThemeChip(cv, id){
   const c = cv.getContext("2d");
   c.clearRect(0,0,cv.width,cv.height);
-  const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#fff","#ff4ad2"], void:["#c44bff","#1a1028"], ghost:["#efe6ff","#6d6288"], ink:["#1b1430","#0c0a12"], lava:["#ff8a5a","#6a1b4a"], rainbow:["#7cff3a","#c44bff"] };
+  const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], rainbow:["#7cff3a","#c44bff"] };
   const pair = cols[id] || ["#00c805","#ff5000"];
   [[16,34,18,1],[28,30,14,0],[38,36,20,1]].forEach(([x,bot,top,up])=>{
     c.strokeStyle = pair[up?0:1]; c.lineWidth = 2;
@@ -1248,13 +1248,10 @@ function candleSkin(){
   if (use==="snow") return { id:"snow", up:"#eef7ff", dn:"#7f93ad" };
   if (use==="bubbles") return { id:"bubbles", up:"#7ad7ff", dn:"#3a5a78" };
   if (use==="neon") return { id:"neon", up:"#7cff3a", dn:"#ff4ad2" };
-  if (use==="toxic") return { id:"toxic", up:"#b6ff4a", dn:"#7a3cff" };
-  if (use==="plasma") return { id:"plasma", up:"#fff6ff", dn:"#ff4ad2" };
-  if (use==="void") return { id:"void", up:"#c44bff", dn:"#14081c" };
-  if (use==="ghost") return { id:"ghost", up:"#efe6ff", dn:"#b9a6dd" };
-  if (use==="ink") return { id:"ink", up:"#1b1430", dn:"#0c0a12" };
+  if (use==="toxic") return { id:"toxic", up:"#243018", dn:"#241438" };
+  if (use==="plasma") return { id:"plasma", up:"#1a2040", dn:"#2a1030" };
   if (use==="lava") return { id:"lava", up:"#ffb08a", dn:"#8a2458" };
-  if (use==="confetti" || use==="ice" || use==="gold") return { id:"basic", up:"#00c805", dn:"#ff5000" };
+  if (use==="confetti" || use==="ice" || use==="gold" || use==="void" || use==="ghost" || use==="ink") return { id:"basic", up:"#00c805", dn:"#ff5000" };
   if (use==="rainbow") return { id:"rainbow", up:"#7af0ff", dn:"#ff5ad0" };
   if (use==="drip") return { id:"drip", up:"#f4ecff", dn:"#d0122a" };
   return { id:"basic", up:"#00c805", dn:"#ff5000" };
@@ -1374,75 +1371,76 @@ function paintNeon(c, x, top, bot, body, up, dpr, i){
 }
 function paintToxic(c, slot, x, top, bot, body, up, dpr, i){
   const t = performance.now()/1000;
+  const h = Math.max(4*dpr, bot-top);
   c.save();
-  c.fillStyle = up ? "rgba(182,255,74,.35)" : "rgba(122,60,255,.4)";
-  c.beginPath(); c.ellipse(x, bot+3*dpr, body*0.42, 3.2*dpr, 0, 0, 7); c.fill();
-  const bob = Math.sin(t*2.4+i)*2*dpr;
-  c.fillStyle = up ? "#d6ff8a" : "#b388ff";
-  c.beginPath(); c.arc(x+(i%2?3:-3)*dpr, top+6*dpr+bob, 2.1*dpr, 0, 7); c.fill();
+  c.beginPath();
+  c.rect(x-body/2, top, body, h);
+  c.clip();
+  for (let n=0;n<5;n++){
+    const ph = t*1.3 + i*0.7 + n*1.4;
+    const bx = x + Math.sin(ph)*body*0.22;
+    const by = top + h*(0.18 + 0.64*((Math.sin(ph*0.8+n)+1)/2));
+    c.fillStyle = n%2 ? "rgba(182,255,74,.72)" : "rgba(150,70,255,.7)";
+    c.beginPath();
+    c.ellipse(bx, by, body*(0.28+ (n%3)*0.06), h*(0.22+ (n%2)*0.08), Math.sin(ph)*0.4, 0, 7);
+    c.fill();
+  }
   c.restore();
-  spawnBits(slot, "slime", i, performance.now(), 700, 40, { x, y: bot, vy: 0.25*dpr, vx: (Math.random()-0.5)*0.2*dpr, r: (1.4+Math.random())*dpr, life: 1, up });
-}
-function stepToxic(slot, c, h){
-  if (!slot.slime) return;
-  slot.slime = slot.slime.filter(d => d.y < h && d.life > 0.05);
-  slot.slime.forEach(d => { d.y += d.vy; d.life -= 0.012; c.fillStyle = d.up ? "rgba(182,255,74,"+d.life.toFixed(3)+")" : "rgba(160,90,255,"+d.life.toFixed(3)+")"; c.beginPath(); c.arc(d.x, d.y, d.r, 0, 7); c.fill(); });
 }
 function paintPlasma(c, slot, x, top, bot, body, up, dpr, i){
+  const t = performance.now()/1000;
+  const h = Math.max(4*dpr, bot-top);
   c.save();
-  c.strokeStyle = i%2 ? "#7af0ff" : "#ff4ad2";
-  c.lineWidth = 1.6*dpr;
-  c.beginPath(); c.arc(x, top-5*dpr, 5*dpr, Math.PI*0.15, Math.PI*0.85); c.stroke();
-  c.strokeStyle = "rgba(255,255,255,.85)";
-  c.strokeRect(x-body*0.28, top+2*dpr, body*0.56, Math.max(3*dpr, bot-top-4*dpr));
-  if (i>0 && (i+Math.floor(performance.now()/180))%5===0) {
-    c.strokeStyle = "rgba(122,240,255,.7)";
-    c.beginPath(); c.moveTo(x-body, (top+bot)/2); c.lineTo(x-body*0.45, top+4*dpr); c.lineTo(x, (top+bot)/2); c.stroke();
-  }
-  c.restore();
-}
-function paintVoid(c, slot, x, top, bot, body, up, dpr, i){
-  const spin = performance.now()/400 + i;
-  c.save();
-  c.strokeStyle = "#c44bff";
-  c.lineWidth = 1.4*dpr;
-  c.beginPath(); c.arc(x, top-4*dpr, 4.5*dpr, spin, spin+4.2); c.stroke();
-  c.fillStyle = "#050308";
-  c.beginPath(); c.arc(x, top-4*dpr, 2.2*dpr, 0, 7); c.fill();
-  if (!up) {
-    c.strokeStyle = "rgba(196,75,255,.45)";
-    c.beginPath(); c.moveTo(x, top); c.lineTo(x, top-14*dpr); c.stroke();
-  }
-  c.restore();
-}
-function paintGhost(c, x, top, bot, body, up, dpr){
-  c.save();
-  c.globalAlpha = 0.55;
-  c.strokeStyle = up ? "#efe6ff" : "#b9a6dd";
-  c.lineWidth = 1.4*dpr;
-  c.strokeRect(x-body/2+3*dpr, top+3*dpr, body, Math.max(4*dpr, bot-top));
-  c.restore();
-}
-function paintInk(c, x, top, bot, body, up, dpr, i){
-  c.save();
-  const g = c.createLinearGradient(x-body, top, x+body*1.6, bot);
-  g.addColorStop(0, "rgba(12,10,18,0)");
-  g.addColorStop(0.45, "rgba(20,14,32,.55)");
-  g.addColorStop(1, "rgba(12,10,18,0)");
+  const g = c.createLinearGradient(x, top, x, bot);
+  g.addColorStop(0, "rgba(122,240,255,.95)");
+  g.addColorStop(0.5, "rgba(255,255,255,.8)");
+  g.addColorStop(1, "rgba(255,74,210,.9)");
   c.fillStyle = g;
-  c.fillRect(x-body*0.2, top, body*1.7, Math.max(6*dpr, bot-top));
-  if (up) { c.fillStyle = "#ffd166"; c.beginPath(); c.arc(x, bot-3*dpr, 1.6*dpr, 0, 7); c.fill(); }
+  c.fillRect(x-body/2, top, body, h);
+  c.strokeStyle = "rgba(255,255,255,.9)";
+  c.lineWidth = 1.4*dpr;
+  c.beginPath();
+  c.moveTo(x-body*0.3, top+h*0.2);
+  c.lineTo(x+body*0.15, top+h*0.45);
+  c.lineTo(x-body*0.1, top+h*0.7);
+  c.stroke();
+  c.strokeStyle = i%2 ? "#7af0ff" : "#ff4ad2";
+  c.beginPath(); c.arc(x, top-6*dpr, 6*dpr, 0.2+Math.sin(t+i)*0.3, 2.8); c.stroke();
   c.restore();
+  if (!slot.sparks) slot.sparks = [];
+  if (slot.sparks.length < 90 && (i+Math.floor(t*8))%2===0) {
+    slot.sparks.push({ x: x+(Math.random()-0.5)*body, y: top+Math.random()*h, vx:(Math.random()-0.5)*1.4*dpr, vy:-(0.4+Math.random()*1.1)*dpr, r:(1+Math.random()*1.6)*dpr, life:1, hue: Math.random()<0.5?185:320 });
+  }
+}
+function stepPlasma(slot, c){
+  if (!slot.sparks) return;
+  slot.sparks = slot.sparks.filter(d => d.life>0.04);
+  slot.sparks.forEach(d => {
+    d.x += d.vx; d.y += d.vy; d.life -= 0.02;
+    c.fillStyle = "hsla("+d.hue+",100%,70%,"+Math.max(0.15,d.life).toFixed(3)+")";
+    c.beginPath(); c.arc(d.x, d.y, d.r, 0, 7); c.fill();
+  });
 }
 function paintLava(c, x, top, bot, body, up, dpr, i){
   const t = performance.now()/700 + i;
   const h = Math.max(8*dpr, bot-top);
   c.save();
+  c.shadowColor = "rgba(255,244,220,.95)";
+  c.shadowBlur = 14*dpr;
+  c.strokeStyle = "rgba(255,250,240,.85)";
+  c.lineWidth = 2.2*dpr;
+  c.beginPath(); c.roundRect(x-body/2-1.5*dpr, top-1.5*dpr, body+3*dpr, h+3*dpr, Math.min(body/2, 8*dpr)); c.stroke();
+  c.shadowBlur = 0;
   c.fillStyle = up ? "#ffb08a" : "#8a2458";
   c.beginPath(); c.roundRect(x-body/2, top, body, h, Math.min(body/2, 8*dpr)); c.fill();
-  c.fillStyle = up ? "rgba(255,236,200,.8)" : "rgba(255,120,160,.7)";
-  const by = top + h*(0.3+0.4*((Math.sin(t)+1)/2));
-  c.beginPath(); c.ellipse(x, by, body*0.22, 3*dpr, 0, 0, 7); c.fill();
+  c.beginPath(); c.rect(x-body/2, top, body, h); c.clip();
+  for (let n=0;n<7;n++){
+    const ph = t*1.6 + n*1.1;
+    const by = top + h*(0.12 + 0.76*((Math.sin(ph)+1)/2));
+    const bx = x + Math.sin(ph*0.7+n)*body*0.22;
+    c.fillStyle = n%3===0 ? "rgba(255,236,200,.9)" : (up ? "rgba(255,90,40,.75)" : "rgba(255,140,180,.7)");
+    c.beginPath(); c.ellipse(bx, by, body*(0.12+ (n%3)*0.04), 2.4*dpr + (n%2), 0, 0, 7); c.fill();
+  }
   c.restore();
 }
 function stepDrips(slot, c, h, dpr){
@@ -1511,9 +1509,6 @@ function drawChart(slot){
     if (skin.id==="neon") paintNeon(c, x, top, bot, body, up, dpr, i);
     if (skin.id==="toxic") paintToxic(c, slot, x, top, bot, body, up, dpr, i);
     if (skin.id==="plasma") paintPlasma(c, slot, x, top, bot, body, up, dpr, i);
-    if (skin.id==="void") paintVoid(c, slot, x, top, bot, body, up, dpr, i);
-    if (skin.id==="ghost") paintGhost(c, x, top, bot, body, up, dpr);
-    if (skin.id==="ink") paintInk(c, x, top, bot, body, up, dpr, i);
     if (skin.id==="lava") paintLava(c, x, top, bot, body, up, dpr, i);
     if (skin.id==="drip" && !up) paintDrip(c, slot, x, bot, body, bh, dpr, i);
   });
@@ -1522,7 +1517,7 @@ function drawChart(slot){
   if (skin.id==="bolt") stepBolts(slot, c); else slot.bolts = [];
   if (skin.id==="snow") stepSnow(slot, c, h, dpr); else slot.flakes = [];
   if (skin.id==="bubbles") stepBubbles(slot, c); else slot.bubbles = [];
-  if (skin.id==="toxic") stepToxic(slot, c, h); else slot.slime = [];
+  if (skin.id==="plasma") stepPlasma(slot, c); else slot.sparks = [];
   const lastY=yOf(last.close);
   c.setLineDash([4*dpr,4*dpr]); c.strokeStyle=lastUp?upCol:dnCol; c.lineWidth=dpr;
   c.beginPath(); c.moveTo(padL,lastY); c.lineTo(w-padR,lastY); c.stroke(); c.setLineDash([]);
