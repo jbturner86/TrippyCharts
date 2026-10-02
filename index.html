@@ -853,7 +853,7 @@ function drawSquid(){
   ctx.save();
   trail.unshift({x:mouse.x,y:mouse.y});
   if (trail.length > 28) trail.length = 28;
-  if (skin === "worm" || skin === "shenron" || skin === "hole") {
+  if (skin === "worm" || skin === "shenron" || skin === "hole") { // CURSOR_DRAW_V3
     if (skin === "hole") {
       ctx.translate(mouse.x, mouse.y);
       ctx.rotate(step*0.04);
@@ -867,44 +867,34 @@ function drawSquid(){
       ctx.restore();
       return;
     }
-    const n = Math.min(trail.length, skin==="shenron"?22:16);
-    ctx.lineCap = "round";
+    const n = Math.min(trail.length, 18);
     for (let i=n-1;i>=1;i--) {
-      const a = trail[i], b = trail[i-1];
-      if (!a || !b) continue;
-      const w = skin==="shenron" ? 7+i*0.15 : 8-i*0.25;
-      ctx.strokeStyle = skin==="shenron" ? "#3dcf5a" : "#c4a574";
-      ctx.lineWidth = Math.max(2, w);
-      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      const a = trail[i];
+      if (!a) continue;
+      const r = 7 - i*0.22;
+      if (skin === "shenron") {
+        ctx.fillStyle = i%2 ? "#3dcf5a" : "#1f8a3a";
+      } else {
+        ctx.fillStyle = "hsl(" + ((i*22+step*4)%360) + ",95%,58%)";
+      }
+      ctx.beginPath(); ctx.arc(a.x, a.y, Math.max(3,r), 0, 7); ctx.fill();
     }
     ctx.translate(mouse.x, mouse.y);
     ctx.rotate(jetAng);
-    if (skin === "worm") {
-      ctx.fillStyle = "#b08958";
-      ctx.beginPath(); ctx.ellipse(-4,0,22,14,0,0,7); ctx.fill();
-      ctx.strokeStyle = "#8a6840"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.ellipse(-4,0,22,14,0,0,7); ctx.stroke();
-      ctx.fillStyle = "#140e0a";
-      ctx.beginPath(); ctx.arc(14,0,12,0,7); ctx.fill();
-      ctx.fillStyle = "#f4efe4";
-      for (let t=-3;t<=3;t++) {
-        ctx.beginPath(); ctx.moveTo(6,t*3.1); ctx.lineTo(20,t*1.6); ctx.lineTo(6,t*3.1+2.2); ctx.closePath(); ctx.fill();
-      }
-    } else {
-      ctx.fillStyle = "#2fa84a";
-      ctx.beginPath(); ctx.moveTo(-18,0); ctx.lineTo(6,-10); ctx.lineTo(22,-6); ctx.lineTo(28,0); ctx.lineTo(22,6); ctx.lineTo(6,10); ctx.closePath(); ctx.fill();
+    if (skin === "shenron") {
+      ctx.fillStyle = "#7dff6a";
+      ctx.beginPath(); ctx.arc(0,0,9,0,7); ctx.fill();
       ctx.fillStyle = "#12301a";
-      ctx.beginPath(); ctx.ellipse(18,-3,2.4,1.6,0,0,7); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(18,3,2.4,1.6,0,0,7); ctx.fill();
-      ctx.fillStyle = "#f4e27a";
-      ctx.beginPath(); ctx.moveTo(-2,-8); ctx.quadraticCurveTo(4,-24,14,-8); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(-2,8); ctx.quadraticCurveTo(4,24,14,8); ctx.fill();
-      ctx.strokeStyle = "#eafff2"; ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.moveTo(16,-2); ctx.quadraticCurveTo(34,-12,42,0); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(16,2); ctx.quadraticCurveTo(34,12,42,0); ctx.stroke();
-      ctx.fillStyle = "#ff5a3c";
-      ctx.beginPath(); ctx.arc(20,-3,1.5,0,7); ctx.fill();
-      ctx.beginPath(); ctx.arc(20,3,1.5,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(3,-3,1.6,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(3,3,1.6,0,7); ctx.fill();
+    } else {
+      ctx.fillStyle = "hsl(" + ((step*4)%360) + ",95%,58%)";
+      ctx.beginPath(); ctx.moveTo(14,0); ctx.lineTo(-2,-7); ctx.lineTo(-2,7); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "#ff4d6a"; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(12,0); ctx.lineTo(22,-4); ctx.moveTo(12,0); ctx.lineTo(22,4); ctx.stroke();
+      ctx.fillStyle = "#1a1020";
+      ctx.beginPath(); ctx.arc(4,-2,1.3,0,7); ctx.fill();
+      ctx.beginPath(); ctx.arc(4,2,1.3,0,7); ctx.fill();
     }
     ctx.restore();
     return;
