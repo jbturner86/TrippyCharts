@@ -2041,7 +2041,11 @@ function drawChart(slot){
       if (skin.id==="lava") paintLava(c, x, top, vBase, vw, up, dpr, i);
       else c.fillRect(x-vw/2, top, vw, bh);
       if (skin.id==="toxic") paintToxic(c, fx, x, top, vBase, vw, up, dpr, i);
-      if (skin.id==="plasma") { const g=c.createLinearGradient(x,top,x,vBase); g.addColorStop(0,"rgba(122,240,255,.95)"); g.addColorStop(.5,"rgba(255,255,255,.8)"); g.addColorStop(1,"rgba(255,74,210,.9)"); c.fillStyle=g; c.fillRect(x-vw/2, top, vw, bh); }
+      if (skin.id==="plasma") paintPlasma(c, slot, x, top, vBase, vw, up, dpr, i+1000);
+      if (skin.id==="bolt" && up) paintBolt(c, slot, x, top, vBase, vw, dpr, i+1000);
+      if (skin.id==="snow" && !up) paintSnow(c, slot, x, top, vw, dpr, i+1000);
+      if (skin.id==="bubbles" && up) paintBubbles(c, slot, x, top, vBase, vw, dpr, i+1000);
+      if (skin.id==="drip" && !up) paintDrip(c, slot, x, top, vw, bh, dpr, i+1000);
       if (skin.id==="neon") paintNeon(c, x, top, vBase, vw, up, dpr, i);
       if (skin.id!=="basic" && skin.id!=="rainbow") paintAura(c, x, top, bh, vw, auraOf(up), dpr);
     });
