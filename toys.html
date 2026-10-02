@@ -31,13 +31,16 @@
     <h1>Toy Store</h1>
     <a class="back" href="index.html">← back to charts</a>
   </header>
-  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Everything else is $1. Cursors are $3. No subscription. <b id="rainCount">Raining 1 / 5</b></p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Everything else is $1. Cursors and candle themes are $3. No subscription. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
   <p class="lead">These ride with your pointer. Squid is free. The rest are $3 each.</p>
   <div class="grid" id="cursors"></div>
-  <p class="note">$1 toys and $3 cursors need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error.</p>
+  <h2>Candle themes</h2>
+  <p class="lead">One theme at a time. Basic is free. Vine, rainbow, and drip are $3. Unselected charts go back to basic.</p>
+  <div class="grid" id="themes"></div>
+  <p class="note">$1 toys and $3 cursors/themes need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error. A paid theme still equips from this browser once owned.</p>
 <script>
 const TOYS = [
   ["mushrooms","Mushrooms"],["stars","Stars"],["moons","Moons"],["leaves","Cannabis leaves"],
@@ -76,7 +79,7 @@ const CURSORS = [
   ["plasma","Plasma Lash",0]
 ];
 function defaultPlayer(){
-  return { xp:0, eaten:0, eatenCycle:0, toyDensity:70, ownedToyIds:["mushrooms"], equippedToyIds:["mushrooms"], passActive:false, passExpiresAt:null, ownedCursorIds:["squid"], equippedCursor:"squid" };
+  return { xp:0, eaten:0, eatenCycle:0, toyDensity:70, ownedToyIds:["mushrooms"], equippedToyIds:["mushrooms"], passActive:false, passExpiresAt:null, ownedCursorIds:["squid"], equippedCursor:"squid", ownedThemeIds:["basic"], equippedTheme:"basic" };
 }
 function loadPlayer(){
   try {
@@ -433,8 +436,84 @@ document.getElementById("cursors").addEventListener("click", async e => {
     else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE).");
   } catch(err){ alert("checkout failed"); }
 });
+
+const THEMES = [["basic","Basic"],["vine","Vine & flower"],["rainbow","Rainbow"],["drip","Blood drip"]];
+function ownsTheme(id){
+  if (id === "basic") return true;
+  return (player.ownedThemeIds || []).includes(id);
+}
+function previewTheme(cv, id){
+  const c = cv.getContext("2d");
+  const w = cv.width, h = cv.height;
+  c.clearRect(0,0,w,h);
+  c.fillStyle = "#12081c";
+  c.fillRect(0,0,w,h);
+  const bars = [[40,70,1],[58,52,0],[70,64,1],[84,46,1],[96,78,0],[112,60,1]];
+  bars.forEach((b,i)=>{
+    const x = 22 + i*24, up = b[2], top = b[1], bot = b[0];
+    const col = id==="vine" ? (up?"#3dcc4a":"#6b4a2a") : id==="drip" ? (up?"#f4ecff":"#d0122a") : (up?"#00c805":"#ff5000");
+    c.strokeStyle = id==="rainbow" ? "#fff" : col;
+    c.beginPath(); c.moveTo(x, top-10); c.lineTo(x, bot+10); c.stroke();
+    if (id==="rainbow") {
+      const g = c.createLinearGradient(x, top, x, bot);
+      g.addColorStop(0, up?"#7af0ff":"#6a5cff");
+      g.addColorStop(0.5, "#ffe14a");
+      g.addColorStop(1, up?"#ff4ad2":"#3a2458");
+      c.fillStyle = g;
+    } else c.fillStyle = col;
+    c.fillRect(x-6, top, 12, Math.max(4, bot-top));
+    if (id==="vine" && up) { c.fillStyle="#ffd6f2"; c.beginPath(); c.arc(x, top-8, 3, 0, 7); c.fill(); }
+    if (id==="drip" && !up) { c.fillStyle="#d0122a"; c.beginPath(); c.moveTo(x-3, bot); c.lineTo(x, bot+12); c.lineTo(x+3, bot); c.fill(); }
+  });
+}
+function paintThemes(){
+  const box = document.getElementById("themes");
+  if (!box) return;
+  if (!player.ownedThemeIds) player.ownedThemeIds = ["basic"];
+  if (!player.equippedTheme) player.equippedTheme = "basic";
+  box.innerHTML = THEMES.map(([id,label]) => {
+    const own = ownsTheme(id);
+    const on = own && player.equippedTheme === id;
+    const action = own
+      ? `<label><input type="radio" name="theme" data-theme="${id}" ${on?"checked":""}></label>`
+      : `<button class="buy" data-buytheme="${id}">Unlock $3</button>`;
+    return `<article class="card${own?"":" locked"}">
+      <canvas width="180" height="120" data-theme="${id}"></canvas>
+      <div class="name">${label}</div>
+      <span class="tag">${id==="basic"?"free": own ? (on?"equipped":"unlocked") : "$3"}</span>
+      ${action}
+    </article>`;
+  }).join("");
+  box.querySelectorAll("canvas[data-theme]").forEach(cv => previewTheme(cv, cv.dataset.theme));
+}
+document.getElementById("themes").addEventListener("change", e => {
+  const id = e.target.dataset.theme;
+  if (!id || !ownsTheme(id)) return;
+  player.equippedTheme = id;
+  savePlayer();
+  paintThemes();
+  try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(err){}
+});
+document.getElementById("themes").addEventListener("click", async e => {
+  const id = e.target.dataset.buytheme;
+  if (!id) return;
+  const ok = confirm("Unlock this candle theme for $3? Charts stay free. Not financial advice.");
+  if (!ok) return;
+  try {
+    const r = await fetch(API + "/buy", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
+      body: JSON.stringify({ playerId: PLAYER_ID, sku: "theme_"+id, type: "theme" })
+    });
+    const data = await r.json();
+    if (data.url) location.href = data.url;
+    else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE). Theme was not unlocked.");
+  } catch(err){ alert("checkout failed"); }
+});
+
 paint();
 paintCursors();
+paintThemes();
 pullCloud();
 (function twinkle(){
   document.querySelectorAll("#grid canvas[data-kind]").forEach(cv => {
