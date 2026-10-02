@@ -31,6 +31,18 @@
     #cartTotal { font-weight:800; margin-top:6px; }
     .card label { display:flex; gap:6px; align-items:center; justify-content:center; background:transparent; border:none; }
     .card input[type="checkbox"], .card input[type="radio"] { width:22px; height:22px; accent-color:#c44bff; }
+    #passSign { position:sticky; top:0; z-index:15; margin:0 0 10px; padding:10px 200px 10px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+      background:linear-gradient(90deg,#ff3cc8,#ffb43c,#7cff3a,#3cf0ff,#b56cff,#ff3cc8); background-size:300% 100%; animation:signflow 9s linear infinite;
+      box-shadow:0 6px 26px rgba(255,60,200,.45); border-bottom:2px solid rgba(255,255,255,.6); }
+    @keyframes signflow { to { background-position:300% 0; } }
+    #passSign .signText { flex:1 1 320px; font-family:"Baloo 2", Impact, sans-serif; color:#12001f; line-height:1.15; text-shadow:0 1px 0 rgba(255,255,255,.55); }
+    #passSign .signText b { display:block; font-size:clamp(1.15rem,2.4vw,1.6rem); letter-spacing:.03em; animation:wob 2.4s ease-in-out infinite; transform-origin:left center; }
+    #passSign .signText span { font-size:.92rem; font-weight:600; }
+    @keyframes wob { 0%,100% { transform:rotate(-1deg) scale(1); } 50% { transform:rotate(1deg) scale(1.03); } }
+    #passSign button { border:2px solid #fff; border-radius:999px; padding:9px 18px; background:#12001f; color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 0 16px rgba(255,255,255,.6); }
+    #passSign button:hover { background:#2a0646; }
+    #passLink { color:#ff8af0; font-weight:700; }
+    .card button.unlock { background:#ffe46b; color:#2a1400; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; margin-top:6px; }
   </style>
 </head>
 <body>
@@ -38,22 +50,25 @@
     <h1>Toy Store</h1>
     <a class="back" href="index.html">← back to charts</a>
   </header>
+  <div id="passSign">
+    <div class="signText"><b id="signTitle">✨ Trippy Pass: $5 a month ✨</b><span id="signSub">5 new subscriber-only toys every month, plus 5 free unlocks for any store toy when you subscribe.</span></div>
+    <button type="button" id="signBtn">Subscribe</button>
+  </div>
   <aside id="cart" hidden>
     <h3>Cart</h3>
     <ul id="cartList"></ul>
     <div id="cartTotal"></div>
     <button type="button" id="cartCheckout">Checkout</button>
   </aside>
-  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Everything else is $1. Cursors and candle themes are $3. <a href="#" id="passLink">Trippy Pass</a> ($5/month) gets 5 brand-new subscriber-only toys every month. <b id="rainCount">Raining 1 / 5</b></p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Regular toys are $1 and cursors and candle themes are $3 (all free while we're testing). <a href="#" id="passLink">Trippy Pass</a> ($5/month) gets 5 brand-new subscriber-only toys every month, plus 5 free toy unlocks when you subscribe. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
   <p class="lead">These ride with your pointer. Squid is free. The rest are $3 each.</p>
   <div class="grid" id="cursors"></div>
   <h2>Candle themes</h2>
-  <p class="lead">Testing: every toy, cursor, and theme is free. Pick one theme. Basic clears it.</p>
+  <p class="lead">Pick one theme. Basic clears it.</p>
   <div class="grid" id="themes"></div>
-  <p class="note">$1 toys and $3 cursors/themes need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error. A paid theme still equips from this browser once owned.</p>
 <script>
 const TOYS = [
   ["mushrooms","Mushrooms"],["bill","$100 bill"],["moons","Moons"],["leaves","Cannabis leaves"],
@@ -134,7 +149,8 @@ function ownedToys(){
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
   return [...new Set([...FREE_TOYS, ...own])];
 }
-function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return true; }
+const TESTING_FREE = true; // regular toys free while testing; set false when $1 toys go live
+function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return TESTING_FREE || ownedToys().includes(id); }
 function cleanEquipped(){
   const ok = (player.equippedToyIds || []).filter(canUse);
   player.equippedToyIds = (ok.length ? ok : ["mushrooms"]).slice(0,5);
@@ -453,7 +469,7 @@ function paint(){
     const action = own
       ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}></label>`
       : isPassToy(id) ? `<button class="buy" data-pass="1">Get pass $5/mo</button>`
-      : `<button class="buy" data-buy="${id}">Add $1</button>`;
+      : `<button class="buy" data-buy="${id}">Add $1</button>${(player.unlockCredits||0)>0?`<button class="unlock" data-unlock="${id}">Use free unlock (${player.unlockCredits} left)</button>`:""}`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
       <div class="name">${label}</div>
@@ -471,6 +487,7 @@ async function pullCloud(){
     if (!row || !row.id) return;
     player.passActive = !!row.pass_active;
     player.passExpiresAt = row.pass_expires_at;
+    player.unlockCredits = Number(row.unlock_credits || 0);
     try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
     const rawOwn = player.ownedToyIds || [];
     const curs = new Set(["squid", ...(player.ownedCursorIds || [])]);
@@ -498,6 +515,7 @@ async function pullCloud(){
     paint();
     paintCursors();
     if (typeof paintThemes==="function") paintThemes();
+    paintSign();
   } catch(e){}
 }
 document.getElementById("grid").addEventListener("change", e => {
@@ -523,8 +541,36 @@ document.getElementById("grid").addEventListener("change", e => {
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
 document.getElementById("passLink").addEventListener("click", e => { e.preventDefault(); startPass(); });
+function paintSign(){
+  const t=document.getElementById("signTitle"), s=document.getElementById("signSub"), btn=document.getElementById("signBtn");
+  if (!t) return;
+  if (hasPass()) {
+    const n = player.unlockCredits||0;
+    t.textContent = "✨ Trippy Pass is on ✨";
+    s.textContent = "Your subscriber toys are unlocked. " + (n ? `You have ${n} free toy unlock${n===1?"":"s"} left.` : "No free unlocks left.");
+    btn.textContent = "Manage pass";
+  } else {
+    t.textContent = "✨ Trippy Pass: $5 a month ✨";
+    s.textContent = "5 new subscriber-only toys every month, plus 5 free unlocks for any store toy when you subscribe.";
+    btn.textContent = "Subscribe";
+  }
+}
+document.getElementById("signBtn").addEventListener("click", () => hasPass() ? managePass() : startPass());
+async function useUnlock(id){
+  try {
+    const r = await fetch(API + "/unlock", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify({ playerId: PLAYER_ID, sku: id }) });
+    const d = await r.json();
+    if (!d.ok) { alert(d.error || "Could not unlock."); if (typeof d.credits==="number") { player.unlockCredits=d.credits; paint(); paintSign(); } return; }
+    player.unlockCredits = d.credits;
+    player.ownedToyIds = [...new Set([...(player.ownedToyIds||["mushrooms"]), id])];
+    if (!(player.equippedToyIds||[]).includes(id) && (player.equippedToyIds||[]).length < 5) player.equippedToyIds.push(id);
+    savePlayer(); paint(); paintSign();
+    try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
+  } catch(e){ alert("Could not unlock. Try again in a minute."); }
+}
 document.getElementById("grid").addEventListener("click", e => {
   if (e.target.dataset.pass) { startPass(); return; }
+  if (e.target.dataset.unlock) { useUnlock(e.target.dataset.unlock); return; }
   const id = e.target.dataset.buy;
   if (!id) return;
   const label = (TOYS.find(t => t[0]===id) || [id,id])[1];
@@ -793,6 +839,7 @@ const claimed = claimPending();
 paint();
 paintCursors();
 paintThemes();
+paintSign();
 if (claimed) alert("Unlocked. It is equipped.");
 pullCloud().then(() => { paint(); paintCursors(); paintThemes(); });
 (function twinkle(){
