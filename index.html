@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height:100%; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif; background:#07010e; overflow:hidden; cursor:crosshair; }
+    html, body { height:100%; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif; background:#07010e; overflow:hidden; overflow-x:hidden; cursor:crosshair; }
     button, select, .chip, input { cursor:pointer; }
     #sky { position:fixed; inset:0; z-index:0; pointer-events:none;
       background: radial-gradient(ellipse at 12% 8%, rgba(255,60,180,.16), transparent 40%),
@@ -20,7 +20,7 @@
     .wrap { position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; padding-left:var(--side-w, 176px); transition:padding-left .2s ease; }
 body.side-hide .wrap { padding-left:8px; }
 body.charts-fs .wrap, body.chart-max .wrap, body.zen .wrap { padding-left:0 !important; }
-body.charts-fs .side, body.chart-max .side, body.charts-fs #sideShow, body.chart-max #sideShow { display:none !important; }
+body.charts-fs #sideShow, body.chart-max #sideShow { display:inline-flex !important; position:fixed; left:8px; top:8px; z-index:30; }
     header { display:none; }
     header .logo { height:28px; width:auto; display:block; flex:none; object-fit:contain; }
     .brand { display:flex; align-items:center; gap:8px; }
@@ -35,7 +35,7 @@ body.charts-fs .side, body.chart-max .side, body.charts-fs #sideShow, body.chart
       100% { background-position:300% 50%; }
     }
     @keyframes sheen { to { background-position:220% center; } }
-    .side { position:fixed; left:0; top:8px; z-index:8; width:196px; max-height:calc(100vh - 16px); overflow:auto; background:rgba(8,2,16,.82); border-radius:0 14px 14px 0; padding:8px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; transition:transform .2s ease; }
+    .side { position:fixed; left:0; top:8px; z-index:8; width:196px; max-height:calc(100vh - 16px); overflow-x:hidden; overflow-y:auto; background:rgba(8,2,16,.82); border-radius:0 14px 14px 0; padding:8px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; transition:transform .2s ease; }
 body.side-hide .side { transform:translateX(-120%); }
 #sideShow { display:none; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.8); color:#efe6ff; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:6px 10px; cursor:pointer; flex:none; }
 body.side-hide #sideShow { display:inline-flex; align-items:center; }
@@ -44,7 +44,7 @@ body.zen #sideShow { display:none !important; }
 .side .actions, .side .dock-btns { display:flex; flex-direction:column; align-items:stretch; gap:6px; padding:0; width:100%; }
 .side .actions button, .side .actions a.page-link, .side .actions select, .side .dock-btns button, .side .dock-btns a.page-link, .side .dock-btns select { width:100%; justify-content:center; text-align:center; }
 #sideToggle { width:auto; }
-body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !important; }
+body.zen .side { display:none !important; }
     .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
     .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
@@ -53,9 +53,9 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
     .density-box.collapsed { width:auto; padding:6px 8px; }
     .density-box.collapsed .toys-body { display:none; }
     .toy-label { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:#efe6ff; padding:2px 2px 4px; font-weight:800; }
-    #quickToys { display:flex; flex-direction:column; gap:3px; width:168px; max-height:46vh; overflow:auto; margin-top:2px; }
+    #quickToys { display:flex; flex-direction:column; gap:3px; width:168px; max-height:46vh; overflow-x:hidden; overflow-y:auto; margin-top:2px; }
     .q-lab { font-size:.48rem; letter-spacing:.08em; text-transform:uppercase; color:#9e8cc4; line-height:1; }
-    .q-row { display:flex; flex-wrap:wrap; gap:3px; }
+    .q-row { display:flex; flex-wrap:wrap; gap:3px; overflow:hidden; }
     .q-ico { width:28px; height:28px; padding:0; border-radius:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); overflow:hidden; display:inline-flex; }
     .q-ico canvas { width:28px; height:28px; display:block; pointer-events:none; }
     .q-ico.on { border-color:#c44bff; box-shadow:0 0 0 1px #c44bff; background:rgba(196,75,255,.32); }
@@ -672,6 +672,7 @@ function enterChartsFs(){
   chartsFs = true;
   if (chartMaxId != null) clearChartMax();
   document.body.classList.add("charts-fs");
+  document.body.classList.add("side-hide");
   document.querySelectorAll("[data-fs]").forEach(b => b.textContent = "back");
   sizeCanvases();
 }
@@ -1009,7 +1010,8 @@ function drawSquid(){
   const trail = window.cursorTrail;
   ctx.save();
   trail.unshift({x:mouse.x,y:mouse.y});
-  if (trail.length > 28) trail.length = 28;
+  const trailMax = (skin === "worm" || skin === "shenron") ? 72 : 28;
+  if (trail.length > trailMax) trail.length = trailMax;
   if (skin === "worm" || skin === "shenron" || skin === "hole") { // CURSOR_DRAW_V3
     if (skin === "hole") {
       const t = performance.now()/400;
@@ -1024,11 +1026,11 @@ function drawSquid(){
       ctx.restore();
       return;
     }
-    const n = Math.min(trail.length, 18);
+    const n = Math.min(trail.length, 64);
     for (let i=n-1;i>=1;i--) {
       const a = trail[i];
       if (!a) continue;
-      const r = 7 - i*0.22;
+      const r = 8 - i*0.08;
       if (skin === "shenron") {
         ctx.fillStyle = i%2 ? "#3dcf5a" : "#1f8a3a";
       } else {
