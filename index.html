@@ -145,8 +145,8 @@ body.zen .side { display:none !important; }
     .note { font-size:.62rem; color:#b9a6dd; }
     .zoom { display:none; }
     #buyPass {
-      position:fixed; top:8px; right:10px; z-index:10; width:128px; height:86px; padding:0;
-      border:none; background:transparent; filter:drop-shadow(0 0 10px rgba(255,60,200,.45));
+      position:static; display:block; width:100%; max-width:170px; height:auto; aspect-ratio:128/86; margin:6px auto 0; padding:0;
+      border:none !important; background:transparent !important; box-shadow:none !important; filter:drop-shadow(0 0 10px rgba(255,60,200,.45)); cursor:pointer;
     }
     #buyPass img { width:100%; height:100%; object-fit:contain; display:block; pointer-events:none; }
     @keyframes passGlow {
@@ -225,11 +225,11 @@ body.zen .side { display:none !important; }
       </span>
       <button type="button" id="fullscreen">play game</button>
       <button type="button" id="legalBtn">disclaimer</button>
+      <button type="button" id="buyPass" title="Trippy Pass: $5/month, 5 subscriber-only toys every month"><img src="pass-blob.png" alt="Trippy Pass $5 a month"></button>
       <span id="passBadge">pass on</span>
       <button type="button" id="cancelBtn">manage pass</button>
     </div>
     </aside>
-    <button type="button" id="buyPass" title="Trippy Pass: $5/month, 5 subscriber-only toys every month"><img src="pass-blob.png" alt="Trippy Pass $5 a month"></button>
     <aside id="legal">
       <h2>Disclaimer</h2>
       <p>TrippyCharts is an entertainment and visualization toy. It is not a broker, adviser, exchange, or data vendor.</p>
