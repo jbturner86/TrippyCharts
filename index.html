@@ -483,7 +483,7 @@ function getPlayerId(){
   return id;
 }
 const PLAYER_ID = getPlayerId();
-const API = "https://trippy-quote.j-bradturner.workers.dev";
+const API = "https://api.trippycharts.com";
 
 async function pullCloud(){
   try {
@@ -1719,7 +1719,7 @@ function aggregate(bars,n){ const out=[]; for(let i=0;i<bars.length;i+=n){ const
   out.push({t:ch[0].t, open:ch[0].open, close:ch.at(-1).close, high:Math.max(...ch.map(b=>b.high)), low:Math.min(...ch.map(b=>b.low)), vol:ch.reduce((s,b)=>s+(b.vol||0),0)}); } return out; }
 function mergeBars(oldB,newB){ if(!oldB.length) return newB; const map=new Map(oldB.map(b=>[b.t,{...b}])); newB.forEach(b=>map.set(b.t,b)); return [...map.values()].sort((a,c)=>a.t-c.t); }
 function tfMs(id){ return ({ "1m":6e4,"5m":3e5,"10m":6e5,"15m":9e5,"30m":18e5,"1h":36e5,"2h":72e5,"4h":144e5,"1d":864e5,"1w":6048e5 })[id] || 18e5; }
-function endpoints(symbol, interval, range){ return [`https://trippy-quote.j-bradturner.workers.dev/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`]; }
+function endpoints(symbol, interval, range){ return [`https://api.trippycharts.com/?symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`]; }
 async function fetchBars(symbol,tfId){
   const tf=TFS.find(t=>t.id===tfId)||TFS[4];
   for(const url of endpoints(symbol,tf.interval,tf.range)){
