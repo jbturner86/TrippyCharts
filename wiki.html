@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrippyCharts Wiki: How to Use the Charts, Themes, Toys, Cursors &amp; Game</title>
+  <meta name="description" content="The TrippyCharts guide: live candlestick charts with psychedelic themes, falling toy rain, cursor toys and a boss game. Learn the chart tools, every theme, toy and cursor, the Toy Store and the $5/month Trippy Pass." />
+  <link rel="canonical" href="https://trippycharts.com/wiki.html" />
+  <meta name="robots" content="index,follow" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="TrippyCharts" />
+  <meta property="og:title" content="TrippyCharts Wiki: charts, themes, toys, cursors &amp; the game" />
+  <meta property="og:description" content="Everything TrippyCharts does, in one page: chart tools, every candle theme, toy and cursor, the boss game, and the Toy Store / Trippy Pass." />
+  <meta property="og:url" content="https://trippycharts.com/wiki.html" />
+  <meta property="og:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trippycharts" />
+  <meta name="twitter:title" content="TrippyCharts Wiki" />
+  <meta name="twitter:description" content="How to use TrippyCharts: chart tools, themes, toys, cursors, the game and the Trippy Pass." />
+  <meta name="twitter:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="apple-touch-icon" href="favicon-180.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; scroll-padding-top:16px; }
+    body { min-height:100dvh; color:#f4ecff; font-family:"Trebuchet MS","Segoe UI",sans-serif; line-height:1.55;
+      background:radial-gradient(ellipse at 12% 0%, rgba(255,60,180,.18), transparent 42%),
+                 radial-gradient(ellipse at 100% 40%, rgba(60,240,255,.08), transparent 40%),
+                 linear-gradient(180deg,#12061c 0%,#07010e 50%,#0b0714 100%); background-attachment:fixed; }
+    a { color:#ff8af0; }
+    a:hover { color:#ffd0fa; }
+    .top { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px 10px; flex-wrap:wrap; }
+    .brand { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .brand img { height:34px; width:auto; }
+    .brand span { font-family:Impact,"Arial Black","Trebuchet MS",sans-serif; text-transform:uppercase; letter-spacing:.04em; font-size:1.1rem;
+      background:linear-gradient(90deg,#ffe14a 0%,#b6ff4a 38%,#3de7ff 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .top nav { display:flex; gap:8px; flex-wrap:wrap; }
+    .pill { display:inline-flex; align-items:center; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.06); color:#efe6ff; padding:7px 13px; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; text-decoration:none; }
+    .pill.go { background:#b7ffd2; color:#04140a; border-color:#fff; font-weight:800; }
+    .layout { display:grid; grid-template-columns:240px minmax(0,1fr); gap:28px; max-width:1240px; margin:0 auto; padding:8px 22px 60px; }
+    .toc { position:sticky; top:14px; align-self:start; max-height:calc(100dvh - 28px); overflow:auto; background:rgba(8,2,16,.82); border:1px solid rgba(196,75,255,.35); border-radius:16px; padding:14px 12px; }
+    .toc h2 { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:#ffd39a; margin:0 0 8px 6px; }
+    .toc ol { list-style:none; counter-reset:toc; }
+    .toc li { counter-increment:toc; }
+    .toc a { display:block; padding:6px 8px; border-radius:10px; color:#e9d7ff; text-decoration:none; font-size:.86rem; }
+    .toc a::before { content:counter(toc) ". "; color:#9e8cc4; }
+    .toc a:hover, .toc a.on { background:rgba(196,75,255,.28); color:#fff; }
+    main { min-width:0; }
+    h1 { font-family:"Baloo 2",Impact,sans-serif; font-size:clamp(1.8rem,4vw,2.8rem); line-height:1.1; letter-spacing:.02em; margin:6px 0 10px;
+      background:linear-gradient(90deg,#ff3cc8,#ffb43c,#7cff3a,#3cf0ff,#b56cff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .lead { color:#cbb6ff; font-size:1.05rem; max-width:760px; margin-bottom:18px; }
+    section { background:rgba(10,6,20,.55); border:1px solid rgba(255,255,255,.12); border-radius:18px; padding:20px 22px; margin:0 0 20px; }
+    section h2 { font-family:"Baloo 2",sans-serif; font-size:1.55rem; letter-spacing:.02em; margin-bottom:8px; color:#fff; }
+    section h2 a.anchor { color:#9e8cc4; text-decoration:none; font-size:1rem; margin-left:6px; opacity:0; }
+    section h2:hover a.anchor { opacity:1; }
+    section h3 { font-size:.82rem; letter-spacing:.1em; text-transform:uppercase; color:#ffd39a; margin:16px 0 6px; }
+    section p { color:#e2d6ff; margin:0 0 10px; max-width:820px; }
+    section ul, section ol.steps { margin:0 0 10px 20px; color:#e2d6ff; max-width:820px; }
+    section li { margin:3px 0; }
+    b, strong { color:#fff; }
+    kbd, .k { display:inline-block; font-family:inherit; font-size:.78em; letter-spacing:.06em; text-transform:uppercase; padding:1px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.3); background:rgba(155,61,255,.25); color:#fff; white-space:nowrap; }
+    .note { border-left:3px solid #ff3cc8; background:rgba(255,60,200,.08); padding:8px 12px; border-radius:0 10px 10px 0; color:#f0e4ff; margin:10px 0; max-width:820px; }
+    .tbl { width:100%; border-collapse:collapse; margin:8px 0 12px; font-size:.92rem; }
+    .tbl th, .tbl td { text-align:left; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,.08); vertical-align:top; }
+    .tbl th { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:#b9a6dd; }
+    .tag { display:inline-block; font-size:.66rem; letter-spacing:.08em; text-transform:uppercase; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+    .free { background:rgba(124,255,58,.16); color:#b6ff8a; border:1px solid rgba(124,255,58,.45); }
+    .paid { background:rgba(255,228,107,.12); color:#ffe46b; border:1px solid rgba(255,228,107,.4); }
+    .pass { background:rgba(255,60,200,.14); color:#ff9cf0; border:1px solid rgba(255,60,200,.45); }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 12px; }
+    .chips span { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:4px 11px; font-size:.86rem; }
+    figure { margin:12px 0 14px; }
+    figure img { display:block; width:100%; height:auto; border-radius:14px; border:1px solid rgba(196,75,255,.35); box-shadow:0 0 26px rgba(196,75,255,.18); }
+    figcaption { font-size:.8rem; color:#9e8cc4; margin-top:6px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    details { border-bottom:1px solid rgba(255,255,255,.08); padding:8px 0; max-width:820px; }
+    summary { cursor:pointer; font-weight:700; color:#fff; }
+    details p { margin:6px 0 4px; }
+    footer { text-align:center; color:#9e8cc4; font-size:.8rem; padding:10px 22px 30px; }
+    @media (max-width:900px) {
+      .layout { grid-template-columns:1fr; gap:14px; padding:4px 12px 40px; }
+      .toc { position:static; max-height:none; }
+      .toc ol { columns:2; column-gap:6px; }
+      section { padding:16px 14px; }
+      .grid2 { grid-template-columns:1fr; }
+      .tbl { font-size:.85rem; }
+      .tbl th, .tbl td { padding:6px 6px; }
+    }
+    @media (max-width:480px) { .toc ol { columns:1; } .top { padding:12px 12px 6px; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./"><img src="logo.png" alt="TrippyCharts logo" width="34" height="34"><span>TrippyCharts Wiki</span></a>
+    <nav>
+      <a class="pill go" href="./">open the charts</a>
+      <a class="pill" href="toys.html">Toy Store</a>
+      <a class="pill" href="https://x.com/trippycharts" rel="noopener" target="_blank">@trippycharts</a>
+    </nav>
+  </header>
+  <div class="layout">
+    <aside class="toc" aria-label="Table of contents">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#what-is-trippycharts">What TrippyCharts is</a></li>
+        <li><a href="#getting-started">Getting started</a></li>
+        <li><a href="#chart-tools">Chart tools</a></li>
+        <li><a href="#themes">Candle themes</a></li>
+        <li><a href="#toys">Toys &amp; toy rain</a></li>
+        <li><a href="#cursors">Cursors</a></li>
+        <li><a href="#game">The game</a></li>
+        <li><a href="#store">Store &amp; Trippy Pass</a></li>
+        <li><a href="#faq">FAQ &amp; troubleshooting</a></li>
+      </ol>
+    </aside>
+    <main>
+      <h1>The TrippyCharts guide</h1>
+      <p class="lead">Everything TrippyCharts does, all on one page: the chart tools, every candle theme, toy and cursor, the boss game, and how the Toy Store and Trippy Pass work.</p>
+
+      <section id="what-is-trippycharts">
+        <h2>1. What TrippyCharts is <a class="anchor" href="#what-is-trippycharts" aria-label="Link to this section">#</a></h2>
+        <p><b>TrippyCharts</b> shows live candlestick charts for stocks, ETFs and crypto, with psychedelic candle themes. Toys rain down the screen behind the charts, a cursor toy follows your mouse and eats them, and there's a boss game built in.</p>
+        <figure>
+          <img src="assets/wiki/charts-neon.webp" width="1440" height="900" loading="eager" alt="Four TrippyCharts candlestick charts (SPY, NVDA, QQQ, BTC-USD) in the Neon theme with mushrooms raining and the Nebula Bloom cursor">
+          <figcaption>2 × 2 layout with the Neon theme, LINES and VOL turned on, mushrooms raining and the Nebula Bloom cursor.</figcaption>
+        </figure>
+        <ul>
+          <li><b>Built for a desktop or laptop with a mouse.</b> Phones and tablets will look wrong, won't have the cursor toy, and make the game nearly unplayable.</li>
+          <li><b>Data comes from free public feeds</b> (Yahoo Finance-style endpoints) and can be delayed, missing or wrong. The moving last candle is just an estimate, not an official price.</li>
+          <li><b>It's an entertainment toy, not a broker</b> and not financial advice. Check every number with your broker before you trade.</li>
+        </ul>
+      </section>
+
+      <section id="getting-started">
+        <h2>2. Getting started <a class="anchor" href="#getting-started" aria-label="Link to this section">#</a></h2>
+        <h3>Pick your tickers</h3>
+        <p>Each chart has a ticker box at its top left. Type a symbol (for example <span class="k">SPY</span>, <span class="k">AAPL</span>, <span class="k">BTC-USD</span>) and press <kbd>Enter</kbd>, or choose from the suggestion list. Tickers you've used before are remembered there too. The first time you visit, the charts show SPY, QQQ, NVDA and IWM on the 30m timeframe. Your tickers, timeframes and VOL/LINES settings are saved in your browser.</p>
+        <h3>Up to 4 charts</h3>
+        <p>Use the layout picker in the left menu to show <span class="k">1 × 1</span>, <span class="k">1 × 2</span>, <span class="k">1 × 3</span> or <span class="k">2 × 2</span> (4 charts, the default).</p>
+        <h3>Timeframes</h3>
+        <p>The dropdown next to each ticker sets the candle size: <b>1m, 5m, 10m, 15m, 30m, 1h, 2h, 4h, 1d, 1w</b>. Prices refresh about every 12 seconds. Under each chart you'll see the last price, the day's change, and the session (<i>pre</i>, <i>AH</i> for after hours, <i>closed</i>, or <i>live last candle</i>). Each chart also shows a countdown to when the current candle closes.</p>
+        <h3>Full screen</h3>
+        <p>Every chart has a <span class="k">full screen</span> button. It puts your charts into browser full screen with the menu tucked away; click <span class="k">back</span> or press <kbd>Esc</kbd> to leave. Scroll the mouse wheel over a chart to zoom in or out.</p>
+        <h3>The left menu</h3>
+        <ul>
+          <li><b>Toy box</b>: quick buttons for the toys, cursors and themes you own. Click a toy to add it to or remove it from the rain (up to 5), click a cursor or theme to use it.</li>
+          <li><b>Toys slider</b>: how many toys fall, from 0 to 200.</li>
+          <li><b>↻ refresh</b> (next to the slider): clears the screen and drops 200 of your selected toys right away. Handy after you change toys in the store, since the old ones can keep falling for a while.</li>
+          <li><b>Cyclone / Wave / Fly</b>: toy motion styles (see <a href="#toys">Toys</a>).</li>
+          <li><b>SFX</b> and <b>Cursor</b> toggles: sound effects and the cursor toy on or off.</li>
+          <li><b>Toy Store</b>, <b>High scores</b>, <b>Play game</b>, <b>Disclaimer</b>, <b>Wiki</b> (this page) and the <b>Trippy Pass</b> button. With an active pass you'll see a <span class="k">pass on</span> badge and a <span class="k">manage pass</span> button instead.</li>
+          <li><span class="k">hide</span> slides the menu away; the <span class="k">menu</span> button on the first chart brings it back.</li>
+        </ul>
+        <h3>VOL</h3>
+        <p>The <span class="k">vol</span> pill on each chart turns on volume bars under the candles. It glows purple when it's on, and the top of the chart also shows the volume of the candle you're hovering.</p>
+        <h3>Disclaimer</h3>
+        <p>The <span class="k">disclaimer</span> button opens the site's terms: desktop only, not financial advice, charts are imperfect, store and Trippy Pass rules, and no warranties. Using the site or buying something means you accept it.</p>
+      </section>
+
+      <section id="chart-tools">
+        <h2>3. Chart tools <a class="anchor" href="#chart-tools" aria-label="Link to this section">#</a></h2>
+        <figure>
+          <img src="assets/wiki/chart-lines.webp" width="1440" height="900" loading="lazy" alt="A single SPY chart in the Rainbow theme with EMA 9, EMA 20, dashed VWAP, prior-day high/low/close lines and a purple saved level line">
+          <figcaption>LINES on a 30m chart: EMA9, EMA20, dashed VWAP, the PDH/PDC/PDL prior-day lines, and a purple level line you added by clicking the price scale.</figcaption>
+        </figure>
+        <h3>LINES</h3>
+        <p>The <span class="k">lines</span> pill (next to VOL) adds indicator lines. A small legend in the chart's top left labels each one.</p>
+        <table class="tbl">
+          <thead><tr><th>Line</th><th>Shows on</th><th>What it is</th></tr></thead>
+          <tbody>
+            <tr><td>EMA9 / EMA20</td><td>All timeframes</td><td>9- and 20-period exponential moving averages of the close</td></tr>
+            <tr><td>SMA50</td><td>1d and 1w only</td><td>50-period simple moving average</td></tr>
+            <tr><td>VWAP (dashed)</td><td>Intraday only (1m to 4h)</td><td>Volume-weighted average price, starting over each trading day (New York time)</td></tr>
+            <tr><td>PDH / PDL / PDC (dotted)</td><td>Intraday only</td><td>The prior day's high, low and close</td></tr>
+          </tbody>
+        </table>
+        <h3>Drag to pan, LIVE ▸ to come back</h3>
+        <p>Click and drag a chart to the right to scroll back in time. Once you've moved away from the newest candle, a purple <span class="k">LIVE ▸</span> button appears in the chart's top right corner. Click it to jump back to the live candle.</p>
+        <h3>Level lines</h3>
+        <p>To mark a price, <b>click the price scale</b> (the column of prices on the chart's right edge) at the height you want. A purple line with a price tag appears there.</p>
+        <ul>
+          <li>Level lines are saved <b>per ticker</b> in your browser and show on every timeframe of that ticker. Each ticker keeps up to 30.</li>
+          <li><b>To remove one, right-click on (or right next to) the line</b> on the chart.</li>
+        </ul>
+      </section>
+
+      <section id="themes">
+        <h2>4. Candle themes <a class="anchor" href="#themes" aria-label="Link to this section">#</a></h2>
+        <p>Themes change how the candles and volume bars look. You can use one at a time; pick it in the Toy Store or the menu's toy box. <b>Basic is free; every other theme is $3</b>, and you own it for good on that browser.</p>
+        <table class="tbl">
+          <thead><tr><th>Theme</th><th>Look</th><th>Price</th></tr></thead>
+          <tbody>
+            <tr><td>Basic</td><td>Classic green up candles and orange-red down candles</td><td><span class="tag free">free</span></td></tr>
+            <tr><td>Rainbow</td><td>Candles and volume bars filled with a shifting rainbow gradient</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Blood drip</td><td>White up candles; red down candles drip blood down the chart</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Lightning</td><td>Lightning bolts crackle off up candles</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Snow</td><td>Icy candles; snowflakes fall from down candles</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Bubbles</td><td>Blue candles; bubbles rise from up candles</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Neon</td><td>Green and pink candles with flickering neon outlines</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Toxic</td><td>Dark candles full of swirling green (up) or purple (down) goo</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Plasma</td><td>Cyan-to-pink glowing candles with electric arcs and sparks</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Lava lamp</td><td>Rounded peach and plum candles with floating lava blobs</td><td><span class="tag paid">$3</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toys">
+        <h2>5. Toys &amp; toy rain <a class="anchor" href="#toys" aria-label="Link to this section">#</a></h2>
+        <p>Toys fall in the background behind your charts. Choose <b>up to 5</b> toys to rain in the Toy Store (tick their boxes) or with the toy box buttons in the left menu. The <b>Toys slider</b> sets how many are on screen (0 to 200), and <b>↻</b> drops a fresh batch of 200 right away.</p>
+        <h3>Free and $1 toys</h3>
+        <p><span class="tag free">free</span> <b>Mushrooms</b> are always free. These toys are <span class="tag paid">$1</span> each:</p>
+        <div class="chips">
+          <span>$100 bill</span><span>Moons</span><span>Cannabis leaves</span><span>Skulls</span><span>Hearts</span><span>Flowers</span><span>Butterflies</span><span>Aliens</span><span>Frogs</span><span>Cats</span><span>Crystals</span><span>Planets</span><span>Clouds</span><span>Dice</span><span>Peace signs</span><span>Sparkles</span><span>Jellyfish</span><span>Robots</span><span>Lightning</span><span>Ghosts</span><span>Eyes</span><span>Capsules</span><span>Bong</span><span>Football</span><span>Baseball</span><span>Basketball</span><span>Soccer</span><span>Cigar</span><span>Controller</span><span>Cross</span><span>Golf balls</span>
+        </div>
+        <h3>Trippy Pass toys</h3>
+        <p><span class="tag pass">pass only</span> These are for subscribers and aren't sold one by one. The October 2026 drop: <b>Rainbows, Disco balls, UFOs, Smileys, Melting clocks</b>. Each month adds new ones (see <a href="#store">Store &amp; Trippy Pass</a>).</p>
+        <h3>Motion styles</h3>
+        <p>By default toys just <b>fall</b>. The three buttons under the slider change how they move. You can have one on at a time; click it again to go back to falling.</p>
+        <ul>
+          <li><span class="k">cyclone</span>: toys spiral in toward the middle of the screen, then start again from the outside.</li>
+          <li><span class="k">wave</span>: toys ride sideways across the screen in a rolling wave.</li>
+          <li><span class="k">fly</span>: toys shoot across the screen from the edges in straight lines.</li>
+        </ul>
+        <h3>Eating toys</h3>
+        <p>With the cursor on, move your mouse near toys and your cursor sucks them in and spits them out. Every toy it eats makes it grow; at full size it blobs out in a burst of sparkles and shrinks back down.</p>
+      </section>
+
+      <section id="cursors">
+        <h2>6. Cursors <a class="anchor" href="#cursors" aria-label="Link to this section">#</a></h2>
+        <p>Cursor toys ride along with your mouse pointer. Pick one in the Toy Store (Cursors section) or the toy box. Turn them off with the <b>Cursor</b> toggle in the left menu (they're always on during the game). Cursors are drawn at <b>2× size</b>, and the area that pulls toys in is scaled up 2× to match.</p>
+        <figure>
+          <img src="assets/wiki/store-cursors.webp" width="1440" height="900" loading="lazy" alt="The Cursors and Candle themes sections of the TrippyCharts Toy Store">
+          <figcaption>The Cursors and Candle themes sections of the Toy Store.</figcaption>
+        </figure>
+        <table class="tbl">
+          <thead><tr><th>Cursor</th><th>Look</th><th>Price</th></tr></thead>
+          <tbody>
+            <tr><td>Aqua Squid</td><td>The original glowing squid with swirling tentacles</td><td><span class="tag free">free</span></td></tr>
+            <tr><td>Nebula Bloom</td><td>A spinning spiral galaxy</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Comet Tail</td><td>An icy comet with a streaming tail</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Spin Lotus</td><td>A layered, breathing lotus flower</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Void Ring</td><td>An eldritch void eye</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Prism Shard</td><td>A spinning gem throwing rainbow beams</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Aurora Trail</td><td>Rippling aurora ribbons</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Ember Drift</td><td>A fireball shedding embers</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Candy Orbit</td><td>A candy-colored solar system</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Plasma Lash</td><td>A plasma globe crackling with lightning</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Color Snake</td><td>A long rainbow snake that trails behind the pointer</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Green Worm</td><td>A long green worm that trails behind the pointer</td><td><span class="tag paid">$3</span></td></tr>
+            <tr><td>Black Hole</td><td>A swirling black hole pulling in specks of light</td><td><span class="tag paid">$3</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="game">
+        <h2>7. The game <a class="anchor" href="#game" aria-label="Link to this section">#</a></h2>
+        <figure>
+          <img src="assets/wiki/game.webp" width="1440" height="900" loading="lazy" alt="TrippyCharts game mode: a gold-outlined boss toy with a health bar, raining toys and the score display">
+          <figcaption>Game mode: the boss (gold outline, green health bar), your red health bar above the cursor, and the score at the top.</figcaption>
+        </figure>
+        <h3>Starting</h3>
+        <p>Click <span class="k">play game</span> in the left menu. The page goes full screen, the charts and menu hide, music starts, and a <b>boss</b> floats around the screen. The boss is a giant toy, picked from toys you don't have in your rain. Press <kbd>Esc</kbd> (leaving full screen) to quit any time.</p>
+        <h3>Controls</h3>
+        <ul>
+          <li><b>Move the mouse</b> into the toys to <b>suck them up</b>.</li>
+          <li>Every toy you swallow gets <b>spat at the nearest boss</b> automatically, as a green-outlined shot that homes in on it.</li>
+          <li>Each hit is <b>1 point</b> and takes a quarter of the boss's health, so 4 hits kill a boss.</li>
+          <li><b>Don't touch the bosses.</b> Each touch costs 20% of your health bar.</li>
+        </ul>
+        <h3>Boss pace</h3>
+        <p>You start with <b>1 boss</b>. You face one more boss for every 3 kills (2 after 3 kills, 3 after 6, and so on), up to <b>6 at once</b>. The top of the screen shows your score and how many bosses you're facing. When toys run low, a new wave comes in falling, spiraling, waving or flying.</p>
+        <h3>Health and the end</h3>
+        <p>You have <b>one life bar and no healing</b>. When it's empty the game ends, <b>full screen closes</b>, and you're asked to put a name (up to 16 characters) on the board, or skip.</p>
+        <h3>High scores</h3>
+        <p><span class="k">high scores</span> opens the <b>shared board</b>: one leaderboard for everyone, showing the top 25 scores. If the board server can't be reached, it shows the scores saved on your own browser instead. No prizes, just bragging rights.</p>
+      </section>
+
+      <section id="store">
+        <h2>8. Store &amp; Trippy Pass <a class="anchor" href="#store" aria-label="Link to this section">#</a></h2>
+        <figure>
+          <img src="assets/wiki/store.webp" width="1440" height="900" loading="lazy" alt="The TrippyCharts Toy Store with the Trippy Pass banner and the falling toy cards">
+          <figcaption>The Toy Store (<a href="toys.html">toys.html</a>).</figcaption>
+        </figure>
+        <h3>Prices</h3>
+        <table class="tbl">
+          <thead><tr><th>Item</th><th>Price</th></tr></thead>
+          <tbody>
+            <tr><td>Mushrooms, Aqua Squid cursor, Basic theme</td><td><span class="tag free">free forever</span></td></tr>
+            <tr><td>Regular falling toys</td><td><span class="tag paid">$1 each</span></td></tr>
+            <tr><td>Cursors</td><td><span class="tag paid">$3 each</span></td></tr>
+            <tr><td>Candle themes</td><td><span class="tag paid">$3 each</span></td></tr>
+            <tr><td>Trippy Pass</td><td><span class="tag pass">$5 / month</span></td></tr>
+          </tbody>
+        </table>
+        <p>Click <span class="k">Add $1</span> or <span class="k">Add $3</span> to put items in the cart (bottom right), then <span class="k">Checkout</span>. You'll pay on Stripe's checkout page. When you come back, the store checks with our server and equips what you bought. It can take a minute to show up; if it doesn't, refresh the store page. Purchases are cosmetic only (no market data) and one-off unlocks aren't refundable.</p>
+        <h3>Trippy Pass ($5/month)</h3>
+        <ul>
+          <li><b>5 new subscriber-only toys every month.</b> New pass toys are designed around the 25th and unlock on the 1st of the next month.</li>
+          <li>While your pass is active you can use <b>every pass toy released so far</b>. Pass toys are never sold separately.</li>
+          <li>When you subscribe you get <b>5 free unlocks</b>. Each one permanently unlocks one regular $1 store toy (use the yellow <span class="k">Use free unlock</span> button on a toy card). Toys you unlock this way are yours even after you cancel. Free unlocks don't work on pass toys, cursors or themes.</li>
+          <li>It renews every month until you cancel. If you cancel, you keep the pass until the end of the month you've paid for, then pass toys lock again. No refunds for partial months.</li>
+        </ul>
+        <h3>No signup: purchases belong to this browser</h3>
+        <p>There are no accounts or logins. The first time you visit, your browser gets a random player ID, and <b>our server keeps track of what that ID owns</b>. Stripe tells the server when a payment goes through, and every page load asks the server what you own. That means:</p>
+        <ul>
+          <li>Your toys, cursors, themes, pass and unlocks belong to <b>this browser on this computer</b>.</li>
+          <li><b>Clearing your browser data, using a private window, or switching browsers or computers</b> gives you a new ID, which won't see your purchases. There's no "restore purchases" button, so keep using the same browser.</li>
+        </ul>
+        <h3>Managing or cancelling the pass</h3>
+        <p>With an active pass, the left menu shows <span class="k">manage pass</span> (the store's banner button also says <span class="k">Manage pass</span>). It opens the <b>Stripe billing portal</b> for the subscription linked to this browser, where you can cancel or update your payment method. Afterwards you come back to trippycharts.com. If no pass is linked to the browser you're on, you'll see “No Trippy Pass found for this browser.”</p>
+      </section>
+
+      <section id="faq">
+        <h2>9. FAQ &amp; troubleshooting <a class="anchor" href="#faq" aria-label="Link to this section">#</a></h2>
+        <details open>
+          <summary>It's laggy or choppy. What can I do?</summary>
+          <p>TrippyCharts animates a lot at once. Try these:</p>
+          <ul>
+            <li>Close other browser tabs and heavy apps.</li>
+            <li>Make sure <b>hardware acceleration</b> is on in your browser (Chrome: Settings → System → “Use graphics acceleration when available”), then restart the browser.</li>
+            <li>Lower the <b>Toys</b> slider, or turn off Cyclone/Wave/Fly.</li>
+            <li>Show fewer charts (1 × 1 or 1 × 2). Particle themes like Snow, Bubbles, Lightning and Plasma take more work than Basic.</li>
+          </ul>
+        </details>
+        <details>
+          <summary>Does it work on my phone or tablet?</summary>
+          <p>Not really. Phones and tablets aren't supported. The page will load in a stacked layout, but it looks wrong, there's no cursor toy, and the game is nearly unplayable. Use a desktop or laptop with a mouse.</p>
+        </details>
+        <details>
+          <summary>Why doesn't the price match my broker?</summary>
+          <p>Data comes from free third-party feeds and can be delayed, missing, or put on the wrong candle. After-hours prices may not match a candle, and the moving last candle is just a visual estimate. If a chart says <i>no live feed</i>, the feed didn't answer; it tries again about every 12 seconds. Never trade off these charts; check every number with your broker.</p>
+        </details>
+        <details>
+          <summary>I bought something but it's not showing.</summary>
+          <p>Wait a minute and refresh the Toy Store page. Make sure you're in the same browser you paid in, and not in a private window.</p>
+        </details>
+        <details>
+          <summary>I changed toys but the old ones are still falling.</summary>
+          <p>Click <b>↻</b> next to the Toys slider to clear the screen and drop your current toys.</p>
+        </details>
+        <details>
+          <summary>How do I get rid of a level line?</summary>
+          <p>Right-click on the purple line on the chart.</p>
+        </details>
+        <details>
+          <summary>How do I contact you?</summary>
+          <p>DM <a href="https://x.com/trippycharts" rel="noopener" target="_blank">@trippycharts on X</a>.</p>
+        </details>
+      </section>
+    </main>
+  </div>
+  <footer>
+    TrippyCharts is an entertainment toy, not a broker or adviser. Nothing here is financial advice. · <a href="./">Charts</a> · <a href="toys.html">Toy Store</a> · <a href="https://x.com/trippycharts" rel="noopener" target="_blank">X / @trippycharts</a>
+  </footer>
+  <script>
+    // Highlight the current section in the sidebar.
+    (function(){
+      const links = [...document.querySelectorAll('.toc a')];
+      const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+      if (!('IntersectionObserver' in window)) return;
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) { links.forEach(l => l.classList.remove('on')); const a = map.get(e.target.id); if (a) a.classList.add('on'); } });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+      document.querySelectorAll('main section[id]').forEach(s => io.observe(s));
+    })();
+  </script>
+</body>
+</html>
