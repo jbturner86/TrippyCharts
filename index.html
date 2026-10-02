@@ -64,8 +64,8 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
     .sound-col { display:flex; flex-direction:column; align-items:center; gap:2px; }
     .sound-col span { font-size:.48rem; letter-spacing:.06em; text-transform:uppercase; color:#ffd39a; }
     #soundBtn, #musicBtn, #cursorBtn { padding:3px 6px; font-size:.52rem; letter-spacing:.04em; }
-    .song-nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
-    .song-nav button { width:22px; height:22px; padding:0; border-radius:999px; font-size:.85rem; line-height:1; }
+    .song-nav { display:flex; align-items:center; gap:2px; margin-bottom:10px; }
+    .song-nav button { width:auto; min-width:0; padding:0 2px; border:none; background:transparent; border-radius:0; box-shadow:none; font-size:1rem; line-height:1; color:#efe6ff; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
@@ -196,11 +196,11 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
       <div class="sound-row">
         <div class="sound-col"><button type="button" id="soundBtn">on</button><span>sfx</span></div>
         <div class="sound-col"><button type="button" id="cursorBtn">on</button><span>cursor</span></div>
+        <div class="sound-col"><button type="button" id="musicBtn">on</button><span>music</span></div>
         <div class="song-nav">
           <button type="button" id="songPrev" aria-label="previous song">‹</button>
           <button type="button" id="songNext" aria-label="next song">›</button>
         </div>
-        <div class="sound-col"><button type="button" id="musicBtn">on</button><span>music</span></div>
       </div>
       </div>
     </div>
