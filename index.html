@@ -196,11 +196,6 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
       <div class="sound-row">
         <div class="sound-col"><button type="button" id="soundBtn">on</button><span>sfx</span></div>
         <div class="sound-col"><button type="button" id="cursorBtn">on</button><span>cursor</span></div>
-        <div class="sound-col"><button type="button" id="musicBtn">on</button><span>music</span></div>
-        <div class="song-nav">
-          <button type="button" id="songPrev" aria-label="previous song">‹</button>
-          <button type="button" id="songNext" aria-label="next song">›</button>
-        </div>
       </div>
       </div>
     </div>
@@ -303,7 +298,7 @@ const MUSIC_KEY = "trippy_music_on";
 const CURSOR_KEY = "trippy_cursor_on";
 const POTATO_KEY = "trippy_potato";
 let soundOn = localStorage.getItem(SOUND_KEY) !== "0";
-let musicOn = localStorage.getItem(MUSIC_KEY) !== "0";
+let musicOn = false;
 let cursorOn = localStorage.getItem(CURSOR_KEY) !== "0";
 let potato = true;
 function pxRatio(){ return potato ? 1 : (devicePixelRatio || 1); }
@@ -367,7 +362,7 @@ let songIx = Math.max(0, Math.min(SONGS.length-1, Number(localStorage.getItem(SO
 let songTouch = Date.now();
 let songQueued = 0;
 function tickMusic(){
-  if (!musicOn || !audioCtx) return;
+  if (!musicOn || !zenMode || !audioCtx) return;
   if (Date.now() - songTouch > 5*60*1000) { songQueued = 1; songTouch = Date.now(); }
   const song = SONGS[songIx];
   const step = Math.floor((audioCtx.currentTime * song.tempo) % song.lead.length);
@@ -694,6 +689,8 @@ function startZen(){
   if(z) z.textContent="show everything";
   fillBosses();
   paintHudScore();
+  musicOn = true;
+  startMusic();
   if (pageFs()) tryLockPointer();
 }
 function paintHudScore(){
@@ -702,6 +699,8 @@ function paintHudScore(){
 }
 function endZen(){
   zenMode=false; bosses=[]; blobT=0; playerHp=100; hurtCool=0;
+  musicOn = false;
+  stopMusic();
   document.body.classList.remove("zen");
   const z=document.getElementById("zen");
   if(z) z.textContent="hide everything";
@@ -1156,16 +1155,17 @@ function tickBits(){
       if(zenMode && b.homing && bosses.length){
         const boss=bosses.slice().sort((a,c)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(c.x-b.x,c.y-b.y))[0];
         const ang=Math.atan2(boss.y-b.y,boss.x-b.x);
-        b.vx = b.vx*0.55 + Math.cos(ang)*16*0.45;
-        b.vy = b.vy*0.55 + Math.sin(ang)*16*0.45;
+        b.vx = Math.cos(ang)*18;
+        b.vy = Math.sin(ang)*18;
+        b.x+=b.vx; b.y+=b.vy; b.rot+=0.06;
+        hitBoss(b);
+      } else {
+        b.x+=b.vx; b.y+=b.vy; b.vx*=0.992; b.vy*=0.992; b.s=Math.min(24,b.s*1.04); b.rot+=0.06;
+        if(dist>150){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
       }
-      b.x+=b.vx; b.y+=b.vy; b.vx*=0.992; b.vy*=0.992; b.s=Math.min(24,b.s*1.04); b.rot+=0.06;
-      if(zenMode&&hitBoss(b)) { /* spent, removed after the loop */ }
-      else if(dist>(zenMode?380:150)){ b.homing=false; b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
     }
-    if(!b.spent && (b.y>innerHeight+50||b.x<-60||b.x>innerWidth+60)){
-      if(b.homing) b.spent = true;
-      else Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b);
+    if(!b.spent && !b.homing && (b.y>innerHeight+50||b.x<-60||b.x>innerWidth+60)){
+      Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b);
     }
   });
   bits = bits.filter(b => !b.spent);
@@ -1848,10 +1848,8 @@ if (densEl) {
 }
 function paintSound(){
   const s = document.getElementById("soundBtn");
-  const m = document.getElementById("musicBtn");
   const k = document.getElementById("cursorBtn");
   if (s){ s.textContent = soundOn ? "on" : "off"; s.classList.toggle("on", soundOn); }
-  if (m){ m.textContent = musicOn ? "on" : "off"; m.classList.toggle("on", musicOn); }
   if (k){ k.textContent = cursorOn ? "on" : "off"; k.classList.toggle("on", cursorOn); }
 }
 paintSound();
@@ -1861,21 +1859,11 @@ document.getElementById("soundBtn").addEventListener("click", () => {
   paintSound();
   ensureAudio();
 });
-document.getElementById("songPrev").addEventListener("click", () => changeSong(-1));
-document.getElementById("songNext").addEventListener("click", () => changeSong(1));
-document.getElementById("musicBtn").addEventListener("click", () => {
-  musicOn = !musicOn;
-  localStorage.setItem(MUSIC_KEY, musicOn ? "1" : "0");
-  paintSound();
-  if (musicOn) startMusic();
-  else stopMusic();
-});
 document.getElementById("cursorBtn").addEventListener("click", () => {
   cursorOn = !cursorOn;
   localStorage.setItem(CURSOR_KEY, cursorOn ? "1" : "0");
   paintSound();
 });
-document.addEventListener("pointerdown", () => { if (musicOn) startMusic(); }, { once:true });
 function localScores(){
   try { return JSON.parse(localStorage.getItem("trippy_scores")||"[]"); } catch(e){ return []; }
 }
