@@ -700,8 +700,7 @@ function growFromEat(){
   if (squidScale >= SQUID_MAX - 0.001) nova();
 }
 function wantedBossCount(){
-  const n = Math.floor(bossKills / 3);
-  return 1 + n*(n+1)/2;
+  return Math.min(6, 1 + Math.floor(bossKills / 3));
 }
 function makeBoss(){
   const act = activeToys(), others = TOYS.map(t=>t[0]).filter(id => !act.includes(id));
