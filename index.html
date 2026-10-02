@@ -78,9 +78,10 @@ body.zen .side { display:none !important; }
     .dens-row { width:132px; margin:6px 0 2px; }
     .dens-row label { margin-bottom:2px; font-size:.58rem; }
     .dens-row input { width:132px; height:14px; }
-    body.charts-fs header,
-    body.charts-fs .actions,
-    body.charts-fs .density-box { display:none !important; }
+    body.charts-fs.side-hide header,
+    body.charts-fs.side-hide .actions,
+    body.charts-fs.side-hide .density-box { display:none !important; }
+    body.charts-fs:not(.side-hide) .side { z-index:40; max-height:100dvh; overflow-y:auto; }
     body.charts-fs .wrap, body.charts-fs .board, body.charts-fs .stage { height:100vh; height:100dvh; min-height:0; }
     body.charts-fs .board { padding:8px; }
     body.charts-fs .stage { gap:8px; }
@@ -807,31 +808,28 @@ function hurtPlayer(){
   if(playerHp<=0){ sfx("die"); openScoreSave(); endZen(); }
 }
 
-let toyStamp = null, toyEdge = null;
+let toyStamp = null;
+const toyEdgeCache = new Map();
 function drawToyOutline(ctx, b){
-  const size = Math.ceil(b.s*2+12);
-  if (!toyStamp) toyStamp = document.createElement("canvas");
-  if (!toyEdge) toyEdge = document.createElement("canvas");
-  if (toyStamp.width !== size) { toyStamp.width = toyEdge.width = size; toyStamp.height = toyEdge.height = size; }
-  const o = toyStamp.getContext("2d");
-  o.clearRect(0,0,size,size);
-  o.save();
-  o.translate(size/2, size/2);
-  drawToy(o, { ...b, x:0, y:0 });
-  o.restore();
-  const e = toyEdge.getContext("2d");
-  e.clearRect(0,0,size,size);
-  for (let i=0;i<8;i++){
-    const a = i/8*Math.PI*2;
-    e.drawImage(toyStamp, Math.cos(a)*2.4, Math.sin(a)*2.4);
+  const S = Math.round(b.s||16), face = b.kind==="dice" ? (b.face||5) : 0, key = b.kind+"|"+S+"|"+face;
+  let edge = toyEdgeCache.get(key);
+  if (!edge) {
+    const size = Math.ceil(S*2+12);
+    if (!toyStamp) toyStamp = document.createElement("canvas");
+    toyStamp.width = toyStamp.height = size;
+    const o = toyStamp.getContext("2d");
+    o.save(); o.translate(size/2, size/2); drawToyRaw(o, { ...b, x:0, y:0, s:S, rot:0, face }); o.restore();
+    edge = document.createElement("canvas"); edge.width = edge.height = size;
+    const e = edge.getContext("2d");
+    for (let i=0;i<8;i++){ const a = i/8*Math.PI*2; e.drawImage(toyStamp, Math.cos(a)*2.4, Math.sin(a)*2.4); }
+    e.globalCompositeOperation = "source-in"; e.fillStyle = "#39ff6a"; e.fillRect(0,0,size,size);
+    e.globalCompositeOperation = "destination-out"; e.drawImage(toyStamp, 0, 0);
+    e.globalCompositeOperation = "source-over";
+    if (toyEdgeCache.size > 600) toyEdgeCache.clear();
+    toyEdgeCache.set(key, edge);
   }
-  e.globalCompositeOperation = "source-in";
-  e.fillStyle = "#39ff6a";
-  e.fillRect(0,0,size,size);
-  e.globalCompositeOperation = "destination-out";
-  e.drawImage(toyStamp, 0, 0);
-  e.globalCompositeOperation = "source-over";
-  ctx.drawImage(toyEdge, b.x-size/2, b.y-size/2);
+  const d = edge.width * ((b.s||16)/S);
+  ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.rot||0); ctx.drawImage(edge, -d/2, -d/2, d, d); ctx.restore();
   drawToy(ctx, b);
 }
 function notMineToys(){ const act=activeToys(), own=player.ownedToyIds||[]; return TOYS.map(t=>t[0]).filter(id=>!act.includes(id)&&!own.includes(id)); }
@@ -852,21 +850,27 @@ function drawToy(c,b){
   const d=sp._d*(s0/S);
   c.save(); c.translate(b.x||0,b.y||0); c.rotate(b.rot||0); c.drawImage(sp,-d/2,-d/2,d,d); c.restore();
 }
-let bossCanA=null, bossCanB=null;
+const bossGoldCache = new Map();
 function drawBossGold(c,boss){
-  const sc=2, D=Math.ceil(boss.s*1.9)+16, W=D*sc;
-  if(!bossCanA){ bossCanA=document.createElement("canvas"); bossCanB=document.createElement("canvas"); }
-  if(bossCanA.width!==W){ bossCanA.width=bossCanA.height=W; bossCanB.width=bossCanB.height=W; }
-  const a=bossCanA.getContext("2d"), g=bossCanB.getContext("2d");
-  a.setTransform(1,0,0,1,0,0); a.clearRect(0,0,W,W); a.setTransform(sc,0,0,sc,0,0);
-  drawToyRaw(a,{...boss,x:D/2,y:D/2});
-  g.setTransform(1,0,0,1,0,0); g.globalCompositeOperation="source-over"; g.clearRect(0,0,W,W); g.drawImage(bossCanA,0,0);
-  g.globalCompositeOperation="source-in"; g.fillStyle="#ffd34d"; g.fillRect(0,0,W,W); g.globalCompositeOperation="source-over";
-  const x=boss.x-D/2, y=boss.y-D/2, o=3.2;
-  c.save(); c.shadowColor="rgba(255,200,40,.85)"; c.shadowBlur=10;
-  for(let i=0;i<12;i++){ const t=i/12*6.283; c.drawImage(bossCanB, x+Math.cos(t)*o, y+Math.sin(t)*o, D, D); }
-  c.restore();
-  c.drawImage(bossCanA, x, y, D, D);
+  const S=Math.round(boss.s||40), face=boss.kind==="dice"?(boss.face||5):0, key=boss.kind+"|"+S+"|"+face;
+  let can=bossGoldCache.get(key);
+  if(!can){
+    const sc=2, D=Math.ceil(S*1.9)+16, W=D*sc, pad=12*sc;
+    const a=document.createElement("canvas"); a.width=a.height=W; const ax=a.getContext("2d"); ax.setTransform(sc,0,0,sc,0,0);
+    drawToyRaw(ax,{...boss,x:D/2,y:D/2,s:S,rot:0,face});
+    const g=document.createElement("canvas"); g.width=g.height=W; const gx=g.getContext("2d");
+    gx.drawImage(a,0,0); gx.globalCompositeOperation="source-in"; gx.fillStyle="#ffd400"; gx.fillRect(0,0,W,W);
+    can=document.createElement("canvas"); can.width=can.height=W+pad*2; const cx=can.getContext("2d");
+    const o=3*sc;
+    for(let i=0;i<12;i++){ const t=i/12*6.283; cx.drawImage(g, pad+Math.cos(t)*o, pad+Math.sin(t)*o); }
+    cx.globalCompositeOperation="destination-out"; cx.drawImage(a,pad,pad); cx.globalCompositeOperation="source-over";
+    can._d=(W+pad*2)/sc;
+    if(bossGoldCache.size>200) bossGoldCache.clear();
+    bossGoldCache.set(key,can);
+  }
+  const d=can._d*((boss.s||40)/S);
+  c.save(); c.translate(boss.x,boss.y); c.rotate(boss.rot||0); c.drawImage(can,-d/2,-d/2,d,d); c.restore();
+  drawToy(c,boss);
 }
 function drawToyRaw(c,b){
   if(!b || !c) return;
@@ -1785,10 +1789,10 @@ function paintDrip(c, slot, x, bot, body, bh, dpr, i){
   if (!slot.dripAt) slot.dripAt = {};
   const now = performance.now();
   if (!slot.dripAt[i]) slot.dripAt[i] = now - Math.random()*700;
-  const every = Math.max(180, (slot.dripN||1)*9);
+  const every = 420*Math.max(1,(slot.nBars||0)/140);
   if (now - slot.dripAt[i] > every) {
     slot.dripAt[i] = now;
-    if (slot.drips.length >= 200) slot.drips.shift();
+    if (slot.drips.length >= Math.max(200, (slot.nBars||0)*3)) slot.drips.shift();
     slot.drips.push({ x: x + (Math.random()-0.5)*body*0.5, y: bot+len, vy: 0.3*dpr, vx: (Math.random()-0.5)*0.2*dpr, r: (1.3+Math.random()*1.3)*dpr, life: 1 });
   }
 }
@@ -1812,7 +1816,7 @@ function paintBolt(c, slot, x, top, bot, body, dpr, i){
   c.lineTo(x+body*0.3, bot-2*dpr);
   c.stroke();
   c.restore();
-  if (now - slot.boltAt[i] > (potato?700:140) && slot.bolts.length < 160) {
+  if (now - slot.boltAt[i] > (potato?700:140)*Math.max(1,(slot.nBars||0)/140) && slot.bolts.length < Math.max(160, (slot.nBars||0)*4)) {
     slot.boltAt[i] = now;
     const y0 = top + Math.random()*Math.max(6*dpr, bot-top);
     const pts = [[x-body*0.4, y0]];
@@ -1860,7 +1864,7 @@ function paintSnow(c, slot, x, bot, body, dpr, i){
   }
   c.restore();
   const now = performance.now();
-  for (let n=0;n<(potato?1:2);n++) spawnBits(slot, "flakes", i*10+n, now, 280, 400, { x: x+(Math.random()-0.5)*body*1.4, y: bot, vy: (0.35+Math.random()*0.55)*dpr, vx: (Math.random()-0.5)*0.7*dpr, r: (1.2+Math.random()*1.8)*dpr, life: 1 });
+  for (let n=0;n<(potato?1:2);n++) spawnBits(slot, "flakes", i*10+n, now, 280*Math.max(1,(slot.nBars||0)/140), Math.max(400, (slot.nBars||0)*6), { x: x+(Math.random()-0.5)*body*1.4, y: bot, vy: (0.35+Math.random()*0.55)*dpr, vx: (Math.random()-0.5)*0.7*dpr, r: (1.2+Math.random()*1.8)*dpr, life: 1 });
 }
 function stepSnow(slot, c, h, dpr){
   if (!slot.flakes) return;
@@ -1868,8 +1872,7 @@ function stepSnow(slot, c, h, dpr){
   slot.flakes.forEach(d => { d.y += d.vy; d.x += Math.sin(d.y*0.05)*0.35*dpr; d.life -= 0.006; c.fillStyle = "rgba(255,255,255,"+Math.max(0.2,d.life).toFixed(3)+")"; c.beginPath(); c.arc(d.x,d.y,d.r,0,7); c.fill(); });
 }
 function paintBubbles(c, slot, x, top, bot, body, dpr, i){
-  spawnBits(slot, "bubbles", i, performance.now(), 420, 70, { x: x+(Math.random()-0.5)*body*0.6, y: top, vy: -(0.3+Math.random()*0.35)*dpr, r: (1.4+Math.random()*1.6)*dpr, life: 1, inner: false });
-  if (!slot.innerBub) slot.innerBub = [];
+  spawnBits(slot, "bubbles", i, performance.now(), 420*Math.max(1,(slot.nBars||0)/140), Math.max(potato?160:320, (slot.nBars||0)*3), { x: x+(Math.random()-0.5)*body*0.6, y: top, vy: -(0.3+Math.random()*0.35)*dpr, r: (1.4+Math.random()*1.6)*dpr, life: 1, inner: false });
   const tb = performance.now()/600 + i;
   const bh = Math.max(6*dpr, bot-top);
   c.save();
@@ -1881,16 +1884,22 @@ function paintBubbles(c, slot, x, top, bot, body, dpr, i){
     c.beginPath(); c.arc(bx, by, (1.2+n%2)*dpr, 0, 7); c.stroke();
   }
   c.restore();
-  if (slot.innerBub.length < 240 && i % 3 === 0) {
-    slot.innerBub.push({ x: x+(Math.random()-0.5)*body*0.6, y: top+Math.random()*bh, vx:(Math.random()-0.5)*0.9*dpr, vy:(Math.random()-0.5)*0.9*dpr, r:(1.1+Math.random()*1.8)*dpr, left:x-body/2, right:x+body/2, top, bot });
-  }
+  if (!slot.innerBubM) slot.innerBubM = {};
+  let e = slot.innerBubM[i]; const nowB = performance.now();
+  if (!e) e = slot.innerBubM[i] = { b: [], seen: nowB };
+  e.seen = nowB;
+  if (i % 2 === 0 && e.b.length < 1) e.b.push({ x, y: top+Math.random()*bh, vx:(Math.random()-0.5)*0.9*dpr, vy:(Math.random()-0.5)*0.9*dpr, r:(1.1+Math.random()*1.8)*dpr });
+  e.b.forEach(d => { d.left=x-body/2; d.right=x+body/2; d.top=top; d.bot=top+bh; });
 }
 function stepBubbles(slot, c){
   if (!slot.bubbles) slot.bubbles = [];
   slot.bubbles = slot.bubbles.filter(d => d.life > 0.05);
   slot.bubbles.forEach(d => { d.y += d.vy; d.life -= 0.01; c.strokeStyle = "rgba(186,240,255,"+Math.max(0.2,d.life).toFixed(3)+")"; c.lineWidth = 1.2; c.beginPath(); c.arc(d.x,d.y,d.r,0,7); c.stroke(); });
-  if (!slot.innerBub) return;
-  slot.innerBub.forEach(d => {
+  if (!slot.innerBubM) return;
+  const nowS = performance.now();
+  for (const k in slot.innerBubM) { if (nowS - slot.innerBubM[k].seen > 400) delete slot.innerBubM[k]; }
+  Object.values(slot.innerBubM).forEach(e => e.b.forEach(d => {
+    if (d.right - d.left < 2*d.r + 1) return;
     d.x += d.vx; d.y += d.vy;
     if (d.x < d.left+d.r || d.x > d.right-d.r) d.vx *= -1;
     if (d.y < d.top+d.r || d.y > d.bot-d.r) d.vy *= -1;
@@ -1899,7 +1908,7 @@ function stepBubbles(slot, c){
     c.strokeStyle = "rgba(220,250,255,.85)";
     c.lineWidth = 1.2;
     c.beginPath(); c.arc(d.x, d.y, d.r, 0, 7); c.stroke();
-  });
+  }));
 }
 function paintNeon(c, x, top, bot, body, up, dpr, i){
   const flip = Math.floor(performance.now()/90 + i) % 2;
@@ -1953,7 +1962,7 @@ function paintPlasma(c, slot, x, top, bot, body, up, dpr, i){
   c.beginPath(); c.arc(x, top-6*dpr, 6*dpr, 0.2+Math.sin(t+i)*0.3, 2.8); c.stroke();
   c.restore();
   if (!slot.sparks) slot.sparks = [];
-  if (slot.sparks.length < 240) {
+  if (slot.sparks.length < Math.max(240, (slot.nBars||0)*3)) {
     slot.sparks.push({ x: x+(Math.random()-0.5)*body, y: top+Math.random()*h, vx:(Math.random()-0.5)*1.4*dpr, vy:-(0.4+Math.random()*1.1)*dpr, r:(1+Math.random()*1.6)*dpr, life:1, hue: Math.random()<0.5?185:320 });
   }
 }
@@ -2016,6 +2025,7 @@ function drawChart(slot){
     slot.liveBar.low = Math.min(slot.liveBar.low, slot.showPx);
   }
   const liveBars = bars;
+  slot.nBars = bars.length*(slot.vol?2:1);
   const dpr=pxRatio();
   const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=slot.vol?Math.round((h-8*dpr-22*dpr)*0.2):0;
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
@@ -2170,7 +2180,7 @@ function clock(){}
 function zoomSlot(i,dir){
   const slot=slots[i], max=Math.max(12,slot.allBars.length);
   slot.view=dir>0?Math.max(12,Math.round(slot.view*.78)):Math.min(max,Math.round(slot.view/0.78));
-  slot.innerBub = [];
+  slot.innerBubM = {};
   slot.bubbles = [];
 }
 const LAYOUTS = { "1x1":1, "1x2":2, "1x3":3, "2x2":4 };
