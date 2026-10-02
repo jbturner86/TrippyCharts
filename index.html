@@ -237,7 +237,7 @@ body.zen .side { display:none !important; }
       <h3>Desktop only</h3>
       <p>TrippyCharts is built for a desktop or laptop browser with a mouse. Phones and tablets will look wrong, miss the cursor toy, and make the game nearly unplayable. Use a computer.</p>
       <h3>How to play</h3>
-      <p>Toys fall in the background. Move your mouse so the cursor (the squid) eats them; it grows, then blobs and resets. Toy Store: pick up to 5 falling toys. The Toys slider sets how many fall. The SFX and Cursor toggles are in the left menu. Each chart has a VOL checkbox to show volume bars.</p>
+      <p>Toys fall in the background. Move your mouse so the cursor (the squid) eats them; it grows, then blobs and resets. Toy Store: pick up to 5 falling toys. The Toys slider sets how many fall. The SFX and Cursor toggles are in the left menu. Each chart has a VOL checkbox to show volume bars. LINES toggles moving averages, VWAP and prior-day levels; drag a chart to scroll back in time; click the price scale to drop a level line, right-click a line to remove it.</p>
       <p>Refresh button (&#x21bb;, next to the Toys slider): after you change your toys in the Toy Store, the old ones can keep falling for a while. Click refresh to clear the screen and drop 200 of your currently selected toys right away.</p>
       <p>Play Game starts game mode fullscreen: charts hide, a boss toy floats around. Suck toys and spit them into the boss. Each hit is 1 point. After the 3rd boss kill a second boss appears, then another after the 4th, and so on. You have one life bar. Getting touched costs 20%. When you die, enter a name for high scores. Esc leaves the game.</p>
       <h3>Not financial advice</h3>
@@ -311,7 +311,8 @@ function loadSavedSlots(){
     return [0,1,2,3].map(i => ({
       symbol: (raw[i]&&raw[i].symbol)||STARTERS[i],
       tf: (raw[i]&&raw[i].tf)||"30m",
-      vol: !!(raw[i]&&raw[i].vol)
+      vol: !!(raw[i]&&raw[i].vol),
+      lines: !!(raw[i]&&raw[i].lines)
     }));
   } catch(e){ return STARTERS.map(s=>({symbol:s,tf:"30m"})); }
 }
@@ -1617,7 +1618,7 @@ function fmtAxisTime(t, tf){
   if (tf==="1h" || tf==="2h" || tf==="4h") return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric"});
   return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
-const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", vol:!!s.vol, allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
+const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", vol:!!s.vol, lines:!!s.lines, offset:0, allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
 document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
   <section class="card" id="card-${s.id}">
     <div class="chart-head">
@@ -1626,6 +1627,7 @@ document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.m
         <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
         <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id===s.tf?"selected":""}>${t.id}</option>`).join("")}</select>
         <label class="volchk" title="Show volume"><input type="checkbox" id="vol-${s.id}" ${s.vol?"checked":""}>vol</label>
+        <label class="volchk" title="EMA 9/20, SMA 50 (daily), VWAP + prior-day levels (intraday)"><input type="checkbox" id="lines-${s.id}" ${s.lines?"checked":""}>lines</label>
         <button type="button" data-fs="${s.id}">full screen</button>
       </div>
       <div class="ohlc" id="ohlc-${s.id}"></div>
@@ -1657,7 +1659,11 @@ async function toggleChartMax(){
 function visibleBars(slot){
   const src=series(slot);
   const n=Math.max(12, Math.min(src.length||12, slot.view || 70));
-  return src.slice(-n);
+  if (slot.offset>0 && slot.srcLen && src.length>slot.srcLen) slot.offset += src.length-slot.srcLen;
+  slot.srcLen = src.length;
+  slot.offset = Math.max(0, Math.min(Math.max(0,src.length-n), Math.round(slot.offset||0)));
+  slot.visStart = Math.max(0, src.length-n-slot.offset);
+  return src.slice(slot.visStart, src.length-slot.offset);
 }
 function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id), r=c.getBoundingClientRect();
   const w=Math.max(240,Math.floor(r.width*pxRatio())), h=Math.max(140,Math.floor(r.height*pxRatio()));
@@ -1718,7 +1724,11 @@ function series(slot){
 function visibleBars(slot){
   const src=series(slot);
   const n=Math.max(12, Math.min(src.length||12, slot.view || 70));
-  return src.slice(-n);
+  if (slot.offset>0 && slot.srcLen && src.length>slot.srcLen) slot.offset += src.length-slot.srcLen;
+  slot.srcLen = src.length;
+  slot.offset = Math.max(0, Math.min(Math.max(0,src.length-n), Math.round(slot.offset||0)));
+  slot.visStart = Math.max(0, src.length-n-slot.offset);
+  return src.slice(slot.visStart, src.length-slot.offset);
 }
 function fmtPx(n){ return (n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtVol(n){
@@ -1728,6 +1738,72 @@ function fmtVol(n){
   return String(Math.round(n));
 }
 
+const LEVEL_KEY = "trippy_levels_v1";
+let levels = (()=>{ try { const o=JSON.parse(localStorage.getItem(LEVEL_KEY)||"{}"); return (o&&typeof o==="object"&&!Array.isArray(o))?o:{}; } catch(e){ return {}; } })();
+function symLevels(sym){ const a=levels[sym]; return Array.isArray(a)?a.filter(Number.isFinite):[]; }
+function saveLevels(){ localStorage.setItem(LEVEL_KEY, JSON.stringify(levels)); }
+const nyDay = new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"});
+function dayKey(b){ if(b._d===undefined || b._dt!==b.t){ b._d=nyDay.format(b.t); b._dt=b.t; } return b._d; }
+function isIntraday(tf){ return tfMs(tf) < 864e5; }
+function emaArr(src,p){ const k=2/(p+1), out=new Array(src.length); let e=null; for(let i=0;i<src.length;i++){ e = e==null ? src[i].close : src[i].close*k + e*(1-k); out[i]= i>=p-1 ? e : null; } return out; }
+function smaArr(src,p){ const out=new Array(src.length); let s=0; for(let i=0;i<src.length;i++){ s+=src[i].close; if(i>=p) s-=src[i-p].close; out[i]= i>=p-1 ? s/p : null; } return out; }
+function vwapArr(src){ const out=new Array(src.length); let d=null, pv=0, v=0; for(let i=0;i<src.length;i++){ const b=src[i], k=dayKey(b); if(k!==d){ d=k; pv=0; v=0; } const tp=(b.high+b.low+b.close)/3, vol=b.vol||0; pv+=tp*vol; v+=vol; out[i]= v>0 ? pv/v : (i&&out[i-1]!=null&&dayKey(src[i-1])===k ? out[i-1] : tp); } return out; }
+function priorDay(src, prevClose){
+  if(!src.length) return null;
+  const lastDay=dayKey(src.at(-1)); let j=src.length-1; while(j>=0 && dayKey(src[j])===lastDay) j--;
+  if(j<0) return prevClose ? { c:prevClose } : null;
+  const pd=dayKey(src[j]); let hi=-Infinity, lo=Infinity; const c=src[j].close;
+  for(; j>=0 && dayKey(src[j])===pd; j--){ hi=Math.max(hi,src[j].high); lo=Math.min(lo,src[j].low); }
+  return { h:hi, l:lo, c };
+}
+function linePalette(id){
+  const p={ ema9:"#4fd8ff", ema20:"#ff6ad5", sma50:"#ffd84a", vwap:"#ffd84a" };
+  if (id==="neon") p.ema20="#ff9a3c";
+  if (id==="bubbles") p.ema9="#b8ff6a";
+  if (id==="rainbow") { p.ema9="#ffffff"; p.ema20="#c9b6ff"; }
+  return p;
+}
+function drawStudies(c, slot, skin, L){
+  const {padL,padT,plotH,gap,yOf,w,dpr,min,max}=L, src=series(slot), st=slot.visStart||0, nVis=L.n;
+  const pal=linePalette(skin.id), intra=isIntraday(slot.tf), legend=[];
+  const path=(arr,col,dash,name)=>{
+    c.strokeStyle=col; c.lineWidth=1.5*dpr; c.setLineDash(dash||[]); c.beginPath(); let on=false;
+    for(let i=0;i<nVis;i++){ const v=arr[st+i]; if(v==null){ on=false; continue; } if(name==="VWAP" && i && dayKey(src[st+i])!==dayKey(src[st+i-1])) on=false; const x=padL+i*gap+gap/2, y=yOf(v); if(on) c.lineTo(x,y); else { c.moveTo(x,y); on=true; } }
+    c.stroke(); c.setLineDash([]); legend.push([name,col]);
+  };
+  c.save(); c.beginPath(); c.rect(padL,padT,w-L.padR-padL,plotH); c.clip(); c.globalAlpha=.9;
+  if (src.length>=9) path(emaArr(src,9),pal.ema9,null,"EMA9");
+  if (src.length>=20) path(emaArr(src,20),pal.ema20,null,"EMA20");
+  if (!intra && src.length>=50) path(smaArr(src,50),pal.sma50,null,"SMA50");
+  if (intra) path(vwapArr(src),pal.vwap,[6*dpr,4*dpr],"VWAP");
+  c.restore();
+  if (intra) {
+    const pd=priorDay(src, slot.prev);
+    if (pd) [["PDH",pd.h],["PDL",pd.l],["PDC",pd.c]].forEach(([lab,v])=>{
+      if (!Number.isFinite(v) || v<min || v>max) return; const y=yOf(v);
+      c.setLineDash([2*dpr,4*dpr]); c.strokeStyle="rgba(255,255,255,.38)"; c.lineWidth=dpr;
+      c.beginPath(); c.moveTo(padL,y); c.lineTo(w-L.padR,y); c.stroke(); c.setLineDash([]);
+      c.fillStyle="rgba(235,230,255,.7)"; c.font=`600 ${9*dpr}px Trebuchet MS`; c.textAlign="right";
+      c.fillText(lab, w-L.padR-4*dpr, y-3*dpr);
+    });
+  }
+  let lx=padL+4*dpr; const ly=padT+(isChartFs(slot.id)?48*dpr:0)+10*dpr;
+  c.font=`600 ${9*dpr}px Trebuchet MS`; c.textAlign="left";
+  legend.forEach(([name,col])=>{ c.globalAlpha=.85; c.fillStyle=col; c.fillRect(lx,ly-4*dpr,8*dpr,2*dpr); c.fillStyle="rgba(235,230,255,.75)"; c.fillText(name,lx+11*dpr,ly); lx+=c.measureText(name).width+22*dpr; });
+  c.globalAlpha=1;
+}
+function drawLevels(c, slot, L){
+  const lv=symLevels(slot.symbol); if(!lv.length) return;
+  const {padL,padR,w,dpr,yOf,min,max}=L;
+  lv.forEach(v=>{
+    if (v<min || v>max) return; const y=yOf(v);
+    c.strokeStyle="rgba(199,139,255,.9)"; c.lineWidth=1.25*dpr; c.beginPath(); c.moveTo(padL,y); c.lineTo(w-padR,y); c.stroke();
+    const tw=52*dpr, th=15*dpr, tx=w-padR+3*dpr, ty=y-th/2;
+    c.fillStyle="#7a2fd6"; c.beginPath(); if(c.roundRect) c.roundRect(tx,ty,tw,th,4*dpr); else c.rect(tx,ty,tw,th); c.fill();
+    c.fillStyle="#fff"; c.font=`700 ${9.5*dpr}px Trebuchet MS`; c.textAlign="center"; c.fillText(fmtPx(v), tx+tw/2, ty+11*dpr);
+  });
+  c.textAlign="left";
+}
 function candleSkin(){
   const id = player.equippedTheme || "basic";
   const use = id;
@@ -2031,8 +2107,9 @@ function drawChart(slot){
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
   const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
   const yOf=px=>padT+(max-px)/span*plotH;
-  slot.layout={padL,padR,gap,plotH,padT,volH};
-  const last=liveBars.at(-1), lastUp=last.close>=last.open;
+  slot.layout={padL,padR,gap,plotH,padT,volH,min,max,span,w};
+  const panned = slot.offset>0;
+  const last=liveBars.at(-1);
   const skin = candleSkin();
   const upCol=skin.up, dnCol=skin.dn;
   const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
@@ -2073,7 +2150,7 @@ function drawChart(slot){
   }
   liveBars.forEach((b,i)=>{
     const x=padL+i*gap+gap/2, up=b.close>=b.open, col=up?upCol:dnCol;
-    const forming = i===liveBars.length-1;
+    const forming = !panned && i===liveBars.length-1;
     c.strokeStyle=col; c.lineWidth=Math.max(1,dpr);
     c.beginPath(); c.moveTo(x,yOf(b.high)); c.lineTo(x,yOf(b.low)); c.stroke();
     const top=yOf(Math.max(b.open,b.close)), bot=yOf(Math.min(b.open,b.close));
@@ -2107,8 +2184,23 @@ function drawChart(slot){
   if (skin.id==="snow") stepSnow(slot, c, h, dpr); else slot.flakes = [];
   if (skin.id==="bubbles") stepBubbles(slot, c); else slot.bubbles = [];
   if (skin.id==="plasma") stepPlasma(slot, c); else slot.sparks = [];
-  const lastY=yOf(last.close);
+  const L={padL,padR,padT,plotH,gap,yOf,w,dpr,min,max,n:liveBars.length};
+  if (slot.lines) drawStudies(c, slot, skin, L);
+  drawLevels(c, slot, L);
+  slot.liveBtn=null;
+  if (panned) {
+    const bw=50*dpr, bh2=18*dpr, bx=w-padR-bw-6*dpr, by=padT+4*dpr;
+    c.fillStyle="rgba(155,61,255,.92)"; c.beginPath(); if(c.roundRect) c.roundRect(bx,by,bw,bh2,9*dpr); else c.rect(bx,by,bw,bh2); c.fill();
+    c.strokeStyle="#d9a8ff"; c.lineWidth=dpr; c.stroke();
+    c.fillStyle="#fff"; c.font=`700 ${9.5*dpr}px Trebuchet MS`; c.textAlign="center"; c.fillText("LIVE \u25B8", bx+bw/2, by+12.5*dpr);
+    slot.liveBtn={x:bx,y:by,w:bw,h:bh2};
+  }
+  const trueLast = panned ? (series(slot).at(-1)||last) : last;
+  const tlUp = trueLast.close>=trueLast.open;
+  const lastY=yOf(trueLast.close), showLast = !panned || (trueLast.close>=min && trueLast.close<=max);
+  if (showLast) {
   const isDarkCol = col => { const m=/^#?([0-9a-f]{6})$/i.exec(col||""); if(!m) return false; const n=parseInt(m[1],16); return (0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255)) < 140; };
+  const lastUp = tlUp;
   c.setLineDash([4*dpr,4*dpr]); c.strokeStyle=isDarkCol(lastUp?upCol:dnCol)?"rgba(255,255,255,.55)":(lastUp?upCol:dnCol); c.lineWidth=dpr;
   c.beginPath(); c.moveTo(padL,lastY); c.lineTo(w-padR,lastY); c.stroke(); c.setLineDash([]);
   const left = tfMs(slot.tf) - (Date.now() % tfMs(slot.tf));
@@ -2123,9 +2215,10 @@ function drawChart(slot){
   const pillDark = isDarkCol(pillCol);
   if (pillDark) { c.strokeStyle="rgba(255,255,255,.55)"; c.lineWidth=dpr; c.stroke(); }
   c.fillStyle=pillDark?"#ffffff":"#111"; c.font=`700 ${10*dpr}px Trebuchet MS`; c.textAlign="center";
-  c.fillText(fmtPx(last.close), pillX+pillW/2, pillY+12*dpr);
+  c.fillText(fmtPx(trueLast.close), pillX+pillW/2, pillY+12*dpr);
   c.font=`600 ${9*dpr}px Trebuchet MS`;
   c.fillText(timer, pillX+pillW/2, pillY+23*dpr);
+  }
   const ticks = Math.min(5, liveBars.length);
   c.fillStyle="rgba(200,200,210,.75)"; c.font=`${9*dpr}px Trebuchet MS`; c.textAlign="center";
   for(let i=0;i<ticks;i++){
@@ -2200,7 +2293,7 @@ function setLayout(name){
   sizeCanvases();
 }
 function saveSlotPrefs(){
-  localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf, vol:!!s.vol}))));
+  localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf, vol:!!s.vol, lines:!!s.lines}))));
 }
 const USED_KEY = "trippy_used_tickers";
 function loadUsedTickers(){
@@ -2232,7 +2325,7 @@ async function loadSlot(i, forceReset=false){
   const symbol=slotSymbol(i), tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
     const data=await fetchBars(symbol,tf);
-    if (forceReset || slots[i].key!==key) slots[i].liveBar = null;
+    if (forceReset || slots[i].key!==key) { slots[i].liveBar = null; slots[i].offset = 0; slots[i].srcLen = 0; }
     const start = bucketStart(tf, Date.now());
     slots[i].allBars = data.bars.filter(b => b.t < start);
     const yahooNow = data.bars.find(b => b.t >= start);
@@ -2261,6 +2354,7 @@ slots.forEach((_,i)=>{
   document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
   document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.getElementById("vol-"+i).addEventListener("change",e=>{ slots[i].vol=e.target.checked; saveSlotPrefs(); });
+  document.getElementById("lines-"+i).addEventListener("change",e=>{ slots[i].lines=e.target.checked; saveSlotPrefs(); });
   document.querySelector(`[data-fs="${i}"]`).addEventListener("click", () => toggleChartMax());
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
@@ -2269,6 +2363,42 @@ slots.forEach((_,i)=>{
     slots[i].hover={ x:(e.clientX-r.left)*dpr, y:(e.clientY-r.top)*dpr };
   });
   cv.addEventListener("mouseleave", () => { slots[i].hover=null; });
+  const cvPt = e => { const r=cv.getBoundingClientRect(), dpr=pxRatio(); return { x:(e.clientX-r.left)*dpr, y:(e.clientY-r.top)*dpr }; };
+  cv.addEventListener("mousedown", e => {
+    if (zenMode || e.button!==0) return;
+    const s=slots[i]; if(!s.layout) return;
+    if (document.activeElement && document.activeElement!==document.body) document.activeElement.blur();
+    e.preventDefault();
+    s.drag = { x0:e.clientX, off0:s.offset||0, moved:false, pt:cvPt(e) };
+  });
+  addEventListener("mousemove", e => {
+    const s=slots[i], d=s.drag; if(!d || !s.layout) return;
+    const dx=e.clientX-d.x0;
+    if (!d.moved && Math.abs(dx)<5) return;
+    d.moved=true; cv.style.cursor="grabbing";
+    s.offset = Math.max(0, d.off0 + Math.round(dx*pxRatio()/s.layout.gap));
+  });
+  addEventListener("mouseup", e => {
+    const s=slots[i], d=s.drag; if(!d) return;
+    s.drag=null; cv.style.cursor="";
+    if (d.moved || zenMode || !s.layout) return;
+    const {x,y}=d.pt, L=s.layout, b=s.liveBtn;
+    if (b && x>=b.x && x<=b.x+b.w && y>=b.y && y<=b.y+b.h) { s.offset=0; return; }
+    if (x > L.w-L.padR && y>=L.padT && y<=L.padT+L.plotH) {
+      const raw=L.max-(y-L.padT)/L.plotH*L.span, px=Number(raw.toFixed(raw<10?4:2));
+      levels[s.symbol]=[...symLevels(s.symbol), px].slice(-30); saveLevels();
+    }
+  });
+  cv.addEventListener("contextmenu", e => {
+    const s=slots[i], L=s.layout; if(zenMode || !L) return;
+    const {y}=cvPt(e), lv=symLevels(s.symbol), yOf=v=>L.padT+(L.max-v)/L.span*L.plotH;
+    let best=-1, bd=6*pxRatio()+0.5;
+    lv.forEach((v,k)=>{ if(v<L.min||v>L.max) return; const dd=Math.abs(yOf(v)-y); if(dd<=bd){ bd=dd; best=k; } });
+    if (best<0) return;
+    e.preventDefault(); lv.splice(best,1);
+    if (lv.length) levels[s.symbol]=lv; else delete levels[s.symbol];
+    saveLevels();
+  });
 });
 document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
 const densEl = document.getElementById("density");
