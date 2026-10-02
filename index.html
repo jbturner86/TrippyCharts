@@ -693,7 +693,7 @@ function hitBoss(b){
   if(!bosses.length) return false;
   const boss = bosses.find(bo => Math.hypot(b.x-bo.x,b.y-bo.y) < bo.s*0.48);
   if(!boss) return false;
-  boss.hp=Math.max(0,boss.hp-4); boss.hurt=8;
+  boss.hp=Math.max(0,boss.hp-25); boss.hurt=8;
   gameScore += 1;
   paintHudScore();
   burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8});
@@ -1079,9 +1079,10 @@ function tickBits(){
         growFromEat(); b.state="eject"; sfx("spit");
         if(zenMode&&bosses.length){
           const boss=bosses.slice().sort((a,c)=>Math.hypot(a.x-mouse.x,a.y-mouse.y)-Math.hypot(c.x-mouse.x,c.y-mouse.y))[0];
+          b.homing=true; b.s=16;
           const ang=Math.atan2(boss.y-mouse.y,boss.x-mouse.x);
-          const power=18+Math.random()*8; b.vx=Math.cos(ang)*power; b.vy=Math.sin(ang)*power; b.s=14;
-        } else {
+          b.vx=Math.cos(ang)*16; b.vy=Math.sin(ang)*16;
+        } else { b.homing=false;
           let ang=jetAng;
           if(!isFinite(ang) || Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<2) ang = Math.atan2(b.y-mouse.y,b.x-mouse.x);
           const spd=10+Math.random()*6;
@@ -1089,7 +1090,13 @@ function tickBits(){
         }
       }
     } else if(b.state==="eject"){
-      b.x+=b.vx; b.y+=b.vy; b.vx*=0.985; b.vy*=0.985; b.s=Math.min(24,b.s*1.04); b.rot+=0.06;
+      if(zenMode && b.homing && bosses.length){
+        const boss=bosses.slice().sort((a,c)=>Math.hypot(a.x-b.x,a.y-b.y)-Math.hypot(c.x-b.x,c.y-b.y))[0];
+        const ang=Math.atan2(boss.y-b.y,boss.x-b.x);
+        b.vx = b.vx*0.55 + Math.cos(ang)*16*0.45;
+        b.vy = b.vy*0.55 + Math.sin(ang)*16*0.45;
+      }
+      b.x+=b.vx; b.y+=b.vy; b.vx*=0.992; b.vy*=0.992; b.s=Math.min(24,b.s*1.04); b.rot+=0.06;
       if(zenMode&&hitBoss(b)) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall")||b);
       else if(dist>(zenMode?380:150)){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
     }
@@ -1104,7 +1111,10 @@ function tickBits(){
     ctx.clearRect(0,0,bg.width,bg.height);
     tickBits();
     tickMusic();
-    bits.forEach(b=>{ try{ drawToy(ctx,b); }catch(e){} });
+    bits.forEach(b=>{
+      if(zenMode && b.homing){ ctx.save(); ctx.strokeStyle="#39ff6a"; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(b.x,b.y,b.s*0.72,0,7); ctx.stroke(); ctx.restore(); }
+      try{ drawToy(ctx,b); }catch(e){}
+    });
     burst.forEach(p=>{
       ctx.globalCompositeOperation="lighter";
       if (p.ring){
