@@ -11,7 +11,7 @@
       background:radial-gradient(ellipse at 20% 0%, rgba(255,60,180,.18), transparent 42%), #07010e; }
     header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px 18px 8px; flex-wrap:wrap; }
     h1 { font-family:"Baloo 2", Impact, sans-serif; font-size:clamp(1.4rem,3vw,2rem); letter-spacing:.04em; }
-    a.back { color:#04140a; background:#b7ffd2; text-decoration:none; border-radius:999px; padding:8px 14px; font-weight:800; }
+    a.back { position:fixed; top:12px; right:12px; z-index:20; color:#04140a; background:#b7ffd2; text-decoration:none; border-radius:999px; padding:8px 14px; font-weight:800; box-shadow:0 6px 18px rgba(0,0,0,.35); }
     .lead { padding:0 18px 14px; color:#cbb6ff; max-width:720px; }
     h2 { padding:8px 18px 6px; font-family:"Baloo 2", sans-serif; font-size:1.15rem; letter-spacing:.04em; }
     .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:12px; padding:10px 16px 18px; }
@@ -181,7 +181,12 @@ function drawToy(c,b){
     c.beginPath(); c.moveTo(0,-s*.36); c.lineTo(0,s*.36); c.stroke();
     c.beginPath(); c.moveTo(0,0); c.lineTo(-s*.25,s*.3); c.stroke();
     c.beginPath(); c.moveTo(0,0); c.lineTo(s*.25,s*.3); c.stroke();
-  } else if(k==="sparkles" || k==="bill"){
+  } else if(k==="sparkles"){
+    const grd=c.createRadialGradient(0,0,0,0,0,s*.42); grd.addColorStop(0,"#fff"); grd.addColorStop(.35,"#ff9ad8"); grd.addColorStop(1,"#7ad7ff");
+    c.fillStyle=grd; c.beginPath();
+    for(let i=0;i<8;i++){ const a=-Math.PI/2+i*Math.PI/4, r=i%2?s*.16:s*.46; c.lineTo(Math.cos(a)*r,Math.sin(a)*r); }
+    c.closePath(); c.fill(); stroke();
+  } else if(k==="bill"){
     c.fillStyle="#1f6b45"; c.beginPath(); c.roundRect(-s*.46,-s*.24,s*.92,s*.48,s*.04); c.fill();
     c.strokeStyle="#d7f5c8"; c.lineWidth=Math.max(1.4,s*0.04); c.strokeRect(-s*.4,-s*.18,s*.8,s*.36);
     c.fillStyle="#d7f5c8"; c.font = Math.max(10,s*0.28)+"px Trebuchet MS"; c.textAlign="center"; c.textBaseline="middle";
@@ -433,12 +438,18 @@ function previewCursor(cv, skin){
       c.strokeStyle="#7ecbff"; c.beginPath(); c.arc(0,0,18,1,5); c.stroke();
       c.fillStyle="#07040c"; c.beginPath(); c.arc(0,0,10,0,7); c.fill(); c.restore(); return;
     }
-    c.strokeStyle = skin==="shenron" ? "#3dcf5a" : "#ff5ad0";
-    c.lineWidth = 10; c.beginPath(); c.moveTo(36,118); c.quadraticCurveTo(90,36,138,92); c.stroke();
-    if (skin!=="shenron") { c.strokeStyle="#7af0ff"; c.lineWidth=4; c.stroke(); }
-    c.fillStyle = skin==="shenron" ? "#7dff6a" : "#ffe14a";
-    c.beginPath(); c.ellipse(142,92,16,9,0.4,0,7); c.fill();
-    c.fillStyle = "#1a1020"; c.beginPath(); c.arc(148,88,2,0,7); c.fill(); c.beginPath(); c.arc(148,96,2,0,7); c.fill();
+    const pts = [[40,120],[62,96],[84,70],[108,78],[132,96]];
+    pts.forEach((pt,i)=>{
+      c.fillStyle = skin==="shenron" ? (i%2?"#3dcf5a":"#1f8a3a") : "hsl("+(i*48)+",95%,58%)";
+      c.beginPath(); c.arc(pt[0],pt[1],10-i,0,7); c.fill();
+    });
+    if (skin==="shenron") {
+      c.fillStyle="#7dff6a"; c.beginPath(); c.arc(146,96,12,0,7); c.fill();
+      c.fillStyle="#12301a"; c.beginPath(); c.arc(150,92,2,0,7); c.fill(); c.beginPath(); c.arc(150,100,2,0,7); c.fill();
+    } else {
+      c.fillStyle="#ff5ad0"; c.beginPath(); c.moveTo(156,96); c.lineTo(132,86); c.lineTo(132,106); c.closePath(); c.fill();
+      c.strokeStyle="#ff4d6a"; c.beginPath(); c.moveTo(150,96); c.lineTo(166,88); c.moveTo(150,96); c.lineTo(166,104); c.stroke();
+    }
     return;
   }
   c.save(); c.globalCompositeOperation="lighter";
@@ -513,7 +524,13 @@ function previewTheme(cv, id){
   const w = cv.width, h = cv.height;
   const t = Date.now();
   c.clearRect(0,0,w,h);
-  sparkleField(c, w, h, id==="drip"?0:id==="bolt"?55:200);
+  const hue = id==="drip"?0:id==="bolt"?55:id==="snow"?200:140;
+  for (let i=0;i<16;i++){
+    const x = (i*29 + hue) % w;
+    const y = ((t/18 + i*23) % (h+12)) - 6;
+    c.fillStyle = "hsla(" + ((hue+i*24)%360) + ",100%,70%,.7)";
+    c.beginPath(); c.arc(x, y, 1.4+(i%3), 0, 7); c.fill();
+  }
   const bars = [[40,70,1],[58,52,0],[70,64,1],[84,46,1],[96,78,0],[112,60,1]];
   bars.forEach((b,i)=>{
     const x = 22 + i*24, up = b[2], top = b[1], bot = b[0];
