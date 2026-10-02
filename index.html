@@ -283,6 +283,7 @@ body.zen .side { display:none !important; }
       <main class="stage layout-2x2" id="grid"></main>
     </div>
   </div>
+<script src="cursorart.js"></script>
 <script>
 const TOYS = [
   ["mushrooms","Mushrooms",true],["bill","$100 bill"],["moons","Moons"],["leaves","Cannabis leaves"],
@@ -564,6 +565,7 @@ function drawCursorChip(cv, id){
   c.fillStyle = CURSOR_COL[id] || "#efe6ff";
   c.beginPath(); c.arc(26,26,14,0,7); c.fill();
   if (id === "hole") { c.fillStyle="#07010e"; c.beginPath(); c.arc(26,26,7,0,7); c.fill(); }
+  if (window.CursorArt && CursorArt.has(id)) { c.clearRect(0,0,cv.width,cv.height); CursorArt.draw(c, id, 26, 26, 0.72, {}, {t:1.3}); return; }
   c.strokeStyle = "rgba(0,0,0,.45)"; c.lineWidth = 2; c.beginPath(); c.arc(26,26,14,0,7); c.stroke();
 }
 function drawThemeChip(cv, id){
@@ -1287,6 +1289,14 @@ function drawSquid(){
   const trailMax = (skin === "worm" || skin === "shenron") ? 72 : 28;
   if (trail.length > trailMax) trail.length = trailMax;
   const CS = CURSOR_SCALE; ctx.translate(mouse.x, mouse.y); ctx.scale(CS, CS); ctx.translate(-mouse.x, -mouse.y);
+  if (window.CursorArt && CursorArt.has(skin)) {
+    const ast = (window.cursorArtSt ||= {}); const st = (ast[skin] ||= {});
+    const mdx = st.mx==null ? 0 : mouse.x-st.mx, mdy = st.my==null ? 0 : mouse.y-st.my; st.mx = mouse.x; st.my = mouse.y;
+    trail.length = 1;
+    CursorArt.draw(ctx, skin, mouse.x, mouse.y, sc*1.25, st, {dx:mdx, dy:mdy});
+    ctx.restore();
+    return;
+  }
   if (skin === "worm" || skin === "shenron" || skin === "hole") { // CURSOR_DRAW_V3
     if (skin === "hole") {
       const t = performance.now()/400;
