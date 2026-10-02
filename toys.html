@@ -517,7 +517,7 @@ document.getElementById("cursors").addEventListener("click", async e => {
   } catch(err){ alert("checkout failed"); }
 });
 
-const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["void","Void"],["ghost","Ghost"],["ink","Ink"],["lava","Lava lamp"]];
+const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"]];
 function ownsTheme(id){ return true; }
 function previewTheme(cv, id){
   const c = cv.getContext("2d");
@@ -534,7 +534,7 @@ function previewTheme(cv, id){
   const bars = [[40,70,1],[58,52,0],[70,64,1],[84,46,1],[96,78,0],[112,60,1]];
   bars.forEach((b,i)=>{
     const x = 22 + i*24, up = b[2], top = b[1], bot = b[0];
-    const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#fff6ff","#ff4ad2"], void:["#c44bff","#1a1028"], ghost:["#efe6ff","#6d6288"], ink:["#1b1430","#0c0a12"], lava:["#ff8a5a","#6a1b4a"] };
+    const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"] };
     const pair = cols[id] || ["#00c805","#ff5000"];
     const col = up ? pair[0] : pair[1];
     c.strokeStyle = id==="rainbow" ? "#fff" : col;
@@ -558,12 +558,18 @@ function previewTheme(cv, id){
     if (id==="snow" && !up) { c.fillStyle="#fff"; c.beginPath(); c.arc(x, bot+4+((t/120+i*9)%22), 1.7, 0, 7); c.fill(); }
     if (id==="bubbles" && up) { c.strokeStyle="#baf0ff"; c.beginPath(); c.arc(x, top-((t/90+i*6)%16), 2.4, 0, 7); c.stroke(); }
     if (id==="neon") { c.strokeStyle = up?"#7cff3a":"#ff4ad2"; c.strokeRect(x-8, top-2, 16, Math.max(6, bot-top)+4); }
-    if (id==="toxic") { c.fillStyle = up?"#d6ff8a":"#b388ff"; c.beginPath(); c.ellipse(x, bot+3, 5, 2.2, 0, 0, 7); c.fill(); }
-    if (id==="plasma") { c.strokeStyle = i%2?"#7af0ff":"#ff4ad2"; c.strokeRect(x-4, top, 8, Math.max(4, bot-top)); c.beginPath(); c.arc(x, top-4, 3, 0.4, 2.6); c.stroke(); }
-    if (id==="void") { c.strokeStyle="#c44bff"; c.beginPath(); c.arc(x, top-4, 3.5, t/200, t/200+4); c.stroke(); c.fillStyle="#050308"; c.beginPath(); c.arc(x, top-4, 1.6, 0, 7); c.fill(); }
-    if (id==="ghost") { c.globalAlpha=.5; c.strokeStyle="#efe6ff"; c.strokeRect(x-4, top+2, 10, Math.max(4, bot-top)); c.globalAlpha=1; }
-    if (id==="ink") { c.fillStyle="rgba(80,60,120,.45)"; c.fillRect(x, top, 14, Math.max(4, bot-top)); if (up){ c.fillStyle="#ffd166"; c.fillRect(x-1, bot-3, 2, 2);} }
-    if (id==="lava") { c.fillStyle=up?"#ffb08a":"#8a2458"; c.beginPath(); c.roundRect(x-6, top, 12, Math.max(6, bot-top), 6); c.fill(); }
+    if (id==="toxic") {
+      c.save(); c.beginPath(); c.rect(x-6, top, 12, Math.max(4, bot-top)); c.clip();
+      for (let n=0;n<4;n++){ c.fillStyle = n%2?"rgba(182,255,74,.8)":"rgba(150,70,255,.75)"; c.beginPath(); c.ellipse(x+Math.sin(t/400+n)*3, top+(bot-top)*(0.2+n*0.18), 4, 5, 0, 0, 7); c.fill(); }
+      c.restore();
+    }
+    if (id==="plasma") { c.fillStyle="#7af0ff"; c.fillRect(x-6, top, 12, Math.max(4, bot-top)); c.fillStyle="#ff4ad2"; c.fillRect(x-2, top+2, 3, 2); c.fillStyle="#fff"; c.fillRect(x+2, top+6, 2, 2); }
+    if (id==="lava") {
+      c.strokeStyle="rgba(255,250,240,.9)"; c.strokeRect(x-7, top-1, 14, Math.max(6, bot-top)+2);
+      c.fillStyle=up?"#ffb08a":"#8a2458"; c.beginPath(); c.roundRect(x-6, top, 12, Math.max(6, bot-top), 6); c.fill();
+      c.fillStyle="rgba(255,236,200,.85)";
+      [[-2,4],[2,9],[0,14]].forEach(([dx,dy])=>{ c.beginPath(); c.arc(x+dx, top+dy, 1.6, 0, 7); c.fill(); });
+    }
     if (id==="drip" && !up) { c.fillStyle="#d0122a"; c.beginPath(); c.moveTo(x-3, bot); c.lineTo(x, bot+12); c.lineTo(x+3, bot); c.fill(); }
   });
 }
