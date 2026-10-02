@@ -64,9 +64,8 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
     .sound-col { display:flex; flex-direction:column; align-items:center; gap:2px; }
     .sound-col span { font-size:.48rem; letter-spacing:.06em; text-transform:uppercase; color:#ffd39a; }
     #soundBtn, #musicBtn, #cursorBtn { padding:3px 6px; font-size:.52rem; letter-spacing:.04em; }
-    .song-nav { margin-left:auto; display:flex; align-items:flex-end; gap:4px; }
-    .song-nav button { width:22px; height:22px; padding:0; border-radius:999px; font-size:.8rem; line-height:1; }
-    #songName { font-size:.42rem; letter-spacing:.04em; text-transform:uppercase; color:#ffd39a; text-align:center; max-width:46px; }
+    .song-nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
+    .song-nav button { width:22px; height:22px; padding:0; border-radius:999px; font-size:.85rem; line-height:1; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
@@ -199,9 +198,9 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
         <div class="sound-col"><button type="button" id="cursorBtn">on</button><span>cursor</span></div>
         <div class="song-nav">
           <button type="button" id="songPrev" aria-label="previous song">‹</button>
-          <div class="sound-col"><button type="button" id="musicBtn">on</button><span id="songName">rock</span></div>
           <button type="button" id="songNext" aria-label="next song">›</button>
         </div>
+        <div class="sound-col"><button type="button" id="musicBtn">on</button><span>music</span></div>
       </div>
       </div>
     </div>
@@ -365,25 +364,33 @@ const SONGS = [
 ];
 const SONG_KEY = "trippy_song";
 let songIx = Math.max(0, Math.min(SONGS.length-1, Number(localStorage.getItem(SONG_KEY)||0)));
-function paintSong(){ const el=document.getElementById("songName"); if(el) el.textContent = SONGS[songIx].name; }
+let songTouch = Date.now();
+let songQueued = 0;
 function tickMusic(){
   if (!musicOn || !audioCtx) return;
+  if (Date.now() - songTouch > 5*60*1000) { songQueued = 1; songTouch = Date.now(); }
   const song = SONGS[songIx];
   const step = Math.floor((audioCtx.currentTime * song.tempo) % song.lead.length);
   if (step === musicTimer) return;
+  if (songQueued && step === 0) {
+    songIx = (songIx + songQueued + SONGS.length) % SONGS.length;
+    songQueued = 0;
+    localStorage.setItem(SONG_KEY, String(songIx));
+    musicTimer = -1;
+    return;
+  }
   musicTimer = step;
-  const n = song.lead[step];
-  if (n) tone(n, 0.18, song.wave, song.vol);
-  const b = song.bass[step % song.bass.length];
+  const live = SONGS[songIx];
+  const n = live.lead[step];
+  if (n) tone(n, 0.18, live.wave, live.vol);
+  const b = live.bass[step % live.bass.length];
   if (step % 2 === 0 && b) tone(b, 0.24, "sine", 0.009);
 }
 function startMusic(){ ensureAudio(); musicTimer = -1; }
 function stopMusic(){ musicTimer = -1; }
 function changeSong(dir){
-  songIx = (songIx + dir + SONGS.length) % SONGS.length;
-  localStorage.setItem(SONG_KEY, String(songIx));
-  musicTimer = -1;
-  paintSong();
+  songQueued = dir;
+  songTouch = Date.now();
 }
 function defaultPlayer(){
   return {
@@ -1856,7 +1863,6 @@ document.getElementById("soundBtn").addEventListener("click", () => {
 });
 document.getElementById("songPrev").addEventListener("click", () => changeSong(-1));
 document.getElementById("songNext").addEventListener("click", () => changeSong(1));
-paintSong();
 document.getElementById("musicBtn").addEventListener("click", () => {
   musicOn = !musicOn;
   localStorage.setItem(MUSIC_KEY, musicOn ? "1" : "0");
