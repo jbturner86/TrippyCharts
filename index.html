@@ -210,8 +210,11 @@ body.zen .side { display:none !important; }
       </span>
       <button type="button" id="fullscreen">play game</button>
       <button type="button" id="legalBtn">disclaimer</button>
+      <span id="passBadge">pass on</span>
+      <button type="button" id="cancelBtn">manage pass</button>
     </div>
     </aside>
+    <button type="button" id="buyPass" title="Trippy Pass: $5/month, 5 subscriber-only toys every month"><img src="pass-blob.png" alt="Trippy Pass $5 a month"></button>
     <aside id="legal">
       <h2>Disclaimer</h2>
       <p>TrippyCharts is an entertainment and visualization toy. It is not a broker, adviser, exchange, or data vendor.</p>
@@ -227,7 +230,7 @@ body.zen .side { display:none !important; }
       <h3>Outages and changes</h3>
       <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
       <h3>Store</h3>
-      <p>Payments are for cosmetic toys, cursor skins, and candle skins — not market data. Toys are $1 each. Extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme stay free. No subscription. No refunds on one-off unlocks. Test charges in sandbox are not real.</p>
+      <p>Payments are for cosmetic toys, cursor skins, and candle skins — not market data. Toys are $1 each. Extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme stay free. The optional Trippy Pass is $5/month for subscriber-only monthly toys; cancel anytime with "manage pass" and it stays on until the paid month ends. No refunds on one-off unlocks. Test charges in sandbox are not real.</p>
       <h3>As-is</h3>
       <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
       <h3>You agree</h3>
@@ -252,7 +255,7 @@ body.zen .side { display:none !important; }
     <div class="hud-score" id="hudScore">0</div>
     <aside id="store">
       <h2>Charm store</h2>
-      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Pass unlocks 5 this month. The rest drop later or will be $1 each.</p>
+      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Trippy Pass ($5/month) unlocks 5 brand-new subscriber-only toys every month. Cancel anytime.</p>
       <div id="storeList"></div>
     </aside>
     <div class="board center" id="board">
@@ -265,7 +268,7 @@ const TOYS = [
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
   ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
   ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"],
-  ["jellyfish","Jellyfish"],["robots","Robots"],["lightning","Lightning"],["ghosts","Ghosts"],["eyes","Eyes"],["capsules","Capsules"],["bongs","Bong"],["football","Football"],["baseball","Baseball"],["basketball","Basketball"],["soccer","Soccer"],["cigar","Cigar"],["controller","Controller"],["cross","Cross"]
+  ["jellyfish","Jellyfish"],["robots","Robots"],["lightning","Lightning"],["ghosts","Ghosts"],["eyes","Eyes"],["capsules","Capsules"],["bongs","Bong"],["football","Football"],["baseball","Baseball"],["basketball","Basketball"],["soccer","Soccer"],["cigar","Cigar"],["controller","Controller"],["cross","Cross"],["rainbows","Rainbows"],["discoballs","Disco balls"],["ufos","UFOs"],["smileys","Smileys"],["clocks","Melting clocks"]
 ];
 const TFS = [
   {id:"1m",interval:"1m",range:"1d"},{id:"5m",interval:"5m",range:"5d"},{id:"10m",interval:"5m",range:"5d",group:2},
@@ -487,16 +490,14 @@ function syncFromLocal(){
 const mid = Math.ceil(TOYS.length/2);
 const FREE_TOYS = ["mushrooms"];
 const PASS_BY_MONTH = {
-  "2026-09": ["bill","moons","leaves","flowers","hearts"],
-  "2026-10": ["jellyfish","robots","lightning","ghosts","eyes"],
-  "2026-11": ["cats","planets","clouds","dice","peace"]
+  "2026-10": ["rainbows","discoballs","ufos","smileys","clocks"]
 };
 function currentMonth(){
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
 }
 function passToys(){
-  return PASS_BY_MONTH[currentMonth()] || PASS_BY_MONTH["2026-09"];
+  return PASS_BY_MONTH[currentMonth()] || [];
 }
 function toyDropMonth(id){
   for (const [m, list] of Object.entries(PASS_BY_MONTH)) {
@@ -504,12 +505,29 @@ function toyDropMonth(id){
   }
   return null;
 }
-function hasPass(){ return false; }
+function isPassToy(id){ return !!toyDropMonth(id); }
+function dropLive(id){ const m = toyDropMonth(id); return !!m && m <= currentMonth(); }
+function hasPass(){ return !!player.passActive && (!player.passExpiresAt || Number(player.passExpiresAt) > Date.now()); }
+async function startPass(){
+  try {
+    const r = await fetch(API + "/buy", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify({ playerId: PLAYER_ID, type: "pass" }) });
+    const d = await r.json();
+    if (d.url) location.href = d.url; else alert(d.error || "Checkout failed. Try again in a minute.");
+  } catch(e){ alert("Checkout failed. Try again in a minute."); }
+}
+async function managePass(){
+  try {
+    const r = await fetch(API + "/portal", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify({ playerId: PLAYER_ID }) });
+    const d = await r.json();
+    if (d.url) location.href = d.url; else alert(d.error || "Could not open billing.");
+  } catch(e){ alert("Could not open billing."); }
+}
+
 function ownedToys(){
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
   return [...new Set([...FREE_TOYS, ...own])];
 }
-function canUse(id){ return true; }
+function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return true; }
 function toyChecked(id){
   if (!canUse(id)) return false;
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
@@ -540,7 +558,7 @@ function drawThemeChip(cv, id){
 function paintQuick(){
   const box = document.getElementById("quickToys");
   if (!box) return;
-  const ownToys = TOYS.map(t => t[0]);
+  const ownToys = TOYS.map(t => t[0]).filter(canUse);
   const ownC = CURSORS.map(t => t[0]);
   const ownT = THEMES.map(t => t[0]);
   const eq = player.equippedToyIds || [];
@@ -581,15 +599,20 @@ function paintStore(){
   if (!box) return;
   const month = currentMonth();
   box.innerHTML = TOYS.map(([id,label]) => {
-    let tag = "later drop";
+    let tag = "toy store";
     if (FREE_TOYS.includes(id)) tag = "free";
-    else if ((PASS_BY_MONTH[month]||[]).includes(id)) tag = hasPass() ? "unlocked this month" : "this month with pass";
-    else {
-      const m = toyDropMonth(id);
-      tag = m ? ("drops " + m) : "later drop";
+    else if (isPassToy(id)) {
+      if (!dropLive(id)) return "";
+      tag = hasPass() ? "pass: unlocked" : "pass only";
     }
     return `<div class="row"><span>${label}</span><span class="tag">${tag}</span></div>`;
   }).join("");
+}
+document.getElementById("buyPass").addEventListener("click", startPass);
+document.getElementById("cancelBtn").addEventListener("click", managePass);
+if (/[?&]pass=ok/.test(location.search)) {
+  [2500, 6000, 12000].forEach(ms => setTimeout(pullCloud, ms));
+  history.replaceState({}, "", location.pathname);
 }
 paintToys();
 paintPass();
@@ -957,6 +980,33 @@ function drawToy(c,b){
     c.fillStyle="#ff5d8f"; c.beginPath(); c.arc(s*.14,-s*.02,s*.05,0,7); c.fill();
     c.fillStyle="#7cff3a"; c.beginPath(); c.arc(s*.26,s*.05,s*.05,0,7); c.fill();
     c.fillStyle="#5aa0ff"; c.beginPath(); c.arc(s*.2,-s*.08,s*.04,0,7); c.fill();
+  } else if(k==="rainbows"){
+    const cols=["#ff4d5a","#ff9a3a","#ffe14a","#5ad75a","#4aa8ff","#9b6bff"];
+    c.lineWidth=Math.max(1.5,s*0.07);
+    cols.forEach((col,i)=>{ c.strokeStyle=col; c.beginPath(); c.arc(0,s*.18,s*(.44-i*.065),Math.PI,0); c.stroke(); });
+    c.fillStyle="#ffffff"; [[-s*.36,s*.2],[s*.36,s*.2]].forEach(([x,y])=>{ c.beginPath(); c.arc(x-s*.06,y,s*.09,0,7); c.arc(x+s*.06,y,s*.09,0,7); c.arc(x,y-s*.06,s*.09,0,7); c.fill(); });
+  } else if(k==="discoballs"){
+    c.fillStyle="#3a3550"; c.fillRect(-s*.02,-s*.5,s*.04,s*.12);
+    c.save(); c.beginPath(); c.arc(0,0,s*.38,0,7); c.clip();
+    const n=6, t=s*.76/n;
+    for(let i=0;i<n;i++) for(let j=0;j<n;j++){ const h=(i*53+j*97)%360; c.fillStyle=`hsl(${h},70%,${55+((i+j)%3)*12}%)`; c.fillRect(-s*.38+i*t,-s*.38+j*t,t-1,t-1); }
+    c.restore(); c.beginPath(); c.arc(0,0,s*.38,0,7); stroke();
+    c.fillStyle="rgba(255,255,255,.85)"; c.beginPath(); c.arc(-s*.14,-s*.16,s*.06,0,7); c.fill();
+  } else if(k==="ufos"){
+    c.fillStyle="rgba(140,255,120,.35)"; c.beginPath(); c.moveTo(-s*.12,s*.08); c.lineTo(s*.12,s*.08); c.lineTo(s*.26,s*.5); c.lineTo(-s*.26,s*.5); c.closePath(); c.fill();
+    c.fillStyle="#9fe8ff"; c.beginPath(); c.ellipse(0,-s*.06,s*.18,s*.16,0,Math.PI,0); c.fill(); stroke();
+    c.fillStyle="#b8b8c8"; c.beginPath(); c.ellipse(0,0,s*.44,s*.13,0,0,7); c.fill(); stroke();
+    ["#ff4ad2","#ffe14a","#7cff3a","#ffe14a","#ff4ad2"].forEach((col,i)=>{ c.fillStyle=col; c.beginPath(); c.arc(-s*.28+i*s*.14,s*.02,s*.035,0,7); c.fill(); });
+  } else if(k==="smileys"){
+    c.fillStyle="#ffd93a"; c.beginPath(); c.arc(0,0,s*.4,0,7); c.fill(); stroke();
+    c.fillStyle="#1b1430"; c.beginPath(); c.ellipse(-s*.13,-s*.1,s*.04,s*.08,0,0,7); c.fill(); c.beginPath(); c.ellipse(s*.13,-s*.1,s*.04,s*.08,0,0,7); c.fill();
+    c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1.2,s*0.05); c.beginPath(); c.arc(0,s*.02,s*.22,.25*Math.PI,.75*Math.PI); c.stroke();
+  } else if(k==="clocks"){
+    c.fillStyle="#f2e6c8";
+    c.beginPath(); c.moveTo(-s*.36,-s*.3); c.quadraticCurveTo(0,-s*.46,s*.36,-s*.3); c.quadraticCurveTo(s*.42,s*.02,s*.3,s*.14); c.quadraticCurveTo(s*.2,s*.22,s*.18,s*.46); c.quadraticCurveTo(s*.1,s*.5,s*.06,s*.24); c.quadraticCurveTo(-s*.2,s*.26,-s*.34,s*.08); c.quadraticCurveTo(-s*.44,-s*.1,-s*.36,-s*.3); c.closePath(); c.fill(); stroke();
+    c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1,s*0.04);
+    c.beginPath(); c.moveTo(0,-s*.08); c.lineTo(0,-s*.28); c.moveTo(0,-s*.08); c.lineTo(s*.16,-s*.02); c.stroke();
+    c.fillStyle="#1b1430"; [[0,-s*.32],[s*.26,-s*.1],[-s*.26,-s*.12]].forEach(([x,y])=>{ c.beginPath(); c.arc(x,y,s*.025,0,7); c.fill(); });
   } else if(k==="cross"){
     c.fillStyle="#8a5a32";
     c.fillRect(-s*.08,-s*.4,s*.16,s*.8);
