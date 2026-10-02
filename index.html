@@ -129,6 +129,8 @@ body.zen .side { display:none !important; }
     .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:7px 9px 9px; }
     .group-name { font-size:1rem; letter-spacing:.08em; text-transform:uppercase; color:#efe6ff; margin-bottom:5px; font-weight:700; }
     .pickers { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+    .volchk { display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; user-select:none; }
+    .volchk input { margin:0; accent-color:#b56cff; cursor:pointer; }
     select { padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; }
     .px { font-variant-numeric:tabular-nums; font-size:.92rem; }
     .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
@@ -286,7 +288,8 @@ function loadSavedSlots(){
     if (!Array.isArray(raw) || !raw.length) return STARTERS.map(s=>({symbol:s,tf:"30m"}));
     return [0,1,2,3].map(i => ({
       symbol: (raw[i]&&raw[i].symbol)||STARTERS[i],
-      tf: (raw[i]&&raw[i].tf)||"30m"
+      tf: (raw[i]&&raw[i].tf)||"30m",
+      vol: !!(raw[i]&&raw[i].vol)
     }));
   } catch(e){ return STARTERS.map(s=>({symbol:s,tf:"30m"})); }
 }
@@ -1336,7 +1339,7 @@ function fmtAxisTime(t, tf){
   if (tf==="1h" || tf==="2h" || tf==="4h") return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric"});
   return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
-const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
+const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", vol:!!s.vol, allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
 document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
   <section class="card" id="card-${s.id}">
     <div class="chart-head">
@@ -1344,6 +1347,7 @@ document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.m
         ${s.id===0 ? '<button type="button" id="sideShow">menu</button>' : ''}
         <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
         <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id===s.tf?"selected":""}>${t.id}</option>`).join("")}</select>
+        <label class="volchk" title="Show volume"><input type="checkbox" id="vol-${s.id}" ${s.vol?"checked":""}>vol</label>
         <button type="button" data-fs="${s.id}">full screen</button>
       </div>
       <div class="ohlc" id="ohlc-${s.id}"></div>
@@ -1737,7 +1741,7 @@ function drawChart(slot){
   }
   const liveBars = bars;
   const dpr=pxRatio();
-  const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=0;
+  const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=slot.vol?Math.round((h-8*dpr-22*dpr)*0.2):0;
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
   const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
   const yOf=px=>padT+(max-px)/span*plotH;
@@ -1745,6 +1749,17 @@ function drawChart(slot){
   const last=liveBars.at(-1), lastUp=last.close>=last.open;
   const skin = candleSkin();
   const upCol=skin.up, dnCol=skin.dn;
+  if (volH) {
+    const vmax=Math.max(1,...liveBars.map(b=>b.vol||0)), vBase=h-padB, vw=Math.max(1.5*dpr,gap*.62);
+    const lum=col=>{ const m=/^#?([0-9a-f]{6})$/i.exec(col||""); if(!m) return 255; const n=parseInt(m[1],16); return 0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255); };
+    const vUp=lum(upCol)<80?"#7cff3a":upCol, vDn=lum(dnCol)<80?"#ff5dd8":dnCol;
+    c.save(); c.globalAlpha=.42;
+    liveBars.forEach((b,i)=>{ const v=b.vol||0; if(!v) return; const bh=Math.max(dpr,v/vmax*(volH-4*dpr)); c.fillStyle=b.close>=b.open?vUp:vDn; c.fillRect(padL+i*gap+gap/2-vw/2, vBase-bh, vw, bh); });
+    c.restore();
+    c.strokeStyle="rgba(255,255,255,.1)"; c.lineWidth=dpr; c.beginPath(); c.moveTo(padL,vBase-volH); c.lineTo(w-padR,vBase-volH); c.stroke();
+    c.fillStyle="rgba(210,210,220,.7)"; c.font=`${10*dpr}px Trebuchet MS`; c.textAlign="left";
+    c.fillText("vol "+fmtVol(vmax), w-padR+6*dpr, vBase-volH*.45);
+  }
   c.strokeStyle="rgba(255,255,255,.08)"; c.lineWidth=dpr;
   for(let i=0;i<5;i++){
     const px=max-span/4*i, y=yOf(px);
@@ -1835,10 +1850,11 @@ function drawChart(slot){
   } else paintOhlc(slot, last);
   c.textAlign="left";
 }
+function fmtVol(v){ v=+v||0; if(v>=1e9) return (v/1e9).toFixed(2)+"B"; if(v>=1e6) return (v/1e6).toFixed(2)+"M"; if(v>=1e3) return (v/1e3).toFixed(1)+"K"; return String(Math.round(v)); }
 function paintOhlc(slot, b){
   const el=document.getElementById("ohlc-"+slot.id); if(!el||!b) return;
   const up=b.close>=b.open;
-  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b>`;
+  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b>${slot.vol&&b.vol?`<b class="${up?"up":"down"}">V ${fmtVol(b.vol)}</b>`:""}`;
 }
 function sessionLabel(state){
   const s = (state||"").toUpperCase();
@@ -1880,7 +1896,7 @@ function setLayout(name){
   sizeCanvases();
 }
 function saveSlotPrefs(){
-  localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf}))));
+  localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf, vol:!!s.vol}))));
 }
 const USED_KEY = "trippy_used_tickers";
 function loadUsedTickers(){
@@ -1940,6 +1956,7 @@ slots.forEach((_,i)=>{
   document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
   document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
+  document.getElementById("vol-"+i).addEventListener("change",e=>{ slots[i].vol=e.target.checked; saveSlotPrefs(); });
   document.querySelector(`[data-fs="${i}"]`).addEventListener("click", () => toggleChartMax());
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
