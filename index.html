@@ -1511,8 +1511,10 @@ function paintDrip(c, slot, x, bot, body, bh, dpr, i){
   if (!slot.dripAt) slot.dripAt = {};
   const now = performance.now();
   if (!slot.dripAt[i]) slot.dripAt[i] = now - Math.random()*700;
-  if (now - slot.dripAt[i] > 180 && slot.drips.length < 140) {
+  const every = Math.max(180, (slot.dripN||1)*9);
+  if (now - slot.dripAt[i] > every) {
     slot.dripAt[i] = now;
+    if (slot.drips.length >= 200) slot.drips.shift();
     slot.drips.push({ x: x + (Math.random()-0.5)*body*0.5, y: bot+len, vy: 0.3*dpr, vx: (Math.random()-0.5)*0.2*dpr, r: (1.3+Math.random()*1.3)*dpr, life: 1 });
   }
 }
@@ -1749,12 +1751,25 @@ function drawChart(slot){
   const last=liveBars.at(-1), lastUp=last.close>=last.open;
   const skin = candleSkin();
   const upCol=skin.up, dnCol=skin.dn;
+  const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
   if (volH) {
-    const vmax=Math.max(1,...liveBars.map(b=>b.vol||0)), vBase=h-padB, vw=Math.max(1.5*dpr,gap*.62);
-    const lum=col=>{ const m=/^#?([0-9a-f]{6})$/i.exec(col||""); if(!m) return 255; const n=parseInt(m[1],16); return 0.299*(n>>16)+0.587*((n>>8)&255)+0.114*(n&255); };
-    const vUp=lum(upCol)<80?"#7cff3a":upCol, vDn=lum(dnCol)<80?"#ff5dd8":dnCol;
-    c.save(); c.globalAlpha=.42;
-    liveBars.forEach((b,i)=>{ const v=b.vol||0; if(!v) return; const bh=Math.max(dpr,v/vmax*(volH-4*dpr)); c.fillStyle=b.close>=b.open?vUp:vDn; c.fillRect(padL+i*gap+gap/2-vw/2, vBase-bh, vw, bh); });
+    const vmax=Math.max(1,...liveBars.map(b=>b.vol||0)), vBase=h-padB, vw=Math.max(1.5*dpr,gap*.58), fx={};
+    c.save(); c.globalAlpha=.6;
+    liveBars.forEach((b,i)=>{
+      const v=b.vol||0; if(!v) return;
+      const up=b.close>=b.open, x=padL+i*gap+gap/2, bh=Math.max(2*dpr,v/vmax*(volH-6*dpr)), top=vBase-bh;
+      if (skin.id==="rainbow") {
+        const shift=(performance.now()/260*70 + i*18) % 360, g=c.createLinearGradient(x-vw/2, top, x+vw/2, vBase);
+        g.addColorStop(0,"hsla("+shift+",100%,68%,.95)"); g.addColorStop(.45,"hsla("+((shift+55)%360)+",100%,62%,.95)"); g.addColorStop(1,"hsla("+((shift+120)%360)+",100%,58%,.95)");
+        c.fillStyle=g;
+      } else c.fillStyle=up?upCol:dnCol;
+      if (skin.id==="lava") paintLava(c, x, top, vBase, vw, up, dpr, i);
+      else c.fillRect(x-vw/2, top, vw, bh);
+      if (skin.id==="toxic") paintToxic(c, fx, x, top, vBase, vw, up, dpr, i);
+      if (skin.id==="plasma") { const g=c.createLinearGradient(x,top,x,vBase); g.addColorStop(0,"rgba(122,240,255,.95)"); g.addColorStop(.5,"rgba(255,255,255,.8)"); g.addColorStop(1,"rgba(255,74,210,.9)"); c.fillStyle=g; c.fillRect(x-vw/2, top, vw, bh); }
+      if (skin.id==="neon") paintNeon(c, x, top, vBase, vw, up, dpr, i);
+      if (skin.id!=="basic" && skin.id!=="rainbow") paintAura(c, x, top, bh, vw, auraOf(up), dpr);
+    });
     c.restore();
     c.strokeStyle="rgba(255,255,255,.1)"; c.lineWidth=dpr; c.beginPath(); c.moveTo(padL,vBase-volH); c.lineTo(w-padR,vBase-volH); c.stroke();
     c.fillStyle="rgba(210,210,220,.7)"; c.font=`${10*dpr}px Trebuchet MS`; c.textAlign="left";
@@ -1786,7 +1801,7 @@ function drawChart(slot){
     } else c.fillStyle=col;
     c.fillRect(x-body/2, top, body, bh);
     if (skin.id!=="basic" && skin.id!=="rainbow") {
-      const aura = skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col;
+      const aura = auraOf(up);
       paintAura(c, x, top, bh, body, aura, dpr);
     }
     if (skin.id==="bolt" && up) paintBolt(c, slot, x, top, bot, body, dpr, i);
@@ -1798,7 +1813,7 @@ function drawChart(slot){
     if (skin.id==="lava") paintLava(c, x, top, bot, body, up, dpr, i);
     if (skin.id==="drip" && !up) paintDrip(c, slot, x, bot, body, bh, dpr, i);
   });
-  if (skin.id==="drip") stepDrips(slot, c, h, dpr); else slot.drips = [];
+  if (skin.id==="drip") { slot.dripN = liveBars.filter(b=>b.close<b.open).length; stepDrips(slot, c, h, dpr); } else slot.drips = [];
   if (skin.id==="bolt") stepBolts(slot, c); else slot.bolts = [];
   if (skin.id==="snow") stepSnow(slot, c, h, dpr); else slot.flakes = [];
   if (skin.id==="bubbles") stepBubbles(slot, c); else slot.bubbles = [];
