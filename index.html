@@ -199,7 +199,7 @@ body.zen .side { display:none !important; }
       <div class="toys-body">
       <div class="dens-row">
         <label for="density">toys <span id="densityVal">36</span></label>
-        <div class="dens-line"><input type="range" id="density" min="0" max="200" value="36"><button type="button" id="densAdd" title="Fill up to 200 toys right now">+</button></div>
+        <div class="dens-line"><input type="range" id="density" min="0" max="200" value="36"><button type="button" id="densAdd" title="Refresh: reload 200 of your selected toys">&#x21bb;</button></div>
       </div>
       <div class="sound-row">
         <div class="sound-col"><button type="button" class="modeBtn" data-mode="cyclone">cyclone</button></div>
@@ -237,6 +237,7 @@ body.zen .side { display:none !important; }
       <p>TrippyCharts is built for a desktop or laptop browser with a mouse. Phones and tablets will look wrong, miss the cursor toy, and make the game nearly unplayable. Use a computer.</p>
       <h3>How to play</h3>
       <p>Toys fall in the background. Move your mouse so the cursor (the squid) eats them; it grows, then blobs and resets. Toy Store: pick up to 5 falling toys. The Toys slider sets how many fall. The SFX and Cursor toggles are in the left menu. Each chart has a VOL checkbox to show volume bars.</p>
+      <p>Refresh button (&#x21bb;, next to the Toys slider): after you change your toys in the Toy Store, the old ones can keep falling for a while. Click refresh to clear the screen and drop 200 of your currently selected toys right away.</p>
       <p>Play Game starts game mode fullscreen: charts hide, a boss toy floats around. Suck toys and spit them into the boss. Each hit is 1 point. After the 3rd boss kill a second boss appears, then another after the 4th, and so on. You have one life bar. Getting touched costs 20%. When you die, enter a name for high scores. Esc leaves the game.</p>
       <h3>Not financial advice</h3>
       <p>Nothing on this site is investment, tax, or trading advice. Do your own research. You can lose money trading. We do not promise profits, signals, or “alpha.”</p>
@@ -836,7 +837,7 @@ function drawToyOutline(ctx, b){
 function notMineToys(){ const act=activeToys(), own=player.ownedToyIds||[]; return TOYS.map(t=>t[0]).filter(id=>!act.includes(id)&&!own.includes(id)); }
 function balancedKind(self){ const kinds=activeToys(); if(!kinds.length) return null; const c={}; kinds.forEach(k=>c[k]=0); for(const o of bits){ if(o!==self && !o.spent && c[o.kind]!==undefined) c[o.kind]++; } let min=Infinity; kinds.forEach(k=>{ if(c[k]<min) min=c[k]; }); return pick(kinds.filter(k=>c[k]===min)); }
 function rekind(b){ if(zenMode && b.state!=="fall") return; const k=balancedKind(b); if(k && k!==b.kind){ b.kind=k; b.face=1+Math.floor(Math.random()*6); } }
-function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; let kind=kinds.length?(balancedKind()||pick(kinds)):"sparkles"; if(zenMode && Math.random()<0.04){ const nm=notMineToys(); if(nm.length) kind=pick(nm); } return {kind,x:x??Math.random()*innerWidth,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,face:1+Math.floor(Math.random()*6),state:state||"fall",ang:0}; }
+function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject" && !zenMode) return null; let kind=kinds.length?(balancedKind()||pick(kinds)):"sparkles"; if(zenMode && Math.random()<0.04){ const nm=notMineToys(); if(nm.length) kind=pick(nm); } return {kind,x:x??Math.random()*innerWidth,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,face:1+Math.floor(Math.random()*6),state:state||"fall",ang:0}; }
 function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
 var TOY_CACHE=new Set(["dice","mushrooms","moons","leaves","butterflies","frogs","cats","aliens","skulls","clouds","football","baseball","basketball","soccer","golfballs","controller","cross"]);
 var toySprites=new Map();
@@ -1489,9 +1490,11 @@ function tickBits(){
   if (zenMode && !gameWasOn) { gameWasOn = true; gameMotion = "fall"; bits = bits.filter(b => !b.extra).slice(0, 60); }
   if (!zenMode && gameWasOn) { gameWasOn = false; }
   if (zenMode) {
-    const live = bits.filter(b => !b.spent && !b.homing).length;
-    if (!bits.length) { for (let i=0;i<36;i++) spawnBit(); }
-    else if (live < 10 && bits.length < TOY_MAX) gameSpit();
+    const ammo = bits.filter(b => !b.spent && !b.homing && b.state==="fall").length;
+    if (ammo < 30) {
+      if (bits.length > TOY_MAX - 30) { let cut = bits.length - (TOY_MAX - 30); bits = bits.filter(b => !(cut > 0 && !b.homing && b.state!=="fall" && cut--)); }
+      gameSpit();
+    } else if (ammo < 70 && step % 6 === 0 && bits.length < TOY_MAX) { const b = newBit(Math.random()*innerWidth, -30); if (b) bits.push(b); }
   } else {
     const dens = Math.min(TOY_MAX, picked);
     const base = bits.filter(b => !b.extra);
@@ -2025,7 +2028,8 @@ function drawChart(slot){
   const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
   if (volH) {
     const vmax=Math.max(1,...liveBars.map(b=>b.vol||0)), vBase=h-padB, vw=Math.max(1.5*dpr,gap*.58), fx={};
-    c.save(); c.globalAlpha=.6;
+    const VOL_UP={toxic:"#8ee03a"}, VOL_DN={bolt:"#b3a6dd", snow:"#c4d4ea", bubbles:"#6fa3d0", toxic:"#9a6cff"};
+    c.save(); c.globalAlpha=skin.id==="basic"||skin.id==="rainbow"?.6:.85;
     liveBars.forEach((b,i)=>{
       const v=b.vol||0; if(!v) return;
       const up=b.close>=b.open, x=padL+i*gap+gap/2, bh=Math.max(2*dpr,v/vmax*(volH-6*dpr)), top=vBase-bh;
@@ -2033,7 +2037,7 @@ function drawChart(slot){
         const shift=(performance.now()/260*70 + i*18) % 360, g=c.createLinearGradient(x-vw/2, top, x+vw/2, vBase);
         g.addColorStop(0,"hsla("+shift+",100%,68%,.95)"); g.addColorStop(.45,"hsla("+((shift+55)%360)+",100%,62%,.95)"); g.addColorStop(1,"hsla("+((shift+120)%360)+",100%,58%,.95)");
         c.fillStyle=g;
-      } else c.fillStyle=up?upCol:dnCol;
+      } else c.fillStyle=up?(VOL_UP[skin.id]||upCol):(VOL_DN[skin.id]||dnCol);
       if (skin.id==="lava") paintLava(c, x, top, vBase, vw, up, dpr, i);
       else c.fillRect(x-vw/2, top, vw, bh);
       if (skin.id==="toxic") paintToxic(c, fx, x, top, vBase, vw, up, dpr, i);
@@ -2267,7 +2271,9 @@ if (densEl) {
   });
 }
 document.getElementById("densAdd").addEventListener("click", () => {
-  addExtraToys(TOY_MAX - bits.length); sfx("spit");
+  if (!zenMode) { bits.length = 0; addExtraToys(Math.max(0, TOY_MAX - Number(document.getElementById("density").value || 0))); }
+  else addExtraToys(TOY_MAX - bits.length);
+  sfx("spit");
 });
 document.querySelectorAll(".modeBtn").forEach(btn => btn.addEventListener("click", () => {
   const m = btn.dataset.mode; motionOn = motionOn[m] ? {} : { [m]: true };
