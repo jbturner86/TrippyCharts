@@ -24,7 +24,8 @@ body.charts-fs .side, body.chart-max .side, body.charts-fs #sideShow, body.chart
     header { display:none; }
     header .logo { height:28px; width:auto; display:block; flex:none; object-fit:contain; }
     .brand { display:flex; align-items:center; gap:8px; }
-    .side-title { margin:0 0 4px; font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; font-weight:900; line-height:1;
+    .side-top { display:flex; align-items:center; width:100%; gap:10px; }
+    .side-title { flex:1; text-align:center; margin:0; font-size:.68rem; letter-spacing:.04em; text-transform:uppercase; font-weight:900; line-height:1;
       font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
       background:linear-gradient(90deg,#ffe14a 0%,#b6ff4a 38%,#3de7ff 100%);
       -webkit-background-clip:text; background-clip:text; color:transparent;
@@ -176,9 +177,11 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
   <div id="sky"><canvas id="bg"></canvas></div>
   <div class="wrap">
     <aside class="side" id="sideBar">
-      <button type="button" id="sideToggle">hide</button>
+      <div class="side-top">
+        <button type="button" id="sideToggle">hide</button>
+        <div class="side-title">TrippyCharts</div>
+      </div>
     <div class="density-box" id="toysPanel">
-      <div class="side-title">TrippyCharts</div>
       <p class="hint" id="firstTip"></p>
       <div class="toy-label">toy box</div>
       <div id="quickToys"></div>
