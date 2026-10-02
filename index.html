@@ -1486,7 +1486,7 @@ function moveBit(b, mode){
     b.x += b.vx2; b.y += b.vy2; b.rot += b.spin*3;
     if (b.x < -90 || b.x > innerWidth+90 || b.y < -90 || b.y > innerHeight+90) { rekind(b); launchFly(b, true); }
   } else {
-    b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
+    b.y+=b.v*1.1; b.x+=b.drift; b.rot+=b.spin;
   }
 }
 function tickBits(){
