@@ -35,28 +35,29 @@ body.charts-fs .side, body.chart-max .side, body.charts-fs #sideShow, body.chart
       100% { background-position:300% 50%; }
     }
     @keyframes sheen { to { background-position:220% center; } }
-    .side { position:fixed; left:0; top:8px; z-index:8; width:max-content; max-height:calc(100vh - 16px); overflow:auto; background:rgba(8,2,16,.82); border-radius:0 14px 14px 0; padding:8px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; transition:transform .2s ease; }
+    .side { position:fixed; left:0; top:8px; z-index:8; width:196px; max-height:calc(100vh - 16px); overflow:auto; background:rgba(8,2,16,.82); border-radius:0 14px 14px 0; padding:8px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; transition:transform .2s ease; }
 body.side-hide .side { transform:translateX(-120%); }
 #sideShow { display:none; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.8); color:#efe6ff; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; padding:6px 10px; cursor:pointer; flex:none; }
 body.side-hide #sideShow { display:inline-flex; align-items:center; }
 body.zen #sideShow { display:none !important; }
 #sideToggle { align-self:flex-start; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:#b7ffd2; color:#04140a; font-weight:800; padding:4px 8px; cursor:pointer; }
-.side .actions, .side .dock-btns { display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:0; width:auto; }
-.side button, .side a.page-link, .side select { width:auto; }
+.side .actions, .side .dock-btns { display:flex; flex-direction:column; align-items:stretch; gap:6px; padding:0; width:100%; }
+.side .actions button, .side .actions a.page-link, .side .actions select, .side .dock-btns button, .side .dock-btns a.page-link, .side .dock-btns select { width:100%; justify-content:center; text-align:center; }
+#sideToggle { width:auto; }
 body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !important; }
     .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
     .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
-    button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
+    button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; }
     button.on { background:rgba(196,75,255,.28); border-color:#c44bff; }
     .density-box { position:static; width:auto; padding:6px; border-radius:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); }
     .density-box.collapsed { width:auto; padding:6px 8px; }
     .density-box.collapsed .toys-body { display:none; }
     .toy-label { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:#efe6ff; padding:2px 2px 4px; font-weight:800; }
-    #quickToys { display:flex; flex-direction:column; gap:3px; width:156px; max-height:46vh; overflow:auto; margin-top:2px; }
+    #quickToys { display:flex; flex-direction:column; gap:3px; width:168px; max-height:46vh; overflow:auto; margin-top:2px; }
     .q-lab { font-size:.48rem; letter-spacing:.08em; text-transform:uppercase; color:#9e8cc4; line-height:1; }
     .q-row { display:flex; flex-wrap:wrap; gap:3px; }
-    .q-ico { width:24px; height:24px; padding:0; border-radius:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); overflow:hidden; display:inline-flex; }
-    .q-ico canvas { width:24px; height:24px; display:block; pointer-events:none; }
+    .q-ico { width:28px; height:28px; padding:0; border-radius:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); overflow:hidden; display:inline-flex; }
+    .q-ico canvas { width:28px; height:28px; display:block; pointer-events:none; }
     .q-ico.on { border-color:#c44bff; box-shadow:0 0 0 1px #c44bff; background:rgba(196,75,255,.32); }
     .hint { margin-top:4px; color:#9e8cc4; font-size:.68rem; letter-spacing:.04em; }
     #cancelBtn { display:none; }
