@@ -44,7 +44,7 @@
     <div id="cartTotal"></div>
     <button type="button" id="cartCheckout">Checkout</button>
   </aside>
-  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Everything else is $1. Cursors and candle themes are $3. No subscription. <b id="rainCount">Raining 1 / 5</b></p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Everything else is $1. Cursors and candle themes are $3. <a href="#" id="passLink">Trippy Pass</a> ($5/month) gets 5 brand-new subscriber-only toys every month. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
@@ -60,13 +60,11 @@ const TOYS = [
   ["skulls","Skulls"],["hearts","Hearts"],["flowers","Flowers"],["butterflies","Butterflies"],
   ["aliens","Aliens"],["frogs","Frogs"],["cats","Cats"],["crystals","Crystals"],
   ["planets","Planets"],["clouds","Clouds"],["dice","Dice"],["peace","Peace signs"],["sparkles","Sparkles"],
-  ["jellyfish","Jellyfish"],["robots","Robots"],["lightning","Lightning"],["ghosts","Ghosts"],["eyes","Eyes"],["capsules","Capsules"],["bongs","Bong"],["football","Football"],["baseball","Baseball"],["basketball","Basketball"],["soccer","Soccer"],["cigar","Cigar"],["controller","Controller"],["cross","Cross"]
+  ["jellyfish","Jellyfish"],["robots","Robots"],["lightning","Lightning"],["ghosts","Ghosts"],["eyes","Eyes"],["capsules","Capsules"],["bongs","Bong"],["football","Football"],["baseball","Baseball"],["basketball","Basketball"],["soccer","Soccer"],["cigar","Cigar"],["controller","Controller"],["cross","Cross"],["rainbows","Rainbows"],["discoballs","Disco balls"],["ufos","UFOs"],["smileys","Smileys"],["clocks","Melting clocks"]
 ];
 const FREE_TOYS = ["mushrooms"];
 const PASS_BY_MONTH = {
-  "2026-09": ["bill","moons","leaves","flowers","hearts"],
-  "2026-10": ["jellyfish","robots","lightning","ghosts","eyes"],
-  "2026-11": ["cats","planets","clouds","dice","peace"]
+  "2026-10": ["rainbows","discoballs","ufos","smileys","clocks"]
 };
 const SAVE_KEY = "trippy_player_v1";
 const API = "https://trippy-quote.j-bradturner.workers.dev";
@@ -74,7 +72,7 @@ function currentMonth(){
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0");
 }
-function passToys(){ return PASS_BY_MONTH[currentMonth()] || PASS_BY_MONTH["2026-09"]; }
+function passToys(){ return PASS_BY_MONTH[currentMonth()] || []; }
 function toyDropMonth(id){
   for (const [m, list] of Object.entries(PASS_BY_MONTH)) if (list.includes(id)) return m;
   return null;
@@ -114,12 +112,29 @@ function getPlayerId(){
   return id;
 }
 const PLAYER_ID = getPlayerId();
-function hasPass(){ return false; }
+function isPassToy(id){ return !!toyDropMonth(id); }
+function dropLive(id){ const m = toyDropMonth(id); return !!m && m <= currentMonth(); }
+function hasPass(){ return !!player.passActive && (!player.passExpiresAt || Number(player.passExpiresAt) > Date.now()); }
+async function startPass(){
+  try {
+    const r = await fetch(API + "/buy", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify({ playerId: PLAYER_ID, type: "pass" }) });
+    const d = await r.json();
+    if (d.url) location.href = d.url; else alert(d.error || "Checkout failed. Try again in a minute.");
+  } catch(e){ alert("Checkout failed. Try again in a minute."); }
+}
+async function managePass(){
+  try {
+    const r = await fetch(API + "/portal", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify({ playerId: PLAYER_ID }) });
+    const d = await r.json();
+    if (d.url) location.href = d.url; else alert(d.error || "Could not open billing.");
+  } catch(e){ alert("Could not open billing."); }
+}
+
 function ownedToys(){
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
   return [...new Set([...FREE_TOYS, ...own])];
 }
-function canUse(id){ return true; }
+function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return true; }
 function cleanEquipped(){
   const ok = (player.equippedToyIds || []).filter(canUse);
   player.equippedToyIds = (ok.length ? ok : ["mushrooms"]).slice(0,5);
@@ -284,6 +299,33 @@ function drawToy(c,b){
     c.fillStyle="#ff5d8f"; c.beginPath(); c.arc(s*.14,-s*.02,s*.05,0,7); c.fill();
     c.fillStyle="#7cff3a"; c.beginPath(); c.arc(s*.26,s*.05,s*.05,0,7); c.fill();
     c.fillStyle="#5aa0ff"; c.beginPath(); c.arc(s*.2,-s*.08,s*.04,0,7); c.fill();
+  } else if(k==="rainbows"){
+    const cols=["#ff4d5a","#ff9a3a","#ffe14a","#5ad75a","#4aa8ff","#9b6bff"];
+    c.lineWidth=Math.max(1.5,s*0.07);
+    cols.forEach((col,i)=>{ c.strokeStyle=col; c.beginPath(); c.arc(0,s*.18,s*(.44-i*.065),Math.PI,0); c.stroke(); });
+    c.fillStyle="#ffffff"; [[-s*.36,s*.2],[s*.36,s*.2]].forEach(([x,y])=>{ c.beginPath(); c.arc(x-s*.06,y,s*.09,0,7); c.arc(x+s*.06,y,s*.09,0,7); c.arc(x,y-s*.06,s*.09,0,7); c.fill(); });
+  } else if(k==="discoballs"){
+    c.fillStyle="#3a3550"; c.fillRect(-s*.02,-s*.5,s*.04,s*.12);
+    c.save(); c.beginPath(); c.arc(0,0,s*.38,0,7); c.clip();
+    const n=6, t=s*.76/n;
+    for(let i=0;i<n;i++) for(let j=0;j<n;j++){ const h=(i*53+j*97)%360; c.fillStyle=`hsl(${h},70%,${55+((i+j)%3)*12}%)`; c.fillRect(-s*.38+i*t,-s*.38+j*t,t-1,t-1); }
+    c.restore(); c.beginPath(); c.arc(0,0,s*.38,0,7); stroke();
+    c.fillStyle="rgba(255,255,255,.85)"; c.beginPath(); c.arc(-s*.14,-s*.16,s*.06,0,7); c.fill();
+  } else if(k==="ufos"){
+    c.fillStyle="rgba(140,255,120,.35)"; c.beginPath(); c.moveTo(-s*.12,s*.08); c.lineTo(s*.12,s*.08); c.lineTo(s*.26,s*.5); c.lineTo(-s*.26,s*.5); c.closePath(); c.fill();
+    c.fillStyle="#9fe8ff"; c.beginPath(); c.ellipse(0,-s*.06,s*.18,s*.16,0,Math.PI,0); c.fill(); stroke();
+    c.fillStyle="#b8b8c8"; c.beginPath(); c.ellipse(0,0,s*.44,s*.13,0,0,7); c.fill(); stroke();
+    ["#ff4ad2","#ffe14a","#7cff3a","#ffe14a","#ff4ad2"].forEach((col,i)=>{ c.fillStyle=col; c.beginPath(); c.arc(-s*.28+i*s*.14,s*.02,s*.035,0,7); c.fill(); });
+  } else if(k==="smileys"){
+    c.fillStyle="#ffd93a"; c.beginPath(); c.arc(0,0,s*.4,0,7); c.fill(); stroke();
+    c.fillStyle="#1b1430"; c.beginPath(); c.ellipse(-s*.13,-s*.1,s*.04,s*.08,0,0,7); c.fill(); c.beginPath(); c.ellipse(s*.13,-s*.1,s*.04,s*.08,0,0,7); c.fill();
+    c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1.2,s*0.05); c.beginPath(); c.arc(0,s*.02,s*.22,.25*Math.PI,.75*Math.PI); c.stroke();
+  } else if(k==="clocks"){
+    c.fillStyle="#f2e6c8";
+    c.beginPath(); c.moveTo(-s*.36,-s*.3); c.quadraticCurveTo(0,-s*.46,s*.36,-s*.3); c.quadraticCurveTo(s*.42,s*.02,s*.3,s*.14); c.quadraticCurveTo(s*.2,s*.22,s*.18,s*.46); c.quadraticCurveTo(s*.1,s*.5,s*.06,s*.24); c.quadraticCurveTo(-s*.2,s*.26,-s*.34,s*.08); c.quadraticCurveTo(-s*.44,-s*.1,-s*.36,-s*.3); c.closePath(); c.fill(); stroke();
+    c.strokeStyle="#1b1430"; c.lineWidth=Math.max(1,s*0.04);
+    c.beginPath(); c.moveTo(0,-s*.08); c.lineTo(0,-s*.28); c.moveTo(0,-s*.08); c.lineTo(s*.16,-s*.02); c.stroke();
+    c.fillStyle="#1b1430"; [[0,-s*.32],[s*.26,-s*.1],[-s*.26,-s*.12]].forEach(([x,y])=>{ c.beginPath(); c.arc(x,y,s*.025,0,7); c.fill(); });
   } else if(k==="cross"){
     c.fillStyle="#8a5a32";
     c.fillRect(-s*.08,-s*.4,s*.16,s*.8);
@@ -319,6 +361,7 @@ function drawToy(c,b){
 }
 function statusFor(id){
   if (FREE_TOYS.includes(id)) return "free";
+  if (isPassToy(id)) return hasPass() ? "pass" : "pass only";
   if (canUse(id)) return "owned";
   return "$1 unlock";
 }
@@ -347,11 +390,12 @@ function paint(){
   const rain = document.getElementById("rainCount");
   if (rain) rain.textContent = "Raining " + (player.equippedToyIds||[]).length + " / 5";
   const box = document.getElementById("grid");
-  box.innerHTML = TOYS.map(([id,label], i) => {
+  box.innerHTML = TOYS.filter(([id]) => !isPassToy(id) || dropLive(id)).map(([id,label], i) => {
     const own = canUse(id);
     const on = own && (player.equippedToyIds||[]).includes(id);
     const action = own
       ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}></label>`
+      : isPassToy(id) ? `<button class="buy" data-pass="1">Get pass $5/mo</button>`
       : `<button class="buy" data-buy="${id}">Add $1</button>`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
@@ -421,7 +465,9 @@ document.getElementById("grid").addEventListener("change", e => {
   paint();
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
+document.getElementById("passLink").addEventListener("click", e => { e.preventDefault(); startPass(); });
 document.getElementById("grid").addEventListener("click", e => {
+  if (e.target.dataset.pass) { startPass(); return; }
   const id = e.target.dataset.buy;
   if (!id) return;
   const label = (TOYS.find(t => t[0]===id) || [id,id])[1];
