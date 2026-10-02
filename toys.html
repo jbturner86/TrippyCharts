@@ -22,6 +22,13 @@
     .tag { display:block; margin:4px 0 8px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#b9a6dd; }
     .card button, .card label { width:100%; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.07); color:#efe6ff; padding:7px 8px; font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
     .card button.buy { background:#b7ffd2; color:#04140a; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.9rem; }
+    #cart { position:fixed; right:14px; bottom:14px; z-index:30; width:min(280px, calc(100vw - 28px)); background:rgba(10,6,18,.96); border:1px solid rgba(255,255,255,.2); border-radius:16px; padding:12px; box-shadow:0 10px 28px rgba(0,0,0,.4); }
+    #cart h3 { font-size:.85rem; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+    #cart ul { list-style:none; max-height:180px; overflow:auto; margin-bottom:8px; }
+    #cart li { display:flex; justify-content:space-between; gap:8px; font-size:.78rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.08); }
+    #cart button { border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.08); color:#efe6ff; padding:6px 10px; cursor:pointer; }
+    #cartCheckout { background:#b7ffd2; color:#04140a; font-weight:800; border-color:#fff; width:100%; margin-top:8px; }
+    #cartTotal { font-weight:800; margin-top:6px; }
     .card label { display:flex; gap:6px; align-items:center; justify-content:center; background:transparent; border:none; }
     .card input[type="checkbox"], .card input[type="radio"] { width:22px; height:22px; accent-color:#c44bff; }
   </style>
@@ -31,6 +38,12 @@
     <h1>Toy Store</h1>
     <a class="back" href="index.html">← back to charts</a>
   </header>
+  <aside id="cart" hidden>
+    <h3>Cart</h3>
+    <ul id="cartList"></ul>
+    <div id="cartTotal"></div>
+    <button type="button" id="cartCheckout">Checkout</button>
+  </aside>
   <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Everything else is $1. Cursors and candle themes are $3. No subscription. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
@@ -339,7 +352,7 @@ function paint(){
     const on = own && (player.equippedToyIds||[]).includes(id);
     const action = own
       ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buy="${id}">Unlock $1</button>`;
+      : `<button class="buy" data-buy="${id}">Add $1</button>`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
       <div class="name">${label}</div>
@@ -408,21 +421,11 @@ document.getElementById("grid").addEventListener("change", e => {
   paint();
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
-document.getElementById("grid").addEventListener("click", async e => {
+document.getElementById("grid").addEventListener("click", e => {
   const id = e.target.dataset.buy;
   if (!id) return;
-  const ok = confirm("Unlock " + id + " for $1? Charts stay free. Not financial advice.");
-  if (!ok) return;
-  try {
-    const r = await fetch(API + "/buy", {
-      method: "POST",
-      headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify({ playerId: PLAYER_ID, sku: id, type: "toy" })
-    });
-    const data = await r.json();
-    if (data.url) { rememberPending(id); location.href = data.url; }
-    else alert(data.error || "Need a $1 Stripe price on the Worker first (STRIPE_TOY_PRICE).");
-  } catch(err){ alert("checkout failed"); }
+  const label = (TOYS.find(t => t[0]===id) || [id,id])[1];
+  addToCart({ sku: id, type: "toy", name: label, amount: 100 });
 });
 function ownsCursor(id){ return true; }
 function previewCursor(cv, skin){
@@ -483,7 +486,7 @@ function paintCursors(){
     const on = own && player.equippedCursor === id;
     const action = own
       ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buycur="${id}">Unlock $3</button>`;
+      : `<button class="buy" data-buycur="${id}">Add $3</button>`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-cur="${id}"></canvas>
       <div class="name">${label}</div>
@@ -500,21 +503,11 @@ document.getElementById("cursors").addEventListener("change", e => {
   paintCursors();
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
-document.getElementById("cursors").addEventListener("click", async e => {
+document.getElementById("cursors").addEventListener("click", e => {
   const id = e.target.dataset.buycur;
   if (!id) return;
-  const ok = confirm("Unlock this cursor for $3? Charts stay free. Not financial advice.");
-  if (!ok) return;
-  try {
-    const r = await fetch(API + "/buy", {
-      method: "POST",
-      headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify({ playerId: PLAYER_ID, sku: "cursor_"+id, type: "cursor" })
-    });
-    const data = await r.json();
-    if (data.url) { rememberPending("cursor_"+id); location.href = data.url; }
-    else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE).");
-  } catch(err){ alert("checkout failed"); }
+  const label = (CURSORS.find(t => t[0]===id) || [id,id])[1];
+  addToCart({ sku: "cursor_"+id, type: "cursor", name: label, amount: 300 });
 });
 
 const THEMES = [["basic","Basic"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"]];
@@ -583,7 +576,7 @@ function paintThemes(){
     const on = own && player.equippedTheme === id;
     const action = own
       ? `<label><input type="radio" name="theme" data-theme="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buytheme="${id}">Unlock $3</button>`;
+      : `<button class="buy" data-buytheme="${id}">Add $3</button>`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="120" data-theme="${id}"></canvas>
       <div class="name">${label}</div>
@@ -601,18 +594,31 @@ document.getElementById("themes").addEventListener("change", e => {
   paintThemes();
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(err){}
 });
-function rememberPending(sku){
-  localStorage.setItem("trippy_pending_sku", JSON.stringify({ sku, t: Date.now() }));
+const CART_KEY = "trippy_cart_v1";
+function loadCart(){ try { return JSON.parse(localStorage.getItem(CART_KEY)||"[]"); } catch(e){ return []; } }
+function saveCart(items){ localStorage.setItem(CART_KEY, JSON.stringify(items)); paintCart(); }
+function addToCart(item){
+  const items = loadCart();
+  if (items.some(x => x.sku === item.sku)) return paintCart();
+  items.push(item);
+  saveCart(items);
 }
-function claimPending(){
-  let pending = null;
-  try { pending = JSON.parse(localStorage.getItem("trippy_pending_sku") || "null"); } catch(e){}
-  if (!pending || !pending.sku || Date.now() - pending.t > 30*60*1000) return false;
-  const q = location.search || "";
-  const back = (document.referrer || "").includes("stripe.com");
-  const paid = /session_id=|checkout=success|paid=1|success=1/.test(q) || back;
-  if (!paid) return false;
-  const sku = pending.sku;
+function paintCart(){
+  const box = document.getElementById("cart");
+  const list = document.getElementById("cartList");
+  const total = document.getElementById("cartTotal");
+  if (!box) return;
+  const items = loadCart();
+  box.hidden = !items.length;
+  if (!list) return;
+  list.innerHTML = items.map(it => `<li><span>${it.name}</span><span>$${(it.amount/100).toFixed(0)} <button type="button" data-drop="${it.sku}">x</button></span></li>`).join("");
+  const cents = items.reduce((n,it)=>n+it.amount,0);
+  if (total) total.textContent = "Total $" + (cents/100).toFixed(2);
+}
+function rememberPending(items){
+  localStorage.setItem("trippy_pending_sku", JSON.stringify({ items, t: Date.now() }));
+}
+function grantSku(sku){
   if (sku.startsWith("theme_")) {
     const id = sku.slice(6);
     player.ownedThemeIds = [...new Set([...(player.ownedThemeIds||["basic"]), "basic", id])];
@@ -625,26 +631,49 @@ function claimPending(){
     player.ownedToyIds = [...new Set([...(player.ownedToyIds||["mushrooms"]), sku])];
     if (!(player.equippedToyIds||[]).includes(sku) && (player.equippedToyIds||[]).length < 5) player.equippedToyIds.push(sku);
   }
+}
+function claimPending(){
+  let pending = null;
+  try { pending = JSON.parse(localStorage.getItem("trippy_pending_sku") || "null"); } catch(e){}
+  const items = pending && pending.items ? pending.items : (pending && pending.sku ? [{sku: pending.sku}] : []);
+  if (!items.length || Date.now() - (pending.t||0) > 30*60*1000) return false;
+  const q = location.search || "";
+  const back = (document.referrer || "").includes("stripe.com");
+  const paid = /session_id=|checkout=success|paid=1|success=1/.test(q) || back;
+  if (!paid) return false;
+  items.forEach(it => grantSku(it.sku));
   localStorage.removeItem("trippy_pending_sku");
+  localStorage.removeItem(CART_KEY);
   savePlayer();
   history.replaceState({}, "", location.pathname);
   return true;
 }
-document.getElementById("themes").addEventListener("click", async e => {
-  const id = e.target.dataset.buytheme;
-  if (!id) return;
-  const ok = confirm("Unlock this candle theme for $3? Charts stay free. Not financial advice.");
-  if (!ok) return;
+document.getElementById("cartList").addEventListener("click", e => {
+  const sku = e.target.dataset.drop;
+  if (!sku) return;
+  saveCart(loadCart().filter(it => it.sku !== sku));
+});
+document.getElementById("cartCheckout").addEventListener("click", async () => {
+  const items = loadCart();
+  if (!items.length) return;
+  const first = items[0];
   try {
     const r = await fetch(API + "/buy", {
       method: "POST",
       headers: { "Content-Type":"application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify({ playerId: PLAYER_ID, sku: "theme_"+id, type: "theme" })
+      body: JSON.stringify({ playerId: PLAYER_ID, sku: first.sku, type: first.type, items })
     });
     const data = await r.json();
-    if (data.url) { rememberPending("theme_"+id); location.href = data.url; }
-    else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE). Theme was not unlocked.");
+    if (data.url) { rememberPending(items); location.href = data.url; }
+    else alert(data.error || "Worker needs a cart checkout. It still only sells one price id.");
   } catch(err){ alert("checkout failed"); }
+});
+paintCart();
+document.getElementById("themes").addEventListener("click", e => {
+  const id = e.target.dataset.buytheme;
+  if (!id) return;
+  const label = (THEMES.find(t => t[0]===id) || [id,id])[1];
+  addToCart({ sku: "theme_"+id, type: "theme", name: label, amount: 300 });
 });
 
 const claimed = claimPending();
