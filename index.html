@@ -832,8 +832,6 @@ function drawSquid(){
   if (!window.cursorTrail) window.cursorTrail = [];
   const trail = window.cursorTrail;
   ctx.save();
-  if (!window.cursorTrail) window.cursorTrail = [];
-  const trail = window.cursorTrail;
   trail.unshift({x:mouse.x,y:mouse.y});
   if (trail.length > 28) trail.length = 28;
   if (skin === "worm" || skin === "shenron" || skin === "hole") {
