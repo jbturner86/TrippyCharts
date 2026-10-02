@@ -38,7 +38,7 @@
   <p class="lead">These ride with your pointer. Squid is free. The rest are $3 each.</p>
   <div class="grid" id="cursors"></div>
   <h2>Candle themes</h2>
-  <p class="lead">One theme at a time. Basic is free. Ember, rainbow, drip, lightning, snow, bubbles, neon, confetti, ice, and gold are $3. Unselected charts go back to basic.</p>
+  <p class="lead">Testing: every toy, cursor, and theme is free. Pick one theme. Basic clears it.</p>
   <div class="grid" id="themes"></div>
   <p class="note">$1 toys and $3 cursors/themes need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error. A paid theme still equips from this browser once owned.</p>
 <script>
@@ -103,7 +103,7 @@ function ownedToys(){
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
   return [...new Set([...FREE_TOYS, ...own])];
 }
-function canUse(id){ return ownedToys().includes(id); }
+function canUse(id){ return true; }
 function cleanEquipped(){
   const ok = (player.equippedToyIds || []).filter(canUse);
   player.equippedToyIds = (ok.length ? ok : ["mushrooms"]).slice(0,5);
@@ -393,10 +393,7 @@ document.getElementById("grid").addEventListener("click", async e => {
     else alert(data.error || "Need a $1 Stripe price on the Worker first (STRIPE_TOY_PRICE).");
   } catch(err){ alert("checkout failed"); }
 });
-function ownsCursor(id){
-  if (id === "squid") return true;
-  return (player.ownedCursorIds || []).includes(id);
-}
+function ownsCursor(id){ return true; }
 function previewCursor(cv, skin){
   const c = cv.getContext("2d");
   const w = cv.width, h = cv.height, t = Date.now()/400;
@@ -469,10 +466,7 @@ document.getElementById("cursors").addEventListener("click", async e => {
 });
 
 const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["confetti","Confetti"],["ice","Ice"],["gold","Gold vein"]];
-function ownsTheme(id){
-  if (id === "basic") return true;
-  return (player.ownedThemeIds || []).includes(id);
-}
+function ownsTheme(id){ return true; }
 function previewTheme(cv, id){
   const c = cv.getContext("2d");
   const w = cv.width, h = cv.height;
