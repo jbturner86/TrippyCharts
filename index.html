@@ -612,7 +612,15 @@ const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
 let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.72, zenMode = false, bosses = [], blobT = 0, playerHp = 100, hurtCool = 0, gameScore = 0, bossKills = 0, pendingScore = 0;
 const SQUID_START = 0.72, SQUID_MAX = 1.55, ARM_N = 16, SEG = 16;
 const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
-function resizeBg(){ bg.width = innerWidth; bg.height = innerHeight; }
+function resizeBg(){
+  const w = innerWidth, h = innerHeight;
+  bg.style.width = w + "px";
+  bg.style.height = h + "px";
+  bg.width = Math.max(1, Math.floor(w * 2));
+  bg.height = Math.max(1, Math.floor(h * 2));
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+}
+addEventListener("wheel", e => { if (e.ctrlKey) e.preventDefault(); }, { passive:false });
 addEventListener("resize", resizeBg); resizeBg();
 function sparkPops(x,y,n){
   const count = Math.min(14, n||10);
@@ -772,7 +780,7 @@ function drawToyOutline(ctx, b){
   ctx.drawImage(toyEdge, b.x-size/2, b.y-size/2);
   drawToy(ctx, b);
 }
-function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*bg.width,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
+function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*innerWidth,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
 function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
 function drawToy(c,b){
   if(!b || !c) return;
@@ -1174,7 +1182,7 @@ function tickBits(){
 (function loopSky(){
   try {
     if (!bg.width || !bg.height) resizeBg();
-    ctx.clearRect(0,0,bg.width,bg.height);
+    ctx.setTransform(2,0,0,2,0,0); ctx.clearRect(0,0,innerWidth,innerHeight);
     tickBits();
     tickMusic();
     bits.forEach(b=>{
@@ -1200,8 +1208,8 @@ function tickBits(){
       bosses.forEach(boss=>{
         boss.x += boss.vx; boss.y += boss.vy; boss.rot += boss.spin;
         const m = boss.s*0.45;
-        if(boss.x<m || boss.x>bg.width-m){ boss.vx*=-1; boss.x=Math.max(m,Math.min(bg.width-m,boss.x)); }
-        if(boss.y<m || boss.y>bg.height-m){ boss.vy*=-1; boss.y=Math.max(m,Math.min(bg.height-m,boss.y)); }
+        if(boss.x<m || boss.x>innerWidth-m){ boss.vx*=-1; boss.x=Math.max(m,Math.min(innerWidth-m,boss.x)); }
+        if(boss.y<m || boss.y>innerHeight-m){ boss.vy*=-1; boss.y=Math.max(m,Math.min(innerHeight-m,boss.y)); }
         if(boss.hurt>0) boss.hurt--;
         if(Math.hypot(boss.x-mouse.x, boss.y-mouse.y) < boss.s*0.42 + 18) hurtPlayer();
         try{ drawToy(ctx,boss); }catch(e){}
