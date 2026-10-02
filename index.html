@@ -596,8 +596,7 @@ paintPass();
 paintStore();
 
 function activeToys(){
-  const eq = (player.equippedToyIds || []).filter(canUse).slice(0,5);
-  return eq.length ? eq : ["mushrooms"];
+  return (player.equippedToyIds || []).filter(canUse).slice(0,5);
 }
 const pick = arr => arr[Math.floor(Math.random()*arr.length)];
 const mouse = { x: innerWidth/2, y: innerHeight/2, px: innerWidth/2, py: innerHeight/2 };
@@ -720,7 +719,12 @@ function hitBoss(b){
   boss.hp=Math.max(0,boss.hp-25); boss.hurt=8;
   gameScore += 1;
   paintHudScore();
-  burst.push({x:b.x,y:b.y,vx:(b.x-boss.x)*.08,vy:(b.y-boss.y)*.08,life:1,hue:boss.hue,r:6+Math.random()*8});
+  for (let n=0;n<10;n++){
+    const a = Math.random()*6.28;
+    const sp = 1.5+Math.random()*3.5;
+    burst.push({x:b.x,y:b.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,hue:90+Math.random()*40,r:3+Math.random()*6});
+  }
+  b.spent = true; b.homing = false;
   if(boss.hp<=0){
     const bx=boss.x,by=boss.y;
     bosses = bosses.filter(bo => bo !== boss);
@@ -736,6 +740,34 @@ function hurtPlayer(){
   sfx("hurt");
   for(let i=0;i<18;i++) burst.push({x:mouse.x,y:mouse.y,vx:(Math.random()-.5)*8,vy:(Math.random()-.5)*8,life:1,hue:0,r:3+Math.random()*5});
   if(playerHp<=0){ sfx("die"); openScoreSave(); endZen(); }
+}
+
+let toyStamp = null, toyEdge = null;
+function drawToyOutline(ctx, b){
+  const size = Math.ceil(b.s*2+12);
+  if (!toyStamp) toyStamp = document.createElement("canvas");
+  if (!toyEdge) toyEdge = document.createElement("canvas");
+  if (toyStamp.width !== size) { toyStamp.width = toyEdge.width = size; toyStamp.height = toyEdge.height = size; }
+  const o = toyStamp.getContext("2d");
+  o.clearRect(0,0,size,size);
+  o.save();
+  o.translate(size/2, size/2);
+  drawToy(o, { ...b, x:0, y:0 });
+  o.restore();
+  const e = toyEdge.getContext("2d");
+  e.clearRect(0,0,size,size);
+  for (let i=0;i<8;i++){
+    const a = i/8*Math.PI*2;
+    e.drawImage(toyStamp, Math.cos(a)*2.4, Math.sin(a)*2.4);
+  }
+  e.globalCompositeOperation = "source-in";
+  e.fillStyle = "#39ff6a";
+  e.fillRect(0,0,size,size);
+  e.globalCompositeOperation = "destination-out";
+  e.drawImage(toyStamp, 0, 0);
+  e.globalCompositeOperation = "source-over";
+  ctx.drawImage(toyEdge, b.x-size/2, b.y-size/2);
+  drawToy(ctx, b);
 }
 function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*bg.width,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
 function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
@@ -1083,7 +1115,7 @@ function drawSquid(){
 function tickBits(){
   const densEl = document.getElementById("density");
   const dens = densEl ? Number(densEl.value) : 36;
-  if (dens <= 0) { bits = []; }
+  if (dens <= 0 || !activeToys().length) { bits = []; }
   else if (activeToys().length) {
     const need = dens - bits.length;
     const burstN = Math.min(40, Math.max(0, need));
@@ -1121,11 +1153,15 @@ function tickBits(){
         b.vy = b.vy*0.55 + Math.sin(ang)*16*0.45;
       }
       b.x+=b.vx; b.y+=b.vy; b.vx*=0.992; b.vy*=0.992; b.s=Math.min(24,b.s*1.04); b.rot+=0.06;
-      if(zenMode&&hitBoss(b)) Object.assign(b,newBit(Math.random()*bg.width,-30,"fall")||b);
-      else if(dist>(zenMode?380:150)){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
+      if(zenMode&&hitBoss(b)) { /* spent, removed after the loop */ }
+      else if(dist>(zenMode?380:150)){ b.homing=false; b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
     }
-    if(b.y>innerHeight+50||b.x<-60||b.x>innerWidth+60) Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b);
+    if(!b.spent && (b.y>innerHeight+50||b.x<-60||b.x>innerWidth+60)){
+      if(b.homing) b.spent = true;
+      else Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b);
+    }
   });
+  bits = bits.filter(b => !b.spent);
   burst=burst.filter(p=>p.life>0);
   burst.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vx*=0.98; p.vy*=0.98; p.life-=0.012; });
 }
@@ -1136,8 +1172,10 @@ function tickBits(){
     tickBits();
     tickMusic();
     bits.forEach(b=>{
-      if(zenMode && b.homing){ ctx.save(); ctx.strokeStyle="#39ff6a"; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(b.x,b.y,b.s*0.72,0,7); ctx.stroke(); ctx.restore(); }
-      try{ drawToy(ctx,b); }catch(e){}
+      try{
+        if(zenMode && b.homing) drawToyOutline(ctx, b);
+        else drawToy(ctx,b);
+      }catch(e){}
     });
     burst.forEach(p=>{
       ctx.globalCompositeOperation="lighter";
