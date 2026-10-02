@@ -1666,7 +1666,7 @@ function visibleBars(slot){
   slot.visStart = Math.max(0, src.length-n-slot.offset);
   return src.slice(slot.visStart, src.length-slot.offset);
 }
-function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id), r=c.getBoundingClientRect();
+function sizeCanvases(){ sizeTick=0; slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id); if(!c) return; const r=c.getBoundingClientRect(); s.hidden = r.width<2 || r.height<2;
   const w=Math.max(240,Math.floor(r.width*pxRatio())), h=Math.max(140,Math.floor(r.height*pxRatio()));
   if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } }); }
 addEventListener("resize", sizeCanvases); addEventListener("fullscreenchange", sizeCanvases);
@@ -2252,7 +2252,8 @@ function fmtVol(v){ v=+v||0; if(v>=1e9) return (v/1e9).toFixed(2)+"B"; if(v>=1e6
 function paintOhlc(slot, b){
   const el=document.getElementById("ohlc-"+slot.id); if(!el||!b) return;
   const up=b.close>=b.open;
-  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b>${slot.vol&&b.vol?`<b class="${up?"up":"down"}">V ${fmtVol(b.vol)}</b>`:""}`;
+  const html=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b>${slot.vol&&b.vol?`<b class="${up?"up":"down"}">V ${fmtVol(b.vol)}</b>`:""}`;
+  if (el._h !== html) { el._h = html; el.innerHTML = html; }
 }
 function sessionLabel(state){
   const s = (state||"").toUpperCase();
@@ -2262,13 +2263,13 @@ function sessionLabel(state){
   if (s==="REGULAR") return "live last candle";
   return "live last candle";
 }
+function setTxt(el, t, cls){ if(!el) return; if(el._t!==t){ el._t=t; el.textContent=t; } if(cls!==undefined && el._c!==cls){ el._c=cls; el.className=cls; } }
 function paintMeta(slot){
   const change=slot.price-slot.prev, pct=slot.prev?(change/slot.prev)*100:0;
-  document.getElementById("px-"+slot.id).textContent=`${slot.symbol}  ${fmt(slot.price||0)}`;
+  setTxt(document.getElementById("px-"+slot.id), `${slot.symbol}  ${fmt(slot.price||0)}`);
   const chg=document.getElementById("chg-"+slot.id), sign=change>=0?"+":"";
-  chg.textContent=slot.price?`${sign}${change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"";
-  chg.className="chg "+(pct>0.01?"up":pct<-0.01?"down":"flat");
-  document.getElementById("note-"+slot.id).textContent=slot.live?`${slot.tf} • ${sessionLabel(slot.state)}`: `${slot.tf} • no live feed`;
+  setTxt(chg, slot.price?`${sign}${change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"", "chg "+(pct>0.01?"up":pct<-0.01?"down":"flat"));
+  setTxt(document.getElementById("note-"+slot.id), slot.live?`${slot.tf} • ${sessionLabel(slot.state)}`: `${slot.tf} • no live feed`);
 }
 function clock(){}
 function zoomSlot(i,dir){
@@ -2360,8 +2361,8 @@ slots.forEach((_,i)=>{
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
   cv.addEventListener("mousemove", e => {
-    const r=cv.getBoundingClientRect(), dpr=pxRatio();
-    slots[i].hover={ x:(e.clientX-r.left)*dpr, y:(e.clientY-r.top)*dpr };
+    const dpr=pxRatio();
+    slots[i].hover={ x:e.offsetX*dpr, y:e.offsetY*dpr };
   });
   cv.addEventListener("mouseleave", () => { slots[i].hover=null; });
   const cvPt = e => { const r=cv.getBoundingClientRect(), dpr=pxRatio(); return { x:(e.clientX-r.left)*dpr, y:(e.clientY-r.top)*dpr }; };
@@ -2500,7 +2501,8 @@ addEventListener("fullscreenchange", () => {
     if (zenMode) endZen();
   }
 });
-function loop(){ if(!zenMode){ sizeCanvases(); slots.forEach(drawChart); } requestAnimationFrame(loop); }
+let sizeTick = 0;
+function loop(){ if(!zenMode){ if(++sizeTick>=30) sizeCanvases(); slots.forEach(s=>{ if(!s.hidden) drawChart(s); }); } requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
   if (!document.fullscreenElement) {
     if (chartsFs) leaveChartsFs();
