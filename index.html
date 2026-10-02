@@ -51,7 +51,7 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
     .density-box { position:static; width:auto; padding:6px; border-radius:12px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); }
     .density-box.collapsed { width:auto; padding:6px 8px; }
     .density-box.collapsed .toys-body { display:none; }
-    #toysToggle { width:auto; margin-bottom:4px; }
+    .toy-label { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:#efe6ff; padding:2px 2px 4px; font-weight:800; }
     #quickToys { display:flex; flex-direction:column; gap:3px; width:156px; max-height:46vh; overflow:auto; margin-top:2px; }
     .q-lab { font-size:.48rem; letter-spacing:.08em; text-transform:uppercase; color:#9e8cc4; line-height:1; }
     .q-row { display:flex; flex-wrap:wrap; gap:3px; }
@@ -178,8 +178,8 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
     </header>
     <aside class="side" id="sideBar">
       <button type="button" id="sideToggle">hide</button>
-    <div class="density-box collapsed" id="toysPanel">
-      <button type="button" id="toysToggle">toy box</button>
+    <div class="density-box" id="toysPanel">
+      <div class="toy-label">toy box</div>
       <div id="quickToys"></div>
       <div class="toys-body">
       <label for="density">toy density <span id="densityVal">70</span></label>
@@ -191,6 +191,8 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
         <button type="button" id="musicBtn">on</button>
         <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">cursor</span>
         <button type="button" id="cursorBtn">on</button>
+        <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">power</span>
+        <button type="button" id="potatoBtn">full</button>
       </div>
       </div>
     </div>
@@ -291,9 +293,12 @@ const SAVE_KEY = "trippy_player_v1";
 const SOUND_KEY = "trippy_sound_on";
 const MUSIC_KEY = "trippy_music_on";
 const CURSOR_KEY = "trippy_cursor_on";
+const POTATO_KEY = "trippy_potato";
 let soundOn = localStorage.getItem(SOUND_KEY) !== "0";
 let musicOn = localStorage.getItem(MUSIC_KEY) !== "0";
 let cursorOn = localStorage.getItem(CURSOR_KEY) !== "0";
+let potato = localStorage.getItem(POTATO_KEY) === "1";
+function pxRatio(){ return potato ? 1 : (devicePixelRatio || 1); }
 let audioCtx = null, musicTimer = -1, lastEatSfx = 0;
 function ensureAudio(){
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1041,7 +1046,8 @@ function drawSquid(){
 }
 function tickBits(){
   const densEl = document.getElementById("density");
-  const dens = densEl ? Number(densEl.value) : 70;
+  let dens = densEl ? Number(densEl.value) : 70;
+  if (potato) dens = Math.min(dens, 36);
   if (dens <= 0) { bits = []; }
   else if (activeToys().length) {
     const need = dens - bits.length;
@@ -1172,7 +1178,7 @@ function visibleBars(slot){
   return src.slice(-n);
 }
 function sizeCanvases(){ slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id), r=c.getBoundingClientRect();
-  const w=Math.max(240,Math.floor(r.width*devicePixelRatio)), h=Math.max(140,Math.floor(r.height*devicePixelRatio));
+  const w=Math.max(240,Math.floor(r.width*pxRatio())), h=Math.max(140,Math.floor(r.height*pxRatio()));
   if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } }); }
 addEventListener("resize", sizeCanvases); addEventListener("fullscreenchange", sizeCanvases);
 function aggregate(bars,n){ const out=[]; for(let i=0;i<bars.length;i+=n){ const ch=bars.slice(i,i+n); if(!ch.length) continue;
@@ -1312,7 +1318,7 @@ function paintBolt(c, slot, x, top, bot, body, dpr, i){
   if (!slot.boltAt) slot.boltAt = {};
   const now = performance.now();
   if (!slot.boltAt[i]) slot.boltAt[i] = now - Math.random()*280;
-  if (now - slot.boltAt[i] > 140 && slot.bolts.length < 90) {
+  if (now - slot.boltAt[i] > (potato?700:140) && slot.bolts.length < (potato?10:90)) {
     slot.boltAt[i] = now;
     const y0 = top + Math.random()*Math.max(6*dpr, bot-top);
     const pts = [[x-body*0.4, y0]];
@@ -1352,7 +1358,7 @@ function spawnBits(slot, key, i, now, every, max, bit){
 }
 function paintSnow(c, slot, x, bot, body, dpr, i){
   const now = performance.now();
-  for (let n=0;n<3;n++) spawnBits(slot, "flakes", i*10+n, now, 140, 220, { x: x+(Math.random()-0.5)*body*1.4, y: bot-Math.random()*10*dpr, vy: (0.35+Math.random()*0.55)*dpr, vx: (Math.random()-0.5)*0.7*dpr, r: (1.2+Math.random()*1.8)*dpr, life: 1 });
+  for (let n=0;n<(potato?1:3);n++) spawnBits(slot, "flakes", i*10+n, now, potato?400:140, potato?40:220, { x: x+(Math.random()-0.5)*body*1.4, y: bot-Math.random()*10*dpr, vy: (0.35+Math.random()*0.55)*dpr, vx: (Math.random()-0.5)*0.7*dpr, r: (1.2+Math.random()*1.8)*dpr, life: 1 });
 }
 function stepSnow(slot, c, h, dpr){
   if (!slot.flakes) return;
@@ -1362,8 +1368,8 @@ function stepSnow(slot, c, h, dpr){
 function paintBubbles(c, slot, x, top, bot, body, dpr, i){
   spawnBits(slot, "bubbles", i, performance.now(), 420, 70, { x: x+(Math.random()-0.5)*body*0.6, y: top, vy: -(0.3+Math.random()*0.35)*dpr, r: (1.4+Math.random()*1.6)*dpr, life: 1, inner: false });
   if (!slot.innerBub) slot.innerBub = [];
-  if (slot.innerBub.length < 220) {
-    for (let n=0;n<3;n++) slot.innerBub.push({ x: x+(Math.random()-0.5)*body*0.6, y: top+Math.random()*Math.max(6*dpr, bot-top), vx:(Math.random()-0.5)*0.9*dpr, vy:(Math.random()-0.5)*0.9*dpr, r:(1.1+Math.random()*1.8)*dpr, left:x-body/2, right:x+body/2, top, bot });
+  if (slot.innerBub.length < (potato?16:220)) {
+    for (let n=0;n<(potato?1:3);n++) slot.innerBub.push({ x: x+(Math.random()-0.5)*body*0.6, y: top+Math.random()*Math.max(6*dpr, bot-top), vx:(Math.random()-0.5)*0.9*dpr, vy:(Math.random()-0.5)*0.9*dpr, r:(1.1+Math.random()*1.8)*dpr, left:x-body/2, right:x+body/2, top, bot });
   }
 }
 function stepBubbles(slot, c){
@@ -1434,7 +1440,7 @@ function paintPlasma(c, slot, x, top, bot, body, up, dpr, i){
   c.beginPath(); c.arc(x, top-6*dpr, 6*dpr, 0.2+Math.sin(t+i)*0.3, 2.8); c.stroke();
   c.restore();
   if (!slot.sparks) slot.sparks = [];
-  if (slot.sparks.length < 90 && (i+Math.floor(t*8))%2===0) {
+  if (slot.sparks.length < (potato?16:90) && (i+Math.floor(t*8))%2===0) {
     slot.sparks.push({ x: x+(Math.random()-0.5)*body, y: top+Math.random()*h, vx:(Math.random()-0.5)*1.4*dpr, vy:-(0.4+Math.random()*1.1)*dpr, r:(1+Math.random()*1.6)*dpr, life:1, hue: Math.random()<0.5?185:320 });
   }
 }
@@ -1449,8 +1455,7 @@ function stepPlasma(slot, c){
 }
 function paintAura(c, x, top, h, body, color, dpr){
   c.save();
-  c.shadowColor = color;
-  c.shadowBlur = 14*dpr;
+  if (!potato) { c.shadowColor = color; c.shadowBlur = 14*dpr; }
   c.strokeStyle = color;
   c.globalAlpha = 0.9;
   c.lineWidth = 2.2*dpr;
@@ -1498,7 +1503,7 @@ function drawChart(slot){
     slot.liveBar.low = Math.min(slot.liveBar.low, slot.showPx);
   }
   const liveBars = bars;
-  const dpr=devicePixelRatio||1;
+  const dpr=pxRatio();
   const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=0;
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
   const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
@@ -1698,16 +1703,12 @@ slots.forEach((_,i)=>{
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
   cv.addEventListener("mousemove", e => {
-    const r=cv.getBoundingClientRect(), dpr=devicePixelRatio||1;
+    const r=cv.getBoundingClientRect(), dpr=pxRatio();
     slots[i].hover={ x:(e.clientX-r.left)*dpr, y:(e.clientY-r.top)*dpr };
   });
   cv.addEventListener("mouseleave", () => { slots[i].hover=null; });
 });
 document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
-document.getElementById("toysToggle").addEventListener("click", () => {
-  document.getElementById("toysPanel").classList.toggle("collapsed");
-});
-// hide-charts removed
 document.getElementById("density").addEventListener("input", e => {
   document.getElementById("densityVal").textContent = e.target.value;
   player.toyDensity = Number(e.target.value);
@@ -1720,6 +1721,8 @@ function paintSound(){
   if (s){ s.textContent = soundOn ? "on" : "off"; s.classList.toggle("on", soundOn); }
   if (m){ m.textContent = musicOn ? "on" : "off"; m.classList.toggle("on", musicOn); }
   if (k){ k.textContent = cursorOn ? "on" : "off"; k.classList.toggle("on", cursorOn); }
+  const pbtn = document.getElementById("potatoBtn");
+  if (pbtn){ pbtn.textContent = potato ? "low" : "full"; pbtn.classList.toggle("on", potato); }
 }
 paintSound();
 document.getElementById("soundBtn").addEventListener("click", () => {
@@ -1867,7 +1870,15 @@ if(sideShow) sideShow.onclick=()=>{ document.body.classList.remove('side-hide');
 addEventListener("resize", fitMenu);
 pullCloud();
 
-setInterval(tickLive, 1500);
+let liveTimer = setInterval(tickLive, potato ? 12000 : 1500);
+function setLiveRate(){ clearInterval(liveTimer); liveTimer = setInterval(tickLive, potato ? 12000 : 1500); }
+document.getElementById("potatoBtn").addEventListener("click", () => {
+  potato = !potato;
+  localStorage.setItem(POTATO_KEY, potato ? "1" : "0");
+  paintSound();
+  setLiveRate();
+  sizeCanvases();
+});
 setInterval(pushCloud, 30000);
 </script>
 </body>
