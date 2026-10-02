@@ -247,7 +247,7 @@ body.zen .side { display:none !important; }
       <h3>Outages and changes</h3>
       <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
       <h3>Store</h3>
-      <p>Payments are for cosmetic toys, cursor skins, and candle skins, not market data. Regular toys are $1 each, and extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme are always free. While the site is in testing, regular toys, cursors, and themes are free to use. One-off unlocks are not refundable.</p>
+      <p>Payments are for cosmetic toys, cursor skins, and candle skins, not market data. Regular toys are $1 each, and extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme are always free. Everything else must be bought (or, for regular toys, unlocked with a Trippy Pass free unlock). One-off unlocks are not refundable.</p>
       <h3>Trippy Pass</h3>
       <p>The Trippy Pass is an optional subscription for $5 a month. It renews automatically every month until you cancel.</p>
       <p>Each month, 5 new subscriber-only toys are released. Subscribers can use every pass toy released so far while the pass is active. Pass toys are never sold separately.</p>
@@ -278,7 +278,7 @@ body.zen .side { display:none !important; }
     <div class="hud-score" id="hudScore">0</div>
     <aside id="store">
       <h2>Charm store</h2>
-      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Trippy Pass ($5/month) unlocks 5 brand-new subscriber-only toys every month. Cancel anytime.</p>
+      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Other toys are $1 each in the <a href="toys.html" style="color:#ff8af0">Toy Store</a>. Trippy Pass ($5/month) unlocks 5 brand-new subscriber-only toys every month. Cancel anytime.</p>
       <div id="storeList"></div>
     </aside>
     <div class="board center" id="board">
@@ -414,8 +414,36 @@ function changeSong(dir){
   songQueued = dir;
   songTouch = Date.now();
 }
+// Ownership is server-authoritative (/me owned_json). OWN_VER bumps wipe the local
+// cache of test-era unlocks so nobody keeps free-while-testing items after launch.
+const OWN_VER = "live1";
+function resetOwnership(p){
+  p.ownedToyIds = ["mushrooms"]; p.ownedCursorIds = ["squid"]; p.ownedThemeIds = ["basic"];
+  p.passActive = false; p.passExpiresAt = null; p.unlockCredits = 0; p.ownVer = OWN_VER;
+  return p;
+}
+function applyOwned(row){
+  let raw = [];
+  try { raw = JSON.parse(row.owned_json || "[]"); } catch(e){}
+  if (!Array.isArray(raw)) raw = [];
+  const toys = new Set(["mushrooms"]), curs = new Set(["squid"]), themes = new Set(["basic"]);
+  raw.forEach(x => {
+    const s = String(x);
+    if (/^cursor[:_]/.test(s)) curs.add(s.slice(7));
+    else if (/^theme[:_]/.test(s)) themes.add(s.slice(6));
+    else toys.add(s);
+  });
+  player.ownedToyIds = [...toys];
+  player.ownedCursorIds = [...curs];
+  player.ownedThemeIds = [...themes];
+  player.passActive = !!row.pass_active;
+  player.passExpiresAt = row.pass_expires_at;
+  player.unlockCredits = Number(row.unlock_credits || 0);
+  player.ownVer = OWN_VER;
+}
 function defaultPlayer(){
   return {
+    ownVer: OWN_VER,
     xp: 0, eaten: 0, eatenCycle: 0,
     toyDensity: 70,
     ownedToyIds: ["mushrooms"],
@@ -432,8 +460,10 @@ function loadPlayer(){
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultPlayer();
-    const p = { ...defaultPlayer(), ...JSON.parse(raw) };
+    const saved = JSON.parse(raw);
+    const p = { ...defaultPlayer(), ...saved };
         if ((p.equippedToyIds || []).length > 5) p.equippedToyIds = p.equippedToyIds.slice(0,5);
+    if (!saved || saved.ownVer !== OWN_VER) resetOwnership(p);
     return p;
   } catch(e){ return defaultPlayer(); }
 }
@@ -464,10 +494,9 @@ async function pullCloud(){
     player.eaten = row.eaten || 0;
     player.eatenCycle = row.eaten_cycle || 0;
     if (!localStorage.getItem(SAVE_KEY)) player.toyDensity = row.toy_density || player.toyDensity;
-    try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
+    applyOwned(row);
     try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
-    player.passActive = !!row.pass_active;
-    player.passExpiresAt = row.pass_expires_at;
+    cleanEquipped();
     savePlayer();
     const dens = document.getElementById("density");
     if (dens) {
@@ -502,6 +531,8 @@ function syncFromLocal(){
     if (!raw) return;
     const fresh = JSON.parse(raw);
     player = { ...player, ...fresh };
+    if (!fresh || fresh.ownVer !== OWN_VER) resetOwnership(player);
+    cleanEquipped();
     const dens = document.getElementById("density");
     if (dens && player.toyDensity) {
       dens.value = player.toyDensity;
@@ -553,7 +584,18 @@ function ownedToys(){
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
   return [...new Set([...FREE_TOYS, ...own])];
 }
-function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return true; }
+function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return ownedToys().includes(id); }
+function ownsCursor(id){ return id === "squid" || (player.ownedCursorIds || []).includes(id); }
+function ownsTheme(id){ return id === "basic" || (player.ownedThemeIds || []).includes(id); }
+// Drop anything equipped that isn't owned (e.g. testers who had free items equipped, or an
+// expired pass). If that empties the toy list, fall back to the free mushrooms.
+function cleanEquipped(){
+  const was = player.equippedToyIds || [];
+  const ok = was.filter(canUse).slice(0,5);
+  player.equippedToyIds = (ok.length || !was.length) ? ok : ["mushrooms"];
+  if (!ownsCursor(player.equippedCursor || "squid")) player.equippedCursor = "squid";
+  if (!ownsTheme(player.equippedTheme || "basic")) player.equippedTheme = "basic";
+}
 function toyChecked(id){
   if (!canUse(id)) return false;
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
@@ -586,8 +628,8 @@ function paintQuick(){
   const box = document.getElementById("quickToys");
   if (!box) return;
   const ownToys = TOYS.map(t => t[0]).filter(canUse);
-  const ownC = CURSORS.map(t => t[0]);
-  const ownT = THEMES.map(t => t[0]);
+  const ownC = CURSORS.map(t => t[0]).filter(ownsCursor);
+  const ownT = THEMES.map(t => t[0]).filter(ownsTheme);
   const eq = player.equippedToyIds || [];
   const toyBtns = ownToys.map(id => {
     const label = (TOYS.find(t=>t[0]===id)||[id,id])[1];
@@ -604,7 +646,7 @@ function paintQuick(){
     const on = (player.equippedTheme||"basic")===id;
     return `<button type="button" class="q-ico${on?" on":""}" data-qtheme="${id}" title="${label}"><canvas width="52" height="52" data-theme="${id}"></canvas></button>`;
   }).join("");
-  box.innerHTML = `<div class="q-lab">rain ${eq.filter(id=>ownToys.includes(id)).length}/5</div><div class="q-row">${toyBtns}</div><div class="q-lab">cursor</div><div class="q-row">${curBtns}</div><div class="q-lab">theme</div><div class="q-row">${thBtns}</div>`;
+  box.innerHTML = `<div class="q-lab">rain ${eq.filter(id=>ownToys.includes(id)).length}/5</div><div class="q-row">${toyBtns}</div><div class="q-lab">cursor</div><div class="q-row">${curBtns}</div><div class="q-lab">theme</div><div class="q-row">${thBtns}</div><a class="q-lab" href="toys.html" style="display:block;color:#ff8af0;text-decoration:none">+ unlock more in the Toy Store</a>`;
   box.querySelectorAll("canvas[data-kind]").forEach(cv => drawToy(cv.getContext("2d"), {x:26,y:30,s:30,rot:0,kind:cv.dataset.kind}));
   box.querySelectorAll("canvas[data-cur]").forEach(cv => drawCursorChip(cv, cv.dataset.cur));
   box.querySelectorAll("canvas[data-theme]").forEach(cv => drawThemeChip(cv, cv.dataset.theme));
@@ -626,7 +668,7 @@ function paintStore(){
   if (!box) return;
   const month = currentMonth();
   box.innerHTML = TOYS.map(([id,label]) => {
-    let tag = "toy store";
+    let tag = canUse(id) ? "owned" : "$1 in toy store";
     if (FREE_TOYS.includes(id)) tag = "free";
     else if (isPassToy(id)) {
       if (!dropLive(id)) return "";
@@ -641,6 +683,8 @@ if (/[?&]pass=ok/.test(location.search)) {
   [2500, 6000, 12000].forEach(ms => setTimeout(pullCloud, ms));
   history.replaceState({}, "", location.pathname);
 }
+cleanEquipped();
+savePlayer();
 paintToys();
 paintPass();
 paintStore();
@@ -2533,15 +2577,15 @@ document.getElementById("quickToys").addEventListener("click", e => {
   if (!btn) return;
   if (btn.dataset.qtoy) {
     const id = btn.dataset.qtoy;
-    if (!TOYS.some(t => t[0]===id)) return;
-    let eq = (player.equippedToyIds || []).filter(x => TOYS.some(t => t[0]===x));
+    if (!TOYS.some(t => t[0]===id) || !canUse(id)) return;
+    let eq = (player.equippedToyIds || []).filter(canUse);
     if (eq.includes(id)) eq = eq.filter(x => x !== id);
     else if (eq.length >= 5) return;
     else eq.push(id);
     player.equippedToyIds = eq.slice(0,5);
   } else if (btn.dataset.qcur) {
     const id = btn.dataset.qcur;
-    if (!CURSORS.some(t => t[0]===id)) return;
+    if (!CURSORS.some(t => t[0]===id) || !ownsCursor(id)) return;
     player.equippedCursor = (player.equippedCursor === id && id !== "squid") ? "squid" : id;
     cursorOn = true;
     localStorage.setItem(CURSOR_KEY, "1");
@@ -2549,7 +2593,7 @@ document.getElementById("quickToys").addEventListener("click", e => {
     if (k){ k.textContent = "on"; k.classList.add("on"); }
   } else if (btn.dataset.qtheme) {
     const id = btn.dataset.qtheme;
-    if (!THEMES.some(t => t[0]===id)) return;
+    if (!THEMES.some(t => t[0]===id) || !ownsTheme(id)) return;
     player.equippedTheme = (player.equippedTheme === id && id !== "basic") ? "basic" : id;
   } else return;
   savePlayer();

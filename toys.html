@@ -60,14 +60,14 @@
     <div id="cartTotal"></div>
     <button type="button" id="cartCheckout">Checkout</button>
   </aside>
-  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Regular toys are $1 and cursors and candle themes are $3 (all free while we're testing). <a href="#" id="passLink">Trippy Pass</a> ($5/month) gets 5 brand-new subscriber-only toys every month, plus 5 free toy unlocks when you subscribe. <b id="rainCount">Raining 1 / 5</b></p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Regular toys are $1 and cursors and candle themes are $3 each. <a href="#" id="passLink">Trippy Pass</a> ($5/month) gets 5 brand-new subscriber-only toys every month, plus 5 free toy unlocks when you subscribe. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
   <p class="lead">These ride with your pointer. Squid is free. The rest are $3 each.</p>
   <div class="grid" id="cursors"></div>
   <h2>Candle themes</h2>
-  <p class="lead">Pick one theme. Basic clears it.</p>
+  <p class="lead">Pick one theme. Basic is free and clears it. The rest are $3 each.</p>
   <div class="grid" id="themes"></div>
 <script src="cursorart.js"></script>
 <script>
@@ -108,15 +108,24 @@ const CURSORS = [
   ["shenron","Green Worm",0],
   ["hole","Black Hole",0]
 ];
+// Ownership is server-authoritative (/me owned_json). OWN_VER bumps wipe the local
+// cache of test-era unlocks so nobody keeps free-while-testing items after launch.
+const OWN_VER = "live1";
+function resetOwnership(p){
+  p.ownedToyIds = ["mushrooms"]; p.ownedCursorIds = ["squid"]; p.ownedThemeIds = ["basic"];
+  p.passActive = false; p.passExpiresAt = null; p.unlockCredits = 0; p.ownVer = OWN_VER;
+  return p;
+}
 function defaultPlayer(){
-  return { xp:0, eaten:0, eatenCycle:0, toyDensity:70, ownedToyIds:["mushrooms"], equippedToyIds:["mushrooms"], passActive:false, passExpiresAt:null, ownedCursorIds:["squid"], equippedCursor:"squid", ownedThemeIds:["basic"], equippedTheme:"basic" };
+  return { ownVer:OWN_VER, xp:0, eaten:0, eatenCycle:0, toyDensity:70, ownedToyIds:["mushrooms"], equippedToyIds:["mushrooms"], passActive:false, passExpiresAt:null, ownedCursorIds:["squid"], equippedCursor:"squid", ownedThemeIds:["basic"], equippedTheme:"basic" };
 }
 function loadPlayer(){
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultPlayer();
-    const p = { ...defaultPlayer(), ...JSON.parse(raw) };
-    if ((p.ownedToyIds || []).length === TOYS.length) p.ownedToyIds = ["mushrooms"];
+    const saved = JSON.parse(raw);
+    const p = { ...defaultPlayer(), ...saved };
+    if (!saved || saved.ownVer !== OWN_VER) resetOwnership(p);
     return p;
   } catch(e){ return defaultPlayer(); }
 }
@@ -150,11 +159,17 @@ function ownedToys(){
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
   return [...new Set([...FREE_TOYS, ...own])];
 }
-const TESTING_FREE = true; // regular toys free while testing; set false when $1 toys go live
+const TESTING_FREE = false; // live: regular toys must be bought ($1) or unlocked with a pass credit
 function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return TESTING_FREE || ownedToys().includes(id); }
+function ownsCursor(id){ return id === "squid" || (player.ownedCursorIds || []).includes(id); }
+function ownsTheme(id){ return id === "basic" || (player.ownedThemeIds || []).includes(id); }
+// Drop anything equipped that isn't owned (testers' free items, expired pass toys);
+// fall back to mushrooms / squid / basic so the page never breaks.
 function cleanEquipped(){
   const ok = (player.equippedToyIds || []).filter(canUse);
   player.equippedToyIds = (ok.length ? ok : ["mushrooms"]).slice(0,5);
+  if (!ownsCursor(player.equippedCursor || "squid")) player.equippedCursor = "squid";
+  if (!ownsTheme(player.equippedTheme || "basic")) player.equippedTheme = "basic";
 }
 function drawToy(c,b){
   c.save(); c.translate(b.x,b.y); c.rotate(b.rot||0);
@@ -610,29 +625,26 @@ async function pullCloud(){
     player.passActive = !!row.pass_active;
     player.passExpiresAt = row.pass_expires_at;
     player.unlockCredits = Number(row.unlock_credits || 0);
-    try { player.ownedToyIds = JSON.parse(row.owned_json || "[]"); } catch(e){}
-    const rawOwn = player.ownedToyIds || [];
-    const curs = new Set(["squid", ...(player.ownedCursorIds || [])]);
+    let rawOwn = [];
+    try { rawOwn = JSON.parse(row.owned_json || "[]"); } catch(e){}
+    if (!Array.isArray(rawOwn)) rawOwn = [];
+    const toys = new Set(["mushrooms"]), curs = new Set(["squid"]), themes = new Set(["basic"]);
     rawOwn.forEach(x => {
       const s = String(x);
-      if (s.startsWith("cursor:")) curs.add(s.slice(7));
-      else if (s.startsWith("cursor_")) curs.add(s.slice(7));
+      if (/^cursor[:_]/.test(s)) curs.add(s.slice(7));
+      else if (/^theme[:_]/.test(s)) themes.add(s.slice(6));
+      else toys.add(s);
     });
+    player.ownedToyIds = [...toys];
     player.ownedCursorIds = [...curs];
-    const themes = new Set(["basic", ...(player.ownedThemeIds || [])]);
-    rawOwn.forEach(x => {
-      const s = String(x);
-      if (s.startsWith("theme_")) themes.add(s.slice(6));
-      else if (s.startsWith("theme:")) themes.add(s.slice(6));
-    });
     player.ownedThemeIds = [...themes];
-    player.ownedToyIds = rawOwn.filter(x => !String(x).startsWith("cursor") && !String(x).startsWith("theme"));
+    player.ownVer = OWN_VER;
     try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
     player.equippedToyIds = (player.equippedToyIds||[]).slice(0,5);
     if (!player.equippedToyIds.length) player.equippedToyIds = ["mushrooms"];
-    if ((player.ownedToyIds || []).length === TOYS.length) player.ownedToyIds = ["mushrooms"];
-    if (!player.ownedCursorIds) player.ownedCursorIds = ["squid"];
     if (!player.equippedCursor) player.equippedCursor = "squid";
+    cleanEquipped();
+    pruneCart();
     savePlayer();
     paint();
     paintCursors();
@@ -684,7 +696,7 @@ async function useUnlock(id){
     const d = await r.json();
     if (!d.ok) { alert(d.error || "Could not unlock."); if (typeof d.credits==="number") { player.unlockCredits=d.credits; paint(); paintSign(); } return; }
     player.unlockCredits = d.credits;
-    player.ownedToyIds = [...new Set([...(player.ownedToyIds||["mushrooms"]), id])];
+    player.ownedToyIds = [...new Set(["mushrooms", ...(d.owned || []).filter(x => !/^(cursor|theme)[:_]/.test(String(x))), id])];
     if (!(player.equippedToyIds||[]).includes(id) && (player.equippedToyIds||[]).length < 5) player.equippedToyIds.push(id);
     savePlayer(); paint(); paintSign();
     try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
@@ -698,7 +710,6 @@ document.getElementById("grid").addEventListener("click", e => {
   const label = (TOYS.find(t => t[0]===id) || [id,id])[1];
   addToCart({ sku: id, type: "toy", name: label, amount: 100 });
 });
-function ownsCursor(id){ return true; }
 function previewCursor(cv, skin){
   const c = cv.getContext("2d");
   const w = cv.width, h = cv.height, t = Date.now()/400;
@@ -791,7 +802,6 @@ document.getElementById("cursors").addEventListener("click", e => {
 });
 
 const THEMES = [["basic","Basic"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"]];
-function ownsTheme(id){ return true; }
 function previewTheme(cv, id){
   const c = cv.getContext("2d");
   const w = cv.width, h = cv.height;
@@ -885,6 +895,16 @@ document.getElementById("themes").addEventListener("change", e => {
 const CART_KEY = "trippy_cart_v1";
 function loadCart(){ try { return JSON.parse(localStorage.getItem(CART_KEY)||"[]"); } catch(e){ return []; } }
 function saveCart(items){ localStorage.setItem(CART_KEY, JSON.stringify(items)); paintCart(); }
+function ownsSku(sku){
+  if (sku.startsWith("cursor_")) return ownsCursor(sku.slice(7));
+  if (sku.startsWith("theme_")) return ownsTheme(sku.slice(6));
+  return ownedToys().includes(sku);
+}
+function pruneCart(){
+  const items = loadCart();
+  const keep = items.filter(it => !ownsSku(it.sku));
+  if (keep.length !== items.length) saveCart(keep);
+}
 function addToCart(item){
   const items = loadCart();
   if (items.some(x => x.sku === item.sku)) return paintCart();
@@ -906,18 +926,13 @@ function paintCart(){
 function rememberPending(items){
   localStorage.setItem("trippy_pending_sku", JSON.stringify({ items, t: Date.now() }));
 }
-function grantSku(sku){
+function grantSku(sku){ // equip a server-confirmed purchase
   if (sku.startsWith("theme_")) {
-    const id = sku.slice(6);
-    player.ownedThemeIds = [...new Set([...(player.ownedThemeIds||["basic"]), "basic", id])];
-    player.equippedTheme = id;
+    player.equippedTheme = sku.slice(6);
   } else if (sku.startsWith("cursor_")) {
-    const id = sku.slice(7);
-    player.ownedCursorIds = [...new Set([...(player.ownedCursorIds||["squid"]), "squid", id])];
-    player.equippedCursor = id;
-  } else {
-    player.ownedToyIds = [...new Set([...(player.ownedToyIds||["mushrooms"]), sku])];
-    if (!(player.equippedToyIds||[]).includes(sku) && (player.equippedToyIds||[]).length < 5) player.equippedToyIds.push(sku);
+    player.equippedCursor = sku.slice(7);
+  } else if (!(player.equippedToyIds||[]).includes(sku) && (player.equippedToyIds||[]).length < 5) {
+    player.equippedToyIds.push(sku);
   }
 }
 function claimPending(){
@@ -929,11 +944,22 @@ function claimPending(){
   const back = (document.referrer || "").includes("stripe.com");
   const paid = /session_id=|checkout=success|paid=1|success=1/.test(q) || back;
   if (!paid) return false;
-  items.forEach(it => grantSku(it.sku));
+  // Ownership comes only from the server (granted by the Stripe webhook). Poll /me a few
+  // times; once the items show up, equip them.
   localStorage.removeItem("trippy_pending_sku");
   localStorage.removeItem(CART_KEY);
-  savePlayer();
   history.replaceState({}, "", location.pathname);
+  let tries = 0;
+  const poll = () => pullCloud().then(() => {
+    const got = items.filter(it => ownsSku(it.sku));
+    if (got.length === items.length || ++tries >= 6) {
+      got.forEach(it => grantSku(it.sku));
+      cleanEquipped(); savePlayer(); paint(); paintCursors(); paintThemes();
+      try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
+      alert(got.length === items.length ? "Unlocked. It is equipped." : got.length ? "Some items unlocked. The rest should appear in a minute; refresh this page." : "Payment received. Your unlocks should appear in a minute; refresh this page.");
+    } else setTimeout(poll, 2500);
+  });
+  setTimeout(poll, 1500);
   return true;
 }
 document.getElementById("cartList").addEventListener("click", e => {
@@ -969,7 +995,6 @@ paint();
 paintCursors();
 paintThemes();
 paintSign();
-if (claimed) alert("Unlocked. It is equipped.");
 pullCloud().then(() => { paint(); paintCursors(); paintThemes(); });
 (function twinkle(){
   document.querySelectorAll("#grid canvas[data-kind]").forEach(cv => {
