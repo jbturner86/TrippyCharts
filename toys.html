@@ -312,7 +312,14 @@ async function pullCloud(){
       else if (s.startsWith("cursor_")) curs.add(s.slice(7));
     });
     player.ownedCursorIds = [...curs];
-    player.ownedToyIds = rawOwn.filter(x => !String(x).startsWith("cursor"));
+    const themes = new Set(["basic", ...(player.ownedThemeIds || [])]);
+    rawOwn.forEach(x => {
+      const s = String(x);
+      if (s.startsWith("theme_")) themes.add(s.slice(6));
+      else if (s.startsWith("theme:")) themes.add(s.slice(6));
+    });
+    player.ownedThemeIds = [...themes];
+    player.ownedToyIds = rawOwn.filter(x => !String(x).startsWith("cursor") && !String(x).startsWith("theme"));
     try { player.equippedToyIds = JSON.parse(row.equipped_json || "[]"); } catch(e){}
     player.equippedToyIds = (player.equippedToyIds||[]).slice(0,5);
     if (!player.equippedToyIds.length) player.equippedToyIds = ["mushrooms"];
@@ -322,6 +329,7 @@ async function pullCloud(){
     savePlayer();
     paint();
     paintCursors();
+    if (typeof paintThemes==="function") paintThemes();
   } catch(e){}
 }
 document.getElementById("grid").addEventListener("change", e => {
@@ -358,7 +366,7 @@ document.getElementById("grid").addEventListener("click", async e => {
       body: JSON.stringify({ playerId: PLAYER_ID, sku: id, type: "toy" })
     });
     const data = await r.json();
-    if (data.url) location.href = data.url;
+    if (data.url) { rememberPending(id); location.href = data.url; }
     else alert(data.error || "Need a $1 Stripe price on the Worker first (STRIPE_TOY_PRICE).");
   } catch(err){ alert("checkout failed"); }
 });
@@ -432,7 +440,7 @@ document.getElementById("cursors").addEventListener("click", async e => {
       body: JSON.stringify({ playerId: PLAYER_ID, sku: "cursor_"+id, type: "cursor" })
     });
     const data = await r.json();
-    if (data.url) location.href = data.url;
+    if (data.url) { rememberPending("cursor_"+id); location.href = data.url; }
     else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE).");
   } catch(err){ alert("checkout failed"); }
 });
@@ -494,6 +502,35 @@ document.getElementById("themes").addEventListener("change", e => {
   paintThemes();
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(err){}
 });
+function rememberPending(sku){
+  localStorage.setItem("trippy_pending_sku", JSON.stringify({ sku, t: Date.now() }));
+}
+function claimPending(){
+  let pending = null;
+  try { pending = JSON.parse(localStorage.getItem("trippy_pending_sku") || "null"); } catch(e){}
+  if (!pending || !pending.sku || Date.now() - pending.t > 30*60*1000) return false;
+  const q = location.search || "";
+  const back = (document.referrer || "").includes("stripe.com");
+  const paid = /session_id=|checkout=success|paid=1|success=1/.test(q) || back;
+  if (!paid) return false;
+  const sku = pending.sku;
+  if (sku.startsWith("theme_")) {
+    const id = sku.slice(6);
+    player.ownedThemeIds = [...new Set([...(player.ownedThemeIds||["basic"]), "basic", id])];
+    player.equippedTheme = id;
+  } else if (sku.startsWith("cursor_")) {
+    const id = sku.slice(7);
+    player.ownedCursorIds = [...new Set([...(player.ownedCursorIds||["squid"]), "squid", id])];
+    player.equippedCursor = id;
+  } else {
+    player.ownedToyIds = [...new Set([...(player.ownedToyIds||["mushrooms"]), sku])];
+    if (!(player.equippedToyIds||[]).includes(sku) && (player.equippedToyIds||[]).length < 5) player.equippedToyIds.push(sku);
+  }
+  localStorage.removeItem("trippy_pending_sku");
+  savePlayer();
+  history.replaceState({}, "", location.pathname);
+  return true;
+}
 document.getElementById("themes").addEventListener("click", async e => {
   const id = e.target.dataset.buytheme;
   if (!id) return;
@@ -506,15 +543,17 @@ document.getElementById("themes").addEventListener("click", async e => {
       body: JSON.stringify({ playerId: PLAYER_ID, sku: "theme_"+id, type: "theme" })
     });
     const data = await r.json();
-    if (data.url) location.href = data.url;
+    if (data.url) { rememberPending("theme_"+id); location.href = data.url; }
     else alert(data.error || "Need a $3 Stripe price on the Worker first (STRIPE_CURSOR_PRICE). Theme was not unlocked.");
   } catch(err){ alert("checkout failed"); }
 });
 
+const claimed = claimPending();
 paint();
 paintCursors();
 paintThemes();
-pullCloud();
+if (claimed) alert("Unlocked. It is equipped.");
+pullCloud().then(() => { paint(); paintCursors(); paintThemes(); });
 (function twinkle(){
   document.querySelectorAll("#grid canvas[data-kind]").forEach(cv => {
     previewToy(cv, cv.dataset.kind, (+cv.dataset.hue + Date.now()/40)%360);
