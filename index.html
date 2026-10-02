@@ -182,8 +182,6 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
       <div class="toy-label">toy box</div>
       <div id="quickToys"></div>
       <div class="toys-body">
-      <label for="density">toy density <span id="densityVal">70</span></label>
-      <input type="range" id="density" min="0" max="400" value="70">
       <div class="sound-row">
         <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">sfx</span>
         <button type="button" id="soundBtn">on</button>
@@ -191,8 +189,6 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
         <button type="button" id="musicBtn">on</button>
         <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">cursor</span>
         <button type="button" id="cursorBtn">on</button>
-        <span style="font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:#ffd39a">power</span>
-        <button type="button" id="potatoBtn">full</button>
       </div>
       </div>
     </div>
@@ -297,7 +293,7 @@ const POTATO_KEY = "trippy_potato";
 let soundOn = localStorage.getItem(SOUND_KEY) !== "0";
 let musicOn = localStorage.getItem(MUSIC_KEY) !== "0";
 let cursorOn = localStorage.getItem(CURSOR_KEY) !== "0";
-let potato = localStorage.getItem(POTATO_KEY) === "1";
+let potato = true;
 function pxRatio(){ return potato ? 1 : (devicePixelRatio || 1); }
 let audioCtx = null, musicTimer = -1, lastEatSfx = 0;
 function ensureAudio(){
@@ -568,8 +564,6 @@ function paintStore(){
 paintToys();
 paintPass();
 paintStore();
-document.getElementById("density").value = player.toyDensity || 70;
-document.getElementById("densityVal").textContent = document.getElementById("density").value;
 
 function activeToys(){
   const eq = (player.equippedToyIds || []).filter(canUse).slice(0,5);
@@ -841,30 +835,42 @@ function drawToy(c,b){
     c.beginPath(); c.moveTo(0,-h/2+1); c.lineTo(0,h/2-1); c.strokeStyle="rgba(20,20,20,.45)"; c.lineWidth=1.2; c.stroke();
     c.fillStyle="rgba(255,255,255,.35)"; c.beginPath(); c.roundRect(-w/2+2,-h/2+2,w-4,h*0.38,r); c.fill();
       } else if(k==="football"){
-    c.save(); c.rotate(-0.6);
-    c.fillStyle="#6b3a1c"; c.beginPath(); c.ellipse(0,0,s*.48,s*.24,0,0,7); c.fill(); stroke();
-    c.strokeStyle="#f4efe6"; c.lineWidth=Math.max(1.2,s*0.04);
-    c.beginPath(); c.moveTo(-s*.08,0); c.lineTo(s*.08,0); c.stroke();
-    for(let i=-2;i<=2;i++){ c.beginPath(); c.moveTo(-s*.05,i*s*.045); c.lineTo(s*.05,i*s*.045); c.stroke(); }
+    c.save(); c.rotate(-0.55);
+    c.fillStyle="#6a3418"; c.beginPath(); c.ellipse(0,0,s*.5,s*.28,0,0,7); c.fill();
+    c.strokeStyle="#3a1c0c"; c.lineWidth=Math.max(1.2,s*0.045); c.stroke();
+    c.strokeStyle="#f7f1e6"; c.lineWidth=Math.max(1.4,s*0.05);
+    c.beginPath(); c.moveTo(-s*.22,0); c.lineTo(s*.22,0); c.stroke();
+    c.lineWidth=Math.max(1.1,s*0.035);
+    for (let i=-2;i<=2;i++){ c.beginPath(); c.moveTo(-s*.07,i*s*.055); c.lineTo(s*.07,i*s*.055); c.stroke(); }
+    c.strokeStyle="rgba(255,255,255,.85)"; c.lineWidth=Math.max(1.6,s*0.05);
+    c.beginPath(); c.ellipse(0,0,s*.34,s*.16,0,0.5,2.6); c.stroke();
+    c.beginPath(); c.ellipse(0,0,s*.34,s*.16,0,3.7,5.8); c.stroke();
     c.restore();
   } else if(k==="baseball"){
-    c.fillStyle="#f4f1ea"; c.beginPath(); c.arc(0,0,s*.32,0,7); c.fill(); stroke();
-    c.strokeStyle="#c43737"; c.lineWidth=Math.max(1.2,s*0.04);
-    c.beginPath(); c.arc(-s*.05,0,s*.24,-1.1,1.1); c.stroke();
-    c.beginPath(); c.arc(s*.05,0,s*.24,2.0,4.3); c.stroke();
+    c.fillStyle="#f7f4ee"; c.beginPath(); c.arc(0,0,s*.34,0,7); c.fill();
+    c.strokeStyle="#222"; c.lineWidth=Math.max(1,s*0.03); c.stroke();
+    c.strokeStyle="#d21f2a"; c.lineWidth=Math.max(1.6,s*0.045);
+    c.beginPath(); c.arc(-s*.08,0,s*.28,-1.15,1.15); c.stroke();
+    c.beginPath(); c.arc(s*.08,0,s*.28,2.0,4.25); c.stroke();
+    c.strokeStyle="#f2f2f2"; c.lineWidth=Math.max(1,s*0.03);
+    [[-0.22,-0.08],[-0.16,0.02],[-0.2,0.12],[0.16,-0.12],[0.2,-0.02],[0.16,0.1]].forEach(([x,y])=>{
+      c.beginPath(); c.moveTo(x*s,y*s-s*0.03); c.lineTo(x*s,y*s+s*0.03); c.stroke();
+    });
   } else if(k==="basketball"){
-    c.fillStyle="#e85d12"; c.beginPath(); c.arc(0,0,s*.32,0,7); c.fill(); stroke();
-    c.strokeStyle="#1a0c06"; c.lineWidth=Math.max(1.6,s*0.045);
-    c.beginPath(); c.moveTo(-s*.32,0); c.lineTo(s*.32,0); c.moveTo(0,-s*.32); c.lineTo(0,s*.32); c.stroke();
-    c.beginPath(); c.arc(-s*.02,0,s*.22,-1.2,1.2); c.stroke();
-    c.beginPath(); c.arc(s*.02,0,s*.22,1.9,4.4); c.stroke();
+    c.fillStyle="#ef6a12"; c.beginPath(); c.arc(0,0,s*.34,0,7); c.fill();
+    c.strokeStyle="#1a0c06"; c.lineWidth=Math.max(1.8,s*0.05);
+    c.beginPath(); c.arc(0,0,s*.34,0,7); c.stroke();
+    c.beginPath(); c.moveTo(-s*.34,0); c.lineTo(s*.34,0); c.stroke();
+    c.beginPath(); c.moveTo(0,-s*.34); c.lineTo(0,s*.34); c.stroke();
+    c.beginPath(); c.arc(-s*.02,-s*.02,s*.24,-1.35,1.15); c.stroke();
+    c.beginPath(); c.arc(s*.02,s*.02,s*.24,1.8,4.3); c.stroke();
   } else if(k==="soccer"){
-    c.fillStyle="#f4f4f4"; c.beginPath(); c.arc(0,0,s*.32,0,7); c.fill(); stroke();
+    c.fillStyle="#f4f4f4"; c.beginPath(); c.arc(0,0,s*.34,0,7); c.fill();
+    c.strokeStyle="#111"; c.lineWidth=Math.max(1,s*0.03); c.stroke();
+    const pent=(x,y,r,rot)=>{ c.beginPath(); for(let i=0;i<5;i++){ const a=rot+i*Math.PI*2/5; const px=x+Math.cos(a)*r, py=y+Math.sin(a)*r; i?c.lineTo(px,py):c.moveTo(px,py);} c.closePath(); c.fill(); };
     c.fillStyle="#161616";
-    c.beginPath();
-    for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; c.lineTo(Math.cos(a)*s*.12, Math.sin(a)*s*.12); }
-    c.closePath(); c.fill();
-    for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; c.beginPath(); c.moveTo(Math.cos(a)*s*.16, Math.sin(a)*s*.16); c.lineTo(Math.cos(a)*s*.28, Math.sin(a)*s*.28); c.strokeStyle="#161616"; c.lineWidth=Math.max(1.4,s*0.04); c.stroke(); }
+    pent(0,0,s*.11,-Math.PI/2);
+    for(let i=0;i<5;i++){ const a=-Math.PI/2+i*Math.PI*2/5; pent(Math.cos(a)*s*.2, Math.sin(a)*s*.2, s*.07, a+Math.PI); }
   } else if(k==="cigar"){
     c.fillStyle="#6b4224"; c.beginPath(); c.roundRect(-s*.42,-s*.1,s*.66,s*.2,s*.1); c.fill(); stroke();
     c.fillStyle="#e6d2b4"; c.beginPath(); c.roundRect(s*.16,-s*.1,s*.2,s*.2,s*.08); c.fill();
@@ -1045,9 +1051,7 @@ function drawSquid(){
   ctx.restore();
 }
 function tickBits(){
-  const densEl = document.getElementById("density");
-  let dens = densEl ? Number(densEl.value) : 70;
-  if (potato) dens = Math.min(dens, 36);
+  const dens = 36;
   if (dens <= 0) { bits = []; }
   else if (activeToys().length) {
     const need = dens - bits.length;
@@ -1537,8 +1541,10 @@ function drawChart(slot){
       c.fillStyle=g;
     } else c.fillStyle=col;
     c.fillRect(x-body/2, top, body, bh);
-    const aura = skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col;
-    paintAura(c, x, top, bh, body, aura, dpr);
+    if (skin.id!=="basic") {
+      const aura = skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col;
+      paintAura(c, x, top, bh, body, aura, dpr);
+    }
     if (skin.id==="bolt" && up) paintBolt(c, slot, x, top, bot, body, dpr, i);
     if (skin.id==="snow" && !up) paintSnow(c, slot, x, bot, body, dpr, i);
     if (skin.id==="bubbles" && up) paintBubbles(c, slot, x, top, bot, body, dpr, i);
@@ -1709,11 +1715,6 @@ slots.forEach((_,i)=>{
   cv.addEventListener("mouseleave", () => { slots[i].hover=null; });
 });
 document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
-document.getElementById("density").addEventListener("input", e => {
-  document.getElementById("densityVal").textContent = e.target.value;
-  player.toyDensity = Number(e.target.value);
-  savePlayer();
-});
 function paintSound(){
   const s = document.getElementById("soundBtn");
   const m = document.getElementById("musicBtn");
@@ -1721,8 +1722,6 @@ function paintSound(){
   if (s){ s.textContent = soundOn ? "on" : "off"; s.classList.toggle("on", soundOn); }
   if (m){ m.textContent = musicOn ? "on" : "off"; m.classList.toggle("on", musicOn); }
   if (k){ k.textContent = cursorOn ? "on" : "off"; k.classList.toggle("on", cursorOn); }
-  const pbtn = document.getElementById("potatoBtn");
-  if (pbtn){ pbtn.textContent = potato ? "low" : "full"; pbtn.classList.toggle("on", potato); }
 }
 paintSound();
 document.getElementById("soundBtn").addEventListener("click", () => {
@@ -1870,15 +1869,7 @@ if(sideShow) sideShow.onclick=()=>{ document.body.classList.remove('side-hide');
 addEventListener("resize", fitMenu);
 pullCloud();
 
-let liveTimer = setInterval(tickLive, potato ? 12000 : 1500);
-function setLiveRate(){ clearInterval(liveTimer); liveTimer = setInterval(tickLive, potato ? 12000 : 1500); }
-document.getElementById("potatoBtn").addEventListener("click", () => {
-  potato = !potato;
-  localStorage.setItem(POTATO_KEY, potato ? "1" : "0");
-  paintSound();
-  setLiveRate();
-  sizeCanvases();
-});
+let liveTimer = setInterval(tickLive, 12000);
 setInterval(pushCloud, 30000);
 </script>
 </body>
