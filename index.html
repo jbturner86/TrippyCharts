@@ -64,7 +64,10 @@ body.zen .side { display:none !important; }
     .sound-row { display:flex; align-items:flex-end; gap:6px; margin-top:6px; width:100%; }
     .sound-col { display:flex; flex-direction:column; align-items:center; gap:2px; }
     .sound-col span { font-size:.48rem; letter-spacing:.06em; text-transform:uppercase; color:#ffd39a; }
-    #soundBtn, #musicBtn, #cursorBtn { padding:3px 6px; font-size:.52rem; letter-spacing:.04em; }
+    #soundBtn, #musicBtn, #cursorBtn, .modeBtn { padding:3px 6px; font-size:.52rem; letter-spacing:.04em; }
+    .dens-line { display:flex; align-items:center; gap:4px; }
+    .dens-line input { width:104px !important; }
+    #densAdd { padding:0 7px; font-size:.8rem; line-height:1.2; font-weight:800; border-radius:999px; }
     .song-nav { display:flex; align-items:center; gap:2px; margin-bottom:10px; }
     .song-nav button { width:auto; min-width:0; padding:0 2px; border:none; background:transparent; border-radius:0; box-shadow:none; font-size:1rem; line-height:1; color:#efe6ff; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
@@ -129,6 +132,8 @@ body.zen .side { display:none !important; }
     .meta { display:flex; flex-wrap:wrap; gap:6px; align-items:center; justify-content:space-between; padding:7px 9px 9px; }
     .group-name { font-size:1rem; letter-spacing:.08em; text-transform:uppercase; color:#efe6ff; margin-bottom:5px; font-weight:700; }
     .pickers { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
+    .volchk { display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; user-select:none; }
+    .volchk input { margin:0; accent-color:#b56cff; cursor:pointer; }
     select { padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; }
     .px { font-variant-numeric:tabular-nums; font-size:.92rem; }
     .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
@@ -189,7 +194,12 @@ body.zen .side { display:none !important; }
       <div class="toys-body">
       <div class="dens-row">
         <label for="density">toys <span id="densityVal">36</span></label>
-        <input type="range" id="density" min="0" max="400" value="36">
+        <div class="dens-line"><input type="range" id="density" min="0" max="400" value="36"><button type="button" id="densAdd" title="Drop this many extra toys right now">+</button></div>
+      </div>
+      <div class="sound-row">
+        <div class="sound-col"><button type="button" class="modeBtn" data-mode="cyclone">off</button><span>cyclone</span></div>
+        <div class="sound-col"><button type="button" class="modeBtn" data-mode="wave">off</button><span>wave</span></div>
+        <div class="sound-col"><button type="button" class="modeBtn" data-mode="bounce">off</button><span>bounce</span></div>
       </div>
       <div class="sound-row">
         <div class="sound-col"><button type="button" id="soundBtn">on</button><span>sfx</span></div>
@@ -221,7 +231,7 @@ body.zen .side { display:none !important; }
       <h3>Desktop only</h3>
       <p>TrippyCharts is built for a desktop or laptop browser with a mouse. Phones and tablets will look wrong, miss the cursor toy, and make the game nearly unplayable. Use a computer.</p>
       <h3>How to play</h3>
-      <p>Toys fall in the background. Move your mouse so the cursor (the squid) eats them; it grows, then blobs and resets. Toy Store: pick up to 5 falling toys. Density slider sets how many fall. Cursor / SFX / Music toggles are top-left.</p>
+      <p>Toys fall in the background. Move your mouse so the cursor (the squid) eats them; it grows, then blobs and resets. Toy Store: pick up to 5 falling toys. The Toys slider sets how many fall. The SFX and Cursor toggles are in the left menu. Each chart has a VOL checkbox to show volume bars.</p>
       <p>Play Game starts game mode fullscreen: charts hide, a boss toy floats around. Suck toys and spit them into the boss. Each hit is 1 point. After the 3rd boss kill a second boss appears, then another after the 4th, and so on. You have one life bar. Getting touched costs 20%. When you die, enter a name for high scores. Esc leaves the game.</p>
       <h3>Not financial advice</h3>
       <p>Nothing on this site is investment, tax, or trading advice. Do your own research. You can lose money trading. We do not promise profits, signals, or “alpha.”</p>
@@ -230,7 +240,13 @@ body.zen .side { display:none !important; }
       <h3>Outages and changes</h3>
       <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
       <h3>Store</h3>
-      <p>Payments are for cosmetic toys, cursor skins, and candle skins — not market data. Toys are $1 each. Extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme stay free. The optional Trippy Pass is $5/month for subscriber-only monthly toys; cancel anytime with "manage pass" and it stays on until the paid month ends. No refunds on one-off unlocks. Test charges in sandbox are not real.</p>
+      <p>Payments are for cosmetic toys, cursor skins, and candle skins, not market data. Regular toys are $1 each, and extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme are always free. While the site is in testing, regular toys, cursors, and themes are free to use. One-off unlocks are not refundable.</p>
+      <h3>Trippy Pass</h3>
+      <p>The Trippy Pass is an optional subscription for $5 a month. It renews automatically every month until you cancel.</p>
+      <p>Each month, 5 new subscriber-only toys are released. Subscribers can use every pass toy released so far while the pass is active. Pass toys are never sold separately.</p>
+      <p>When you subscribe you get 5 free unlocks. Each one permanently unlocks one regular store toy you don't already own, and toys you unlock this way stay yours even after you cancel. Unlocks can't be used on pass toys, cursors, or themes, and they have no cash value.</p>
+      <p>Cancel anytime with "manage pass". You keep the pass until the end of the month you already paid for, then pass toys lock again. There are no refunds or credits for partial months.</p>
+      <p>There are no accounts or logins. Your pass, unlocks, and toys are tied to this browser on this computer. Clearing your browser data or switching browsers or computers can lose access, so keep using the same browser.</p>
       <h3>As-is</h3>
       <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
       <h3>You agree</h3>
@@ -286,7 +302,8 @@ function loadSavedSlots(){
     if (!Array.isArray(raw) || !raw.length) return STARTERS.map(s=>({symbol:s,tf:"30m"}));
     return [0,1,2,3].map(i => ({
       symbol: (raw[i]&&raw[i].symbol)||STARTERS[i],
-      tf: (raw[i]&&raw[i].tf)||"30m"
+      tf: (raw[i]&&raw[i].tf)||"30m",
+      vol: !!(raw[i]&&raw[i].vol)
     }));
   } catch(e){ return STARTERS.map(s=>({symbol:s,tf:"30m"})); }
 }
@@ -1221,22 +1238,93 @@ function drawSquid(){
   }
   ctx.restore();
 }
+const MOTION_KEY = "trippy_motion_v1";
+let motionOn = (()=>{ try { return JSON.parse(localStorage.getItem(MOTION_KEY)||"{}"); } catch(e){ return {}; } })();
+let gameMotion = "fall", gameWasOn = false;
+function currentMotion(){
+  if (zenMode) return gameMotion;
+  const on = ["cyclone","wave","bounce"].filter(m => motionOn[m]);
+  if (!on.length) return "fall";
+  return on[Math.floor(Date.now()/20000) % on.length];
+}
+function paintModes(){
+  document.querySelectorAll(".modeBtn").forEach(b => { const on=!!motionOn[b.dataset.mode]; b.textContent = on?"on":"off"; b.classList.toggle("on", on); });
+}
+function addExtraToys(n){
+  if (!activeToys().length) return;
+  n = Math.min(n, 600 - bits.filter(b=>b.extra).length);
+  for (let i=0;i<n;i++){ const b=newBit(Math.random()*innerWidth, -30-Math.random()*innerHeight*0.6); if(b){ b.extra=true; bits.push(b); } }
+}
+function gameSpit(){
+  const opts = ["fall","cyclone","wave","bounce"].filter(m => m!==gameMotion);
+  gameMotion = opts[Math.floor(Math.random()*opts.length)];
+  const side = gameMotion==="fall" ? 0 : Math.floor(Math.random()*4), n = 30;
+  for (let i=0;i<n;i++){
+    const x = side===0 ? Math.random()*innerWidth : side===1 ? innerWidth+20 : side===2 ? Math.random()*innerWidth : -20;
+    const y = side===0 ? -20 : side===2 ? innerHeight+20 : Math.random()*innerHeight;
+    const b = newBit(x, y); if (!b) continue;
+    b.vx2 = (innerWidth/2 - x)*0.012 + (Math.random()-.5)*3; b.vy2 = (innerHeight/2 - y)*0.012 + (Math.random()-.5)*3;
+    bits.push(b);
+  }
+  sfx("spit");
+}
+function moveBit(b, mode){
+  if (b.m !== mode) {
+    b.m = mode;
+    const cx=innerWidth/2, cy=innerHeight/2;
+    if (mode==="cyclone"){ b.ang=Math.atan2(b.y-cy,b.x-cx); b.rad=Math.max(60,Math.hypot(b.x-cx,b.y-cy)); }
+    if (mode==="wave"){ b.wy=innerHeight*(0.15+0.7*Math.random()); b.ph=Math.random()*6; }
+    if (mode==="bounce"){ if(!isFinite(b.vx2)) b.vx2=(Math.random()-.5)*5; if(!isFinite(b.vy2)) b.vy2=0; }
+  }
+  if (mode==="cyclone"){
+    const cx=innerWidth/2, cy=innerHeight/2, maxR=Math.hypot(cx,cy);
+    b.ang += (6+b.v*4)/Math.max(40,b.rad);
+    b.rad -= 0.35*b.v;
+    if (b.rad < 24) { b.rad = maxR*(0.75+Math.random()*0.3); b.ang = Math.random()*7; }
+    const tx=cx+Math.cos(b.ang)*b.rad, ty=cy+Math.sin(b.ang)*b.rad*0.8;
+    b.x += (tx-b.x)*0.1; b.y += (ty-b.y)*0.1; b.rot += b.spin*2;
+  } else if (mode==="wave"){
+    b.x += 1.3 + b.v*1.4;
+    const ty = b.wy + Math.sin(b.x*0.011 + performance.now()/700 + b.ph)*innerHeight*0.12;
+    b.y += (ty-b.y)*0.08; b.rot += b.spin;
+    if (b.x > innerWidth+60) { b.x = -60 - Math.floor(Math.random()*3)*innerWidth*0.4 - Math.random()*80; b.wy=innerHeight*(0.15+0.7*Math.random()); }
+  } else if (mode==="bounce"){
+    b.vy2 += 0.22; b.x += b.vx2; b.y += b.vy2; b.rot += b.vx2*0.03;
+    const r = (b.s||18)*0.9;
+    if (b.y > innerHeight - r) { b.y = innerHeight - r; b.vy2 = -Math.abs(b.vy2)*0.82; if (Math.abs(b.vy2) < 4) b.vy2 = -(7+Math.random()*7); }
+    if (b.x < r) { b.x=r; b.vx2=Math.abs(b.vx2)||2; }
+    if (b.x > innerWidth-r) { b.x=innerWidth-r; b.vx2=-(Math.abs(b.vx2)||2); }
+    if (Math.abs(b.vx2) < 0.6) b.vx2 = (Math.random()<.5?-1:1)*(1+Math.random()*3);
+  } else {
+    b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
+  }
+}
 function tickBits(){
   const densEl = document.getElementById("density");
   const picked = densEl ? Number(densEl.value) : Number(player.toyDensity || 0);
-  const dens = zenMode ? 36 : picked;
-  if (dens <= 0 || !activeToys().length) { bits = []; }
-  else if (activeToys().length) {
-    if (bits.length > dens) bits.length = dens;
-    const need = dens - bits.length;
-    const burstN = Math.min(80, Math.max(0, need));
-    for (let i=0;i<burstN;i++) spawnBit();
+  if (zenMode && !gameWasOn) { gameWasOn = true; gameMotion = "fall"; }
+  if (!zenMode && gameWasOn) { gameWasOn = false; }
+  if (zenMode) {
+    const live = bits.filter(b => !b.spent && !b.homing).length;
+    if (!bits.length) { for (let i=0;i<36;i++) spawnBit(); }
+    else if (live < 10) gameSpit();
+  } else {
+    const dens = picked;
+    const base = bits.filter(b => !b.extra);
+    if (dens <= 0 || !activeToys().length) { bits = bits.filter(b => b.extra && activeToys().length); }
+    else {
+      if (base.length > dens) { let cut = base.length - dens; bits = bits.filter(b => b.extra || cut-- <= 0); }
+      const need = dens - bits.filter(b => !b.extra).length;
+      const burstN = Math.min(80, Math.max(0, need));
+      for (let i=0;i<burstN;i++) spawnBit();
+    }
   }
+  const motion = currentMotion();
   const capture=48+18*squidScale;
   bits.forEach(b=>{
     const dx=b.x-mouse.x, dy=b.y-mouse.y, dist=Math.hypot(dx,dy);
     if(b.state==="fall"){
-      b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
+      moveBit(b, motion);
       if((cursorOn || zenMode) && dist<capture) b.state="suck";
     } else if(b.state==="suck"){
       b.x += (mouse.x - b.x) * 0.28;
@@ -1269,8 +1357,10 @@ function tickBits(){
         if(dist>150){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
       }
     }
-    if(!b.spent && !b.homing && (b.y>innerHeight+50||b.x<-60||b.x>innerWidth+60)){
-      Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b);
+    const off = b.y>innerHeight+50 || b.y<-innerHeight || (motion==="wave" && b.state==="fall" ? b.x<-innerWidth*1.5 : b.x<-60) || b.x>innerWidth+60;
+    if(!b.spent && !b.homing && off){
+      if (b.extra || zenMode) b.spent = true;
+      else { Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b); b.m = null; }
     }
   });
   bits = bits.filter(b => !b.spent);
@@ -1336,7 +1426,7 @@ function fmtAxisTime(t, tf){
   if (tf==="1h" || tf==="2h" || tf==="4h") return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric"});
   return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
-const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
+const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", vol:!!s.vol, allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
 document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
   <section class="card" id="card-${s.id}">
     <div class="chart-head">
@@ -1344,6 +1434,7 @@ document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.m
         ${s.id===0 ? '<button type="button" id="sideShow">menu</button>' : ''}
         <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
         <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id===s.tf?"selected":""}>${t.id}</option>`).join("")}</select>
+        <label class="volchk" title="Show volume"><input type="checkbox" id="vol-${s.id}" ${s.vol?"checked":""}>vol</label>
         <button type="button" data-fs="${s.id}">full screen</button>
       </div>
       <div class="ohlc" id="ohlc-${s.id}"></div>
@@ -1507,8 +1598,10 @@ function paintDrip(c, slot, x, bot, body, bh, dpr, i){
   if (!slot.dripAt) slot.dripAt = {};
   const now = performance.now();
   if (!slot.dripAt[i]) slot.dripAt[i] = now - Math.random()*700;
-  if (now - slot.dripAt[i] > 180 && slot.drips.length < 140) {
+  const every = Math.max(180, (slot.dripN||1)*9);
+  if (now - slot.dripAt[i] > every) {
     slot.dripAt[i] = now;
+    if (slot.drips.length >= 200) slot.drips.shift();
     slot.drips.push({ x: x + (Math.random()-0.5)*body*0.5, y: bot+len, vy: 0.3*dpr, vx: (Math.random()-0.5)*0.2*dpr, r: (1.3+Math.random()*1.3)*dpr, life: 1 });
   }
 }
@@ -1737,7 +1830,7 @@ function drawChart(slot){
   }
   const liveBars = bars;
   const dpr=pxRatio();
-  const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=0;
+  const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=slot.vol?Math.round((h-8*dpr-22*dpr)*0.2):0;
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
   const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
   const yOf=px=>padT+(max-px)/span*plotH;
@@ -1745,6 +1838,30 @@ function drawChart(slot){
   const last=liveBars.at(-1), lastUp=last.close>=last.open;
   const skin = candleSkin();
   const upCol=skin.up, dnCol=skin.dn;
+  const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
+  if (volH) {
+    const vmax=Math.max(1,...liveBars.map(b=>b.vol||0)), vBase=h-padB, vw=Math.max(1.5*dpr,gap*.58), fx={};
+    c.save(); c.globalAlpha=.6;
+    liveBars.forEach((b,i)=>{
+      const v=b.vol||0; if(!v) return;
+      const up=b.close>=b.open, x=padL+i*gap+gap/2, bh=Math.max(2*dpr,v/vmax*(volH-6*dpr)), top=vBase-bh;
+      if (skin.id==="rainbow") {
+        const shift=(performance.now()/260*70 + i*18) % 360, g=c.createLinearGradient(x-vw/2, top, x+vw/2, vBase);
+        g.addColorStop(0,"hsla("+shift+",100%,68%,.95)"); g.addColorStop(.45,"hsla("+((shift+55)%360)+",100%,62%,.95)"); g.addColorStop(1,"hsla("+((shift+120)%360)+",100%,58%,.95)");
+        c.fillStyle=g;
+      } else c.fillStyle=up?upCol:dnCol;
+      if (skin.id==="lava") paintLava(c, x, top, vBase, vw, up, dpr, i);
+      else c.fillRect(x-vw/2, top, vw, bh);
+      if (skin.id==="toxic") paintToxic(c, fx, x, top, vBase, vw, up, dpr, i);
+      if (skin.id==="plasma") { const g=c.createLinearGradient(x,top,x,vBase); g.addColorStop(0,"rgba(122,240,255,.95)"); g.addColorStop(.5,"rgba(255,255,255,.8)"); g.addColorStop(1,"rgba(255,74,210,.9)"); c.fillStyle=g; c.fillRect(x-vw/2, top, vw, bh); }
+      if (skin.id==="neon") paintNeon(c, x, top, vBase, vw, up, dpr, i);
+      if (skin.id!=="basic" && skin.id!=="rainbow") paintAura(c, x, top, bh, vw, auraOf(up), dpr);
+    });
+    c.restore();
+    c.strokeStyle="rgba(255,255,255,.1)"; c.lineWidth=dpr; c.beginPath(); c.moveTo(padL,vBase-volH); c.lineTo(w-padR,vBase-volH); c.stroke();
+    c.fillStyle="rgba(210,210,220,.7)"; c.font=`${10*dpr}px Trebuchet MS`; c.textAlign="left";
+    c.fillText("vol "+fmtVol(vmax), w-padR+6*dpr, vBase-volH*.45);
+  }
   c.strokeStyle="rgba(255,255,255,.08)"; c.lineWidth=dpr;
   for(let i=0;i<5;i++){
     const px=max-span/4*i, y=yOf(px);
@@ -1771,7 +1888,7 @@ function drawChart(slot){
     } else c.fillStyle=col;
     c.fillRect(x-body/2, top, body, bh);
     if (skin.id!=="basic" && skin.id!=="rainbow") {
-      const aura = skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col;
+      const aura = auraOf(up);
       paintAura(c, x, top, bh, body, aura, dpr);
     }
     if (skin.id==="bolt" && up) paintBolt(c, slot, x, top, bot, body, dpr, i);
@@ -1783,7 +1900,7 @@ function drawChart(slot){
     if (skin.id==="lava") paintLava(c, x, top, bot, body, up, dpr, i);
     if (skin.id==="drip" && !up) paintDrip(c, slot, x, bot, body, bh, dpr, i);
   });
-  if (skin.id==="drip") stepDrips(slot, c, h, dpr); else slot.drips = [];
+  if (skin.id==="drip") { slot.dripN = liveBars.filter(b=>b.close<b.open).length; stepDrips(slot, c, h, dpr); } else slot.drips = [];
   if (skin.id==="bolt") stepBolts(slot, c); else slot.bolts = [];
   if (skin.id==="snow") stepSnow(slot, c, h, dpr); else slot.flakes = [];
   if (skin.id==="bubbles") stepBubbles(slot, c); else slot.bubbles = [];
@@ -1835,10 +1952,11 @@ function drawChart(slot){
   } else paintOhlc(slot, last);
   c.textAlign="left";
 }
+function fmtVol(v){ v=+v||0; if(v>=1e9) return (v/1e9).toFixed(2)+"B"; if(v>=1e6) return (v/1e6).toFixed(2)+"M"; if(v>=1e3) return (v/1e3).toFixed(1)+"K"; return String(Math.round(v)); }
 function paintOhlc(slot, b){
   const el=document.getElementById("ohlc-"+slot.id); if(!el||!b) return;
   const up=b.close>=b.open;
-  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b>`;
+  el.innerHTML=`<b class="${up?"up":"down"}">H ${fmtPx(b.high)}</b><b class="${up?"up":"down"}">O ${fmtPx(b.open)}</b><b class="${up?"up":"down"}">C ${fmtPx(b.close)}</b>${slot.vol&&b.vol?`<b class="${up?"up":"down"}">V ${fmtVol(b.vol)}</b>`:""}`;
 }
 function sessionLabel(state){
   const s = (state||"").toUpperCase();
@@ -1880,7 +1998,7 @@ function setLayout(name){
   sizeCanvases();
 }
 function saveSlotPrefs(){
-  localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf}))));
+  localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf, vol:!!s.vol}))));
 }
 const USED_KEY = "trippy_used_tickers";
 function loadUsedTickers(){
@@ -1940,6 +2058,7 @@ slots.forEach((_,i)=>{
   document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
   document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
+  document.getElementById("vol-"+i).addEventListener("change",e=>{ slots[i].vol=e.target.checked; saveSlotPrefs(); });
   document.querySelector(`[data-fs="${i}"]`).addEventListener("click", () => toggleChartMax());
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
@@ -1962,6 +2081,15 @@ if (densEl) {
     savePlayer();
   });
 }
+document.getElementById("densAdd").addEventListener("click", () => {
+  const n = Number(document.getElementById("density").value) || 36;
+  addExtraToys(n); sfx("spit");
+});
+document.querySelectorAll(".modeBtn").forEach(btn => btn.addEventListener("click", () => {
+  const m = btn.dataset.mode; motionOn[m] = !motionOn[m];
+  localStorage.setItem(MOTION_KEY, JSON.stringify(motionOn)); paintModes();
+}));
+paintModes();
 function paintSound(){
   const s = document.getElementById("soundBtn");
   const k = document.getElementById("cursorBtn");
