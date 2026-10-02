@@ -1312,7 +1312,7 @@ function paintBolt(c, slot, x, top, bot, body, dpr, i){
   if (!slot.boltAt) slot.boltAt = {};
   const now = performance.now();
   if (!slot.boltAt[i]) slot.boltAt[i] = now - Math.random()*280;
-  if (now - slot.boltAt[i] > 220 && slot.bolts.length < 48) {
+  if (now - slot.boltAt[i] > 140 && slot.bolts.length < 90) {
     slot.boltAt[i] = now;
     const y0 = top + Math.random()*Math.max(6*dpr, bot-top);
     const pts = [[x-body*0.4, y0]];
@@ -1322,6 +1322,10 @@ function paintBolt(c, slot, x, top, bot, body, dpr, i){
       pts.push([px + (Math.random()-0.5)*body*0.35, top + Math.random()*Math.max(8*dpr, bot-top)]);
     }
     slot.bolts.push({ pts, life: 1 });
+    const tip = [[x, top-26*dpr]];
+    let y = top-26*dpr;
+    while (y < top+12*dpr) { y += 6*dpr; tip.push([x+(Math.random()-0.5)*14*dpr, y]); }
+    slot.bolts.push({ pts: tip, life: 1 });
   }
 }
 function stepBolts(slot, c){
@@ -1329,8 +1333,8 @@ function stepBolts(slot, c){
   slot.bolts = slot.bolts.filter(b => b.life > 0.05);
   slot.bolts.forEach(b => {
     b.life -= 0.04;
-    c.strokeStyle = "rgba(255,246,170," + b.life.toFixed(3) + ")";
-    c.lineWidth = 2;
+    c.strokeStyle = "rgba(255,250,190," + Math.min(1, b.life+0.3).toFixed(3) + ")";
+    c.lineWidth = 2.6;
     c.beginPath();
     b.pts.forEach((p, n) => n ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]));
     c.stroke();
@@ -1358,8 +1362,8 @@ function stepSnow(slot, c, h, dpr){
 function paintBubbles(c, slot, x, top, bot, body, dpr, i){
   spawnBits(slot, "bubbles", i, performance.now(), 420, 70, { x: x+(Math.random()-0.5)*body*0.6, y: top, vy: -(0.3+Math.random()*0.35)*dpr, r: (1.4+Math.random()*1.6)*dpr, life: 1, inner: false });
   if (!slot.innerBub) slot.innerBub = [];
-  if (slot.innerBub.length < 80 && (i % 2 === 0)) {
-    slot.innerBub.push({ x: x+(Math.random()-0.5)*body*0.5, y: top+Math.random()*Math.max(6*dpr, bot-top), vx:(Math.random()-0.5)*0.8*dpr, vy:(Math.random()-0.5)*0.8*dpr, r:(1.2+Math.random()*1.5)*dpr, left:x-body/2, right:x+body/2, top, bot });
+  if (slot.innerBub.length < 220) {
+    for (let n=0;n<3;n++) slot.innerBub.push({ x: x+(Math.random()-0.5)*body*0.6, y: top+Math.random()*Math.max(6*dpr, bot-top), vx:(Math.random()-0.5)*0.9*dpr, vy:(Math.random()-0.5)*0.9*dpr, r:(1.1+Math.random()*1.8)*dpr, left:x-body/2, right:x+body/2, top, bot });
   }
 }
 function stepBubbles(slot, c){
@@ -1443,16 +1447,20 @@ function stepPlasma(slot, c){
     c.beginPath(); c.arc(d.x, d.y, d.r, 0, 7); c.fill();
   });
 }
+function paintAura(c, x, top, h, body, color, dpr){
+  c.save();
+  c.shadowColor = color;
+  c.shadowBlur = 14*dpr;
+  c.strokeStyle = color;
+  c.globalAlpha = 0.9;
+  c.lineWidth = 2.2*dpr;
+  c.strokeRect(x-body/2-1.5*dpr, top-1.5*dpr, body+3*dpr, Math.max(4*dpr, h)+3*dpr);
+  c.restore();
+}
 function paintLava(c, x, top, bot, body, up, dpr, i){
   const t = performance.now()/700 + i;
   const h = Math.max(8*dpr, bot-top);
   c.save();
-  c.shadowColor = "rgba(255,244,220,.95)";
-  c.shadowBlur = 14*dpr;
-  c.strokeStyle = "rgba(255,250,240,.85)";
-  c.lineWidth = 2.2*dpr;
-  c.beginPath(); c.roundRect(x-body/2-1.5*dpr, top-1.5*dpr, body+3*dpr, h+3*dpr, Math.min(body/2, 8*dpr)); c.stroke();
-  c.shadowBlur = 0;
   c.fillStyle = up ? "#ffb08a" : "#8a2458";
   c.beginPath(); c.roundRect(x-body/2, top, body, h, Math.min(body/2, 8*dpr)); c.fill();
   c.beginPath(); c.rect(x-body/2, top, body, h); c.clip();
@@ -1524,6 +1532,8 @@ function drawChart(slot){
       c.fillStyle=g;
     } else c.fillStyle=col;
     c.fillRect(x-body/2, top, body, bh);
+    const aura = skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col;
+    paintAura(c, x, top, bh, body, aura, dpr);
     if (skin.id==="bolt" && up) paintBolt(c, slot, x, top, bot, body, dpr, i);
     if (skin.id==="snow" && !up) paintSnow(c, slot, x, bot, body, dpr, i);
     if (skin.id==="bubbles" && up) paintBubbles(c, slot, x, top, bot, body, dpr, i);
