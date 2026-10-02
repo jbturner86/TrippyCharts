@@ -208,7 +208,7 @@
       <h3>Outages and changes</h3>
       <p>Feeds, toys, passes, and features can break, change, or disappear without notice. We owe you no uptime, accuracy, or specific toy rotation.</p>
       <h3>Store</h3>
-      <p>Payments are for cosmetic toys and cursor skins — not market data. Toys are $1 each. Extra cursors are $3 each. Mushrooms and the squid cursor stay free. No subscription. No refunds on one-off unlocks. Test charges in sandbox are not real.</p>
+      <p>Payments are for cosmetic toys, cursor skins, and candle skins — not market data. Toys are $1 each. Extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme stay free. No subscription. No refunds on one-off unlocks. Test charges in sandbox are not real.</p>
       <h3>As-is</h3>
       <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
       <h3>You agree</h3>
@@ -347,7 +347,9 @@ function defaultPlayer(){
     passActive: false,
     passExpiresAt: null,
     ownedCursorIds: ["squid"],
-    equippedCursor: "squid"
+    equippedCursor: "squid",
+    ownedThemeIds: ["basic"],
+    equippedTheme: "basic"
   };
 }
 function loadPlayer(){
@@ -1073,6 +1075,47 @@ function fmtVol(n){
   if (n>=1e3) return (n/1e3).toFixed(2)+"K";
   return String(Math.round(n));
 }
+
+function candleSkin(){
+  const id = player.equippedTheme || "basic";
+  const own = player.ownedThemeIds || ["basic"];
+  const use = (id==="basic" || own.includes(id)) ? id : "basic";
+  if (use==="vine") return { id:"vine", up:"#3dcc4a", dn:"#6b4a2a" };
+  if (use==="rainbow") return { id:"rainbow", up:"#7af0ff", dn:"#ff5ad0" };
+  if (use==="drip") return { id:"drip", up:"#f4ecff", dn:"#d0122a" };
+  return { id:"basic", up:"#00c805", dn:"#ff5000" };
+}
+function paintVine(c, x, top, bot, body, up, forming, dpr){
+  c.save();
+  c.strokeStyle = up ? "#1f7a32" : "#3a2a18";
+  c.lineWidth = Math.max(1, dpr);
+  c.beginPath();
+  c.moveTo(x-body/2, bot);
+  c.quadraticCurveTo(x-body*0.15, (top+bot)/2, x-body/2+2*dpr, top);
+  c.stroke();
+  c.fillStyle = up ? "#7cff3a" : "#8a6a3a";
+  const mid = (top+bot)/2;
+  c.beginPath(); c.ellipse(x-body/2-2*dpr, mid, 4*dpr, 2.2*dpr, -0.6, 0, 7); c.fill();
+  if (up && !forming) {
+    c.fillStyle = "#ffd6f2";
+    c.beginPath(); c.arc(x, top-5*dpr, 3.2*dpr, 0, 7); c.fill();
+    c.fillStyle = "#ff4ad2";
+    c.beginPath(); c.arc(x, top-5*dpr, 1.3*dpr, 0, 7); c.fill();
+  }
+  c.restore();
+}
+function paintDrip(c, x, bot, body, bh, dpr){
+  const len = Math.min(18*dpr, 4*dpr + bh*0.35);
+  c.save();
+  c.fillStyle = "#d0122a";
+  c.beginPath();
+  c.moveTo(x-body*0.18, bot);
+  c.quadraticCurveTo(x-body*0.08, bot+len*0.7, x, bot+len);
+  c.quadraticCurveTo(x+body*0.08, bot+len*0.7, x+body*0.18, bot);
+  c.fill();
+  c.beginPath(); c.arc(x+body*0.22, bot+len*0.45, 1.6*dpr, 0, 7); c.fill();
+  c.restore();
+}
 function drawChart(slot){
   const canvas=document.getElementById("cv-"+slot.id), c=canvas.getContext("2d");
   const w=canvas.width,h=canvas.height; c.clearRect(0,0,w,h);
@@ -1091,7 +1134,8 @@ function drawChart(slot){
   const yOf=px=>padT+(max-px)/span*plotH;
   slot.layout={padL,padR,gap,plotH,padT,volH};
   const last=liveBars.at(-1), lastUp=last.close>=last.open;
-  const upCol="#00c805", dnCol="#ff5000";
+  const skin = candleSkin();
+  const upCol=skin.up, dnCol=skin.dn;
   c.strokeStyle="rgba(255,255,255,.08)"; c.lineWidth=dpr;
   for(let i=0;i<5;i++){
     const px=max-span/4*i, y=yOf(px);
@@ -1101,11 +1145,22 @@ function drawChart(slot){
   }
   liveBars.forEach((b,i)=>{
     const x=padL+i*gap+gap/2, up=b.close>=b.open, col=up?upCol:dnCol;
+    const forming = i===liveBars.length-1;
     c.strokeStyle=col; c.lineWidth=Math.max(1,dpr);
     c.beginPath(); c.moveTo(x,yOf(b.high)); c.lineTo(x,yOf(b.low)); c.stroke();
     const top=yOf(Math.max(b.open,b.close)), bot=yOf(Math.min(b.open,b.close));
-    const body = i===liveBars.length-1 ? Math.max(3.2*dpr, gap*.72) : bodyW;
-    c.fillStyle=col; c.fillRect(x-body/2,top,body,Math.max(2*dpr,bot-top));
+    const body = forming ? Math.max(3.2*dpr, gap*.72) : bodyW;
+    const bh = Math.max(2*dpr, bot-top);
+    if (skin.id==="rainbow") {
+      const g = c.createLinearGradient(x, top, x, top+bh);
+      g.addColorStop(0, up ? "#7af0ff" : "#6a5cff");
+      g.addColorStop(0.5, up ? "#ffe14a" : "#ff5ad0");
+      g.addColorStop(1, up ? "#ff4ad2" : "#3a2458");
+      c.fillStyle=g;
+    } else c.fillStyle=col;
+    c.fillRect(x-body/2, top, body, bh);
+    if (skin.id==="vine") paintVine(c, x, top, bot, body, up, forming, dpr);
+    if (skin.id==="drip" && !up) paintDrip(c, x, bot, body, bh, dpr);
   });
   const lastY=yOf(last.close);
   c.setLineDash([4*dpr,4*dpr]); c.strokeStyle=lastUp?upCol:dnCol; c.lineWidth=dpr;
