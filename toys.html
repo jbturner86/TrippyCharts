@@ -38,7 +38,7 @@
   <p class="lead">These ride with your pointer. Squid is free. The rest are $3 each.</p>
   <div class="grid" id="cursors"></div>
   <h2>Candle themes</h2>
-  <p class="lead">One theme at a time. Basic is free. Ember, rainbow, drip, and lightning are $3. Unselected charts go back to basic.</p>
+  <p class="lead">One theme at a time. Basic is free. Ember, rainbow, drip, lightning, snow, bubbles, neon, confetti, ice, and gold are $3. Unselected charts go back to basic.</p>
   <div class="grid" id="themes"></div>
   <p class="note">$1 toys and $3 cursors/themes need Stripe one-off prices on the Worker (`STRIPE_TOY_PRICE` / `STRIPE_CURSOR_PRICE`). Until those exist, Unlock will show the Worker error. A paid theme still equips from this browser once owned.</p>
 <script>
@@ -468,7 +468,7 @@ document.getElementById("cursors").addEventListener("click", async e => {
   } catch(err){ alert("checkout failed"); }
 });
 
-const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"]];
+const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["confetti","Confetti"],["ice","Ice"],["gold","Gold vein"]];
 function ownsTheme(id){
   if (id === "basic") return true;
   return (player.ownedThemeIds || []).includes(id);
@@ -482,7 +482,9 @@ function previewTheme(cv, id){
   const bars = [[40,70,1],[58,52,0],[70,64,1],[84,46,1],[96,78,0],[112,60,1]];
   bars.forEach((b,i)=>{
     const x = 22 + i*24, up = b[2], top = b[1], bot = b[0];
-    const col = id==="vine" ? (up?"#ffb703":"#8a4b2a") : id==="drip" ? (up?"#f4ecff":"#d0122a") : (up?"#00c805":"#ff5000");
+    const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], confetti:["#ffe14a","#ff5d8f"], ice:["#d7f3ff","#8eb4c9"], gold:["#ffd166","#8a6a3a"] };
+    const pair = cols[id] || ["#00c805","#ff5000"];
+    const col = up ? pair[0] : pair[1];
     c.strokeStyle = id==="rainbow" ? "#fff" : col;
     c.beginPath(); c.moveTo(x, top-10); c.lineTo(x, bot+10); c.stroke();
     if (id==="rainbow") {
@@ -501,6 +503,12 @@ function previewTheme(cv, id){
     if (id==="bolt" && up && ((t/500+i)%4) < 1) {
       c.strokeStyle="#fff6aa"; c.beginPath(); c.moveTo(x, top-16); c.lineTo(x-4, top-8); c.lineTo(x+3, top-4); c.lineTo(x, top); c.stroke();
     }
+    if (id==="snow" && !up) { c.fillStyle="#fff"; c.beginPath(); c.arc(x, bot+4+((t/120+i*9)%22), 1.7, 0, 7); c.fill(); }
+    if (id==="bubbles" && up) { c.strokeStyle="#baf0ff"; c.beginPath(); c.arc(x, top-((t/90+i*6)%16), 2.4, 0, 7); c.stroke(); }
+    if (id==="neon") { c.strokeStyle = up?"#7cff3a":"#ff4ad2"; c.strokeRect(x-8, top-2, 16, Math.max(6, bot-top)+4); }
+    if (id==="confetti" && up) { c.fillStyle = "hsl("+((t/8+i*40)%360)+",100%,65%)"; c.fillRect(x-2, top+((t/100+i)%14), 3, 2); }
+    if (id==="ice") { c.strokeStyle="#fff"; c.beginPath(); c.moveTo(x-4, top+2); c.lineTo(x, (top+bot)/2); c.lineTo(x+4, bot-2); c.stroke(); }
+    if (id==="gold" && up) { const gy = bot-(bot-top)*((t/600+i)%1); c.strokeStyle="#ffe9a8"; c.beginPath(); c.moveTo(x, bot); c.lineTo(x, gy); c.stroke(); }
     if (id==="drip" && !up) { c.fillStyle="#d0122a"; c.beginPath(); c.moveTo(x-3, bot); c.lineTo(x, bot+12); c.lineTo(x+3, bot); c.fill(); }
   });
 }
