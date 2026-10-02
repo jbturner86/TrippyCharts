@@ -710,7 +710,12 @@ function drawToy(c,b){
     c.beginPath(); c.moveTo(0,-s*.36); c.lineTo(0,s*.36); c.stroke();
     c.beginPath(); c.moveTo(0,0); c.lineTo(-s*.25,s*.3); c.stroke();
     c.beginPath(); c.moveTo(0,0); c.lineTo(s*.25,s*.3); c.stroke();
-  } else if(k==="sparkles" || k==="bill"){
+  } else if(k==="sparkles"){
+    const grd=c.createRadialGradient(0,0,0,0,0,s*.42); grd.addColorStop(0,"#fff"); grd.addColorStop(.35,"#ff9ad8"); grd.addColorStop(1,"#7ad7ff");
+    c.fillStyle=grd; c.beginPath();
+    for(let i=0;i<8;i++){ const a=-Math.PI/2+i*Math.PI/4, r=i%2?s*.16:s*.46; c.lineTo(Math.cos(a)*r,Math.sin(a)*r); }
+    c.closePath(); c.fill(); stroke();
+  } else if(k==="bill"){
     c.fillStyle="#1f6b45"; c.beginPath(); c.roundRect(-s*.46,-s*.24,s*.92,s*.48,s*.04); c.fill();
     c.strokeStyle="#d7f5c8"; c.lineWidth=Math.max(1.4,s*0.04); c.strokeRect(-s*.4,-s*.18,s*.8,s*.36);
     c.fillStyle="#d7f5c8"; c.font = Math.max(10,s*0.28)+"px Trebuchet MS"; c.textAlign="center"; c.textBaseline="middle";
