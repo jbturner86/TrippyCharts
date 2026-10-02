@@ -1101,8 +1101,7 @@ function fmtVol(n){
 
 function candleSkin(){
   const id = player.equippedTheme || "basic";
-  const own = player.ownedThemeIds || ["basic"];
-  const use = (id==="basic" || own.includes(id)) ? id : "basic";
+  const use = id;
   if (use==="vine") return { id:"ember", up:"#ffb703", dn:"#8a4b2a" };
   if (use==="bolt") return { id:"bolt", up:"#f4ecff", dn:"#6d6288" };
   if (use==="snow") return { id:"snow", up:"#eef7ff", dn:"#7f93ad" };
