@@ -767,6 +767,7 @@ function endZen(){
   if(z) z.textContent="hide everything";
   document.getElementById("grid").classList.remove("hide");
   if (document.pointerLockElement) document.exitPointerLock();
+  if (document.fullscreenElement && !chartsFs && chartMaxId == null) { try { document.exitFullscreen().catch(()=>{}); } catch(e){} }
 }
 function startSuperNova(x,y){
   sfx("nova");
