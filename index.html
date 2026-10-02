@@ -461,7 +461,7 @@ function ownedToys(){
   const own = player.ownedToyIds && player.ownedToyIds.length ? player.ownedToyIds : [];
   return [...new Set([...FREE_TOYS, ...own])];
 }
-function canUse(id){ return ownedToys().includes(id); }
+function canUse(id){ return true; }
 function toyChecked(id){
   if (!canUse(id)) return false;
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
@@ -751,39 +751,43 @@ function drawToy(c,b){
     c.beginPath(); c.roundRect(-w/2,-h/2,w,h,r); c.strokeStyle="#1a1a1a"; c.lineWidth=Math.max(1.4,s*0.05); c.stroke();
     c.beginPath(); c.moveTo(0,-h/2+1); c.lineTo(0,h/2-1); c.strokeStyle="rgba(20,20,20,.45)"; c.lineWidth=1.2; c.stroke();
     c.fillStyle="rgba(255,255,255,.35)"; c.beginPath(); c.roundRect(-w/2+2,-h/2+2,w-4,h*0.38,r); c.fill();
-    } else if(k==="football"){
-    c.fillStyle="#6b3a1f"; c.beginPath(); c.ellipse(0,0,s*.42,s*.24,0.3,0,7); c.fill(); stroke();
-    c.strokeStyle="#f4ecff"; c.lineWidth=1.4;
-    c.beginPath(); c.moveTo(-s*.12,-s*.08); c.lineTo(s*.16,s*.08); c.stroke();
-    c.beginPath(); c.moveTo(-s*.08,-s*.14); c.lineTo(s*.2,s*.02); c.stroke();
+      } else if(k==="football"){
+    c.fillStyle="#6a3418"; c.beginPath(); c.ellipse(0,0,s*.46,s*.26,-0.5,0,7); c.fill(); stroke();
+    c.strokeStyle="#f6efe4"; c.lineWidth=Math.max(1,s*0.035);
+    c.beginPath(); c.ellipse(0,0,s*.16,s*.1,-0.5,0,7); c.stroke();
+    c.beginPath(); c.moveTo(-s*.1,-s*.02); c.lineTo(s*.1,s*.06); c.moveTo(-s*.06,-s*.08); c.lineTo(s*.14,0); c.stroke();
   } else if(k==="baseball"){
-    c.fillStyle="#f7f7f2"; c.beginPath(); c.arc(0,0,s*.3,0,7); c.fill(); stroke();
-    c.strokeStyle="#d23b3b"; c.lineWidth=1.6;
-    c.beginPath(); c.arc(-s*.08,0,s*.22,-1,1); c.stroke();
-    c.beginPath(); c.arc(s*.08,0,s*.22,2.2,4.2); c.stroke();
+    c.fillStyle="#f4f1ea"; c.beginPath(); c.arc(0,0,s*.32,0,7); c.fill(); stroke();
+    c.strokeStyle="#c43737"; c.lineWidth=Math.max(1.2,s*0.04);
+    c.beginPath(); c.arc(-s*.05,0,s*.24,-1.1,1.1); c.stroke();
+    c.beginPath(); c.arc(s*.05,0,s*.24,2.0,4.3); c.stroke();
   } else if(k==="basketball"){
-    c.fillStyle="#e07a2f"; c.beginPath(); c.arc(0,0,s*.3,0,7); c.fill(); stroke();
-    c.strokeStyle="#2a1408"; c.lineWidth=1.5;
-    c.beginPath(); c.moveTo(-s*.3,0); c.lineTo(s*.3,0); c.stroke();
-    c.beginPath(); c.moveTo(0,-s*.3); c.lineTo(0,s*.3); c.stroke();
+    c.fillStyle="#e36a1e"; c.beginPath(); c.arc(0,0,s*.32,0,7); c.fill(); stroke();
+    c.strokeStyle="#2a1408"; c.lineWidth=Math.max(1.2,s*0.035);
+    c.beginPath(); c.arc(0,0,s*.32,-0.2,1.2); c.stroke();
+    c.beginPath(); c.moveTo(-s*.32,0); c.lineTo(s*.32,0); c.moveTo(0,-s*.32); c.lineTo(0,s*.32); c.stroke();
   } else if(k==="soccer"){
-    c.fillStyle="#f4f4f4"; c.beginPath(); c.arc(0,0,s*.3,0,7); c.fill(); stroke();
-    c.fillStyle="#1b1b1b";
-    c.beginPath(); c.moveTo(0,-s*.12); c.lineTo(s*.1,-s*.02); c.lineTo(s*.06,s*.1); c.lineTo(-s*.06,s*.1); c.lineTo(-s*.1,-s*.02); c.closePath(); c.fill();
+    c.fillStyle="#f7f7f7"; c.beginPath(); c.arc(0,0,s*.32,0,7); c.fill(); stroke();
+    c.fillStyle="#1c1c1c";
+    c.beginPath(); c.moveTo(0,-s*.14); c.lineTo(s*.12,-s*.04); c.lineTo(s*.07,s*.12); c.lineTo(-s*.07,s*.12); c.lineTo(-s*.12,-s*.04); c.closePath(); c.fill();
+    c.strokeStyle="#1c1c1c"; c.lineWidth=1; c.beginPath(); c.arc(0,0,s*.24,0,7); c.stroke();
   } else if(k==="cigar"){
-    c.fillStyle="#7a4a28"; c.beginPath(); c.roundRect(-s*.4,-s*.1,s*.7,s*.2,s*.1); c.fill(); stroke();
-    c.fillStyle="#e8d2b0"; c.beginPath(); c.roundRect(s*.22,-s*.1,s*.16,s*.2,s*.06); c.fill();
+    c.fillStyle="#6b4224"; c.beginPath(); c.roundRect(-s*.42,-s*.1,s*.66,s*.2,s*.1); c.fill(); stroke();
+    c.fillStyle="#e6d2b4"; c.beginPath(); c.roundRect(s*.16,-s*.1,s*.2,s*.2,s*.08); c.fill();
     c.fillStyle="#ffb020"; c.beginPath(); c.arc(s*.4,0,s*.05,0,7); c.fill();
+    c.fillStyle="rgba(255,255,255,.25)"; c.fillRect(-s*.3,-s*.08,s*.2,s*.04);
   } else if(k==="controller"){
-    c.fillStyle="#3a2a55"; c.beginPath(); c.roundRect(-s*.36,-s*.18,s*.72,s*.36,s*.12); c.fill(); stroke();
-    c.fillStyle="#d7c7ff"; c.fillRect(-s*.22,-s*.04,s*.1,s*.03); c.fillRect(-s*.185,-s*.08,s*.03,s*.11);
-    c.fillStyle="#ff5d8f"; c.beginPath(); c.arc(s*.16,-s*.02,s*.045,0,7); c.fill();
-    c.fillStyle="#7cff3a"; c.beginPath(); c.arc(s*.24,s*.04,s*.045,0,7); c.fill();
+    c.fillStyle="#2c2144"; c.beginPath(); c.roundRect(-s*.4,-s*.2,s*.8,s*.4,s*.16); c.fill(); stroke();
+    c.fillStyle="#efe6ff"; c.fillRect(-s*.24,-s*.05,s*.12,s*.04); c.fillRect(-s*.2,-s*.1,s*.04,s*.14);
+    c.fillStyle="#ff5d8f"; c.beginPath(); c.arc(s*.14,-s*.02,s*.05,0,7); c.fill();
+    c.fillStyle="#7cff3a"; c.beginPath(); c.arc(s*.26,s*.05,s*.05,0,7); c.fill();
+    c.fillStyle="#5aa0ff"; c.beginPath(); c.arc(s*.2,-s*.08,s*.04,0,7); c.fill();
   } else if(k==="cross"){
-    c.fillStyle="#f4e7b2";
-    c.fillRect(-s*.08,-s*.36,s*.16,s*.72);
-    c.fillRect(-s*.26,-s*.12,s*.52,s*.16);
+    c.fillStyle="#f3e2a0";
+    c.beginPath(); c.roundRect(-s*.08,-s*.38,s*.16,s*.76,s*.04); c.fill();
+    c.beginPath(); c.roundRect(-s*.28,-s*.12,s*.56,s*.16,s*.04); c.fill();
     stroke();
+    c.fillStyle="rgba(255,255,255,.35)"; c.fillRect(-s*.03,-s*.32,s*.04,s*.6);
   } else if(k==="bongs"){
     c.fillStyle="#c5e8f2"; c.beginPath(); c.ellipse(0,s*.42,s*.22,s*.06,0,0,7); c.fill();
     c.strokeStyle="#16323a"; c.lineWidth=Math.max(1.3,s*0.04); c.stroke();
@@ -819,11 +823,7 @@ function drawSquid(){
   const jig = blobT > 0 ? (1 + 1.15*blobT + 0.28*Math.sin(step*0.7)*blobT) : 1;
   const sc = squidScale * jig;
   const skin = (function(){
-    const id = player.equippedCursor || "squid";
-    if (id === "squid") return id;
-    if ((player.ownedCursorIds || []).includes(id)) return id;
-    if (hasPass()) return id;
-    return "squid";
+    return player.equippedCursor || "squid";
   })();
   const spin = skin === "nebula" || skin === "aurora" ? 0.018 : skin === "lotus" || skin === "candy" ? 0.012 : skin === "prism" || skin === "plasma" ? 0.02 : skin === "ember" ? 0.01 : 0.004;
   const radius=(13+5*Math.sin(step/10))*sc;
@@ -831,7 +831,60 @@ function drawSquid(){
   if(!isFinite(jetAng)||Math.hypot(mouse.x-mouse.px,mouse.y-mouse.py)<1) jetAng=step*0.03;
   if (!window.cursorTrail) window.cursorTrail = [];
   const trail = window.cursorTrail;
-  ctx.save(); ctx.globalCompositeOperation="lighter";
+  ctx.save();
+  if (!window.cursorTrail) window.cursorTrail = [];
+  const trail = window.cursorTrail;
+  trail.unshift({x:mouse.x,y:mouse.y});
+  if (trail.length > 28) trail.length = 28;
+  if (skin === "worm" || skin === "shenron" || skin === "hole") {
+    if (skin === "hole") {
+      ctx.translate(mouse.x, mouse.y);
+      ctx.rotate(step*0.04);
+      for (let i=5;i>=0;i--) {
+        ctx.strokeStyle = i%2 ? "rgba(255,170,60,.55)" : "rgba(120,180,255,.4)";
+        ctx.lineWidth = 3-i*0.3;
+        ctx.beginPath(); ctx.arc(0,0,10+i*6, step*0.02, 4.2+i); ctx.stroke();
+      }
+      ctx.fillStyle = "#050308";
+      ctx.beginPath(); ctx.arc(0,0,11,0,7); ctx.fill();
+      ctx.restore();
+      return;
+    }
+    const n = Math.min(trail.length, skin==="shenron"?22:16);
+    ctx.lineCap = "round";
+    for (let i=n-1;i>=1;i--) {
+      const a = trail[i], b = trail[i-1];
+      if (!a || !b) continue;
+      const w = skin==="shenron" ? 7+i*0.15 : 8-i*0.25;
+      ctx.strokeStyle = skin==="shenron" ? "#3dcf5a" : "#c4a574";
+      ctx.lineWidth = Math.max(2, w);
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+    }
+    ctx.translate(mouse.x, mouse.y);
+    ctx.rotate(jetAng);
+    if (skin === "worm") {
+      ctx.fillStyle = "#d7b98a";
+      ctx.beginPath(); ctx.ellipse(0,0,14,8,0,0,7); ctx.fill();
+      ctx.fillStyle = "#1a120c";
+      ctx.beginPath(); ctx.ellipse(8,0,6,5,0,0,7); ctx.fill();
+      ctx.fillStyle = "#f4f0e6";
+      for (let t=0;t<6;t++) { ctx.beginPath(); ctx.moveTo(6,-4+t*1.6); ctx.lineTo(12,-2+t*1.2); ctx.lineTo(6,-1+t*1.6); ctx.fill(); }
+    } else {
+      ctx.fillStyle = "#7dff6a";
+      ctx.beginPath(); ctx.ellipse(0,0,16,7,0,0,7); ctx.fill();
+      ctx.fillStyle = "#f2e27a";
+      ctx.beginPath(); ctx.moveTo(4,-7); ctx.lineTo(10,-16); ctx.lineTo(8,-6); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(4,7); ctx.lineTo(10,16); ctx.lineTo(8,6); ctx.fill();
+      ctx.strokeStyle = "#e8f7ff"; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(10,-2); ctx.quadraticCurveTo(22,-8,28,-1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(10,2); ctx.quadraticCurveTo(22,8,28,1); ctx.stroke();
+      ctx.fillStyle = "#ff5a3c";
+      ctx.beginPath(); ctx.arc(12,-2,1.4,0,7); ctx.fill();
+    }
+    ctx.restore();
+    return;
+  }
+  ctx.globalCompositeOperation="lighter";
   squid.forEach((arm,ai)=>{
     const ang=2*Math.PI*ai/ARM_N+step*spin;
     let tx=mouse.x+radius*Math.cos(ang), ty=mouse.y+radius*Math.sin(ang);
@@ -1204,7 +1257,7 @@ function spawnBits(slot, key, i, now, every, max, bit){
   }
 }
 function paintSnow(c, slot, x, bot, body, dpr, i){
-  spawnBits(slot, "flakes", i, performance.now(), 460, 80, { x: x+(Math.random()-0.5)*body, y: bot, vy: 0.25*dpr, vx: (Math.random()-0.5)*0.35*dpr, r: (1+Math.random())*dpr, life: 1 });
+  spawnBits(slot, "flakes", i, performance.now(), 460, 80, { x: x+(Math.random()-0.5)*body, y: bot, vy: 0.28*dpr, vx: (Math.random()-0.5)*0.4*dpr, r: (1.6+Math.random()*1.4)*dpr, life: 1 });
 }
 function stepSnow(slot, c, h, dpr){
   if (!slot.flakes) return;
