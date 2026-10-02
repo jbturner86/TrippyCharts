@@ -135,7 +135,10 @@ body.zen .side { display:none !important; }
     .group-name { font-size:1rem; letter-spacing:.08em; text-transform:uppercase; color:#efe6ff; margin-bottom:5px; font-weight:700; }
     .pickers { display:flex; gap:5px; flex-wrap:wrap; align-items:center; }
     .volchk { display:inline-flex; align-items:center; gap:4px; padding:4px 9px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.7rem; text-transform:uppercase; letter-spacing:.04em; cursor:pointer; user-select:none; }
-    .volchk input { margin:0; accent-color:#b56cff; cursor:pointer; }
+    .volchk input { position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+    .volchk { position:relative; }
+    .volchk:has(input:checked) { background:#9b3dff; border-color:#d9a8ff; box-shadow:0 0 8px rgba(196,75,255,.6); }
+    .volchk:has(input:focus-visible) { outline:2px solid #d9a8ff; outline-offset:2px; }
     select { padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; }
     .px { font-variant-numeric:tabular-nums; font-size:.92rem; }
     .chg.up { color:#7cff3a; } .chg.down { color:#ff5d8f; } .chg.flat { color:#d7c7ff; }
@@ -1597,8 +1600,7 @@ function fmtAxisTime(t, tf){
   if (tf==="1h" || tf==="2h" || tf==="4h") return d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric"});
   return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
-const VOL_ALL = savedSlots.some(s => s && s.vol);
-const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", vol:VOL_ALL, allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
+const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", vol:!!s.vol, allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
 document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
   <section class="card" id="card-${s.id}">
     <div class="chart-head">
@@ -2230,7 +2232,7 @@ slots.forEach((_,i)=>{
   document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
   document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
-  document.getElementById("vol-"+i).addEventListener("change",e=>{ const on=e.target.checked; slots.forEach(s=>{ s.vol=on; const c=document.getElementById("vol-"+s.id); if(c) c.checked=on; }); saveSlotPrefs(); });
+  document.getElementById("vol-"+i).addEventListener("change",e=>{ slots[i].vol=e.target.checked; saveSlotPrefs(); });
   document.querySelector(`[data-fs="${i}"]`).addEventListener("click", () => toggleChartMax());
   const cv=document.getElementById("cv-"+i);
   cv.addEventListener("wheel", e => { e.preventDefault(); zoomSlot(i, e.deltaY<0?1:-1); }, { passive:false });
