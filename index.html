@@ -21,14 +21,13 @@
 body.side-hide .wrap { padding-left:8px; }
 body.charts-fs .wrap, body.chart-max .wrap, body.zen .wrap { padding-left:0 !important; }
 body.charts-fs .side, body.chart-max .side, body.charts-fs #sideShow, body.chart-max #sideShow { display:none !important; }
-    header { text-align:center; padding:4px 10px 0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; overflow:hidden; }
+    header { display:none; }
     header .logo { height:28px; width:auto; display:block; flex:none; object-fit:contain; }
     .brand { display:flex; align-items:center; gap:8px; }
-    h1 { margin:0; font-size:clamp(1.05rem,2.4vw,1.55rem); letter-spacing:.04em; text-transform:uppercase; font-weight:900;
+    .side-title { margin:0 0 4px; font-size:.72rem; letter-spacing:.04em; text-transform:uppercase; font-weight:900; line-height:1;
       font-family:Impact,"Arial Black","Trebuchet MS",sans-serif;
       background:linear-gradient(90deg,#ffe14a 0%,#b6ff4a 38%,#3de7ff 100%);
       -webkit-background-clip:text; background-clip:text; color:transparent;
-      filter:drop-shadow(0 0 6px rgba(80,220,255,.45));
     }
         @keyframes titleHue {
       0% { background-position:0% 50%; }
@@ -176,16 +175,11 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
 <body>
   <div id="sky"><canvas id="bg"></canvas></div>
   <div class="wrap">
-    <header>
-      <div class="brand">
-        <h1>TrippyCharts</h1>
-        <img class="logo" src="logo.png" alt="">
-      </div>
-      <p class="hint" id="firstTip"></p>
-    </header>
     <aside class="side" id="sideBar">
       <button type="button" id="sideToggle">hide</button>
     <div class="density-box" id="toysPanel">
+      <div class="side-title">TrippyCharts</div>
+      <p class="hint" id="firstTip"></p>
       <div class="toy-label">toy box</div>
       <div id="quickToys"></div>
       <div class="toys-body">
