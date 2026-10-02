@@ -19,6 +19,8 @@
     #sky canvas { width:100%; height:100%; display:block; }
     .wrap { position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; padding-left:118px; transition:padding-left .2s ease; }
 body.side-hide .wrap { padding-left:8px; }
+body.charts-fs .wrap, body.chart-max .wrap, body.zen .wrap { padding-left:0 !important; }
+body.charts-fs .side, body.chart-max .side, body.charts-fs #sideShow, body.chart-max #sideShow { display:none !important; }
     header { text-align:center; padding:4px 10px 0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; overflow:hidden; }
     header .logo { height:28px; width:auto; display:block; flex:none; object-fit:contain; }
     .brand { display:flex; align-items:center; gap:8px; }
@@ -41,7 +43,7 @@ body.zen #sideShow { display:none !important; }
 #sideToggle { align-self:flex-start; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:#b7ffd2; color:#04140a; font-weight:800; padding:4px 8px; cursor:pointer; }
 .side .actions, .side .dock-btns { display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:0; width:auto; }
 .side button, .side a.page-link, .side select { width:auto; }
-body.zen .side, body.charts-fs .side { display:none !important; }
+body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !important; }
     .actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 10px; align-items:center; }
     .dock-btns { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
     button, a.page-link { background:rgba(255,255,255,.06); color:#efe6ff; border:1px solid rgba(255,255,255,.25); border-radius:999px; padding:6px 11px; letter-spacing:.08em; text-transform:uppercase; font-size:.65rem; text-decoration:none; display:inline-flex; align-items:center; }
@@ -50,6 +52,12 @@ body.zen .side, body.charts-fs .side { display:none !important; }
     .density-box.collapsed { width:auto; padding:6px 8px; }
     .density-box.collapsed .toys-body { display:none; }
     #toysToggle { width:auto; margin-bottom:4px; }
+    #quickToys { display:flex; flex-direction:column; gap:3px; max-width:148px; margin-top:2px; }
+    .q-lab { font-size:.48rem; letter-spacing:.08em; text-transform:uppercase; color:#9e8cc4; line-height:1; }
+    .q-row { display:flex; flex-wrap:wrap; gap:3px; }
+    .q-ico { width:24px; height:24px; padding:0; border-radius:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); overflow:hidden; display:inline-flex; }
+    .q-ico canvas { width:24px; height:24px; display:block; pointer-events:none; }
+    .q-ico.on { border-color:#c44bff; box-shadow:0 0 0 1px #c44bff; background:rgba(196,75,255,.32); }
     .hint { margin-top:4px; color:#9e8cc4; font-size:.68rem; letter-spacing:.04em; }
     #cancelBtn { display:none; }
     .sound-row { display:flex; align-items:center; justify-content:space-between; margin-top:7px; gap:4px; flex-wrap:wrap; }
@@ -172,6 +180,7 @@ body.zen .side, body.charts-fs .side { display:none !important; }
       <button type="button" id="sideToggle">hide</button>
     <div class="density-box collapsed" id="toysPanel">
       <button type="button" id="toysToggle">toys</button>
+      <div id="quickToys"></div>
       <div class="toys-body">
       <label for="density">toy density <span id="densityVal">70</span></label>
       <input type="range" id="density" min="0" max="400" value="70">
@@ -410,6 +419,7 @@ async function pullCloud(){
     paintToys();
     paintPass();
     paintStore();
+    paintQuick();
   } catch(e){}
 }
 async function pushCloud(){
@@ -440,6 +450,7 @@ function syncFromLocal(){
       if (label) label.textContent = dens.value;
     }
     paintPass();
+    paintQuick();
   } catch(e){}
 }
 
@@ -474,7 +485,56 @@ function toyChecked(id){
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
   return id === "mushrooms";
 }
-function paintToys(){}
+const CURSORS = [["squid","Aqua Squid"],["nebula","Nebula Bloom"],["comet","Comet Tail"],["lotus","Spin Lotus"],["void","Void Ring"],["prism","Prism Shard"],["aurora","Aurora Trail"],["ember","Ember Drift"],["candy","Candy Orbit"],["plasma","Plasma Lash"],["worm","Color Snake"],["shenron","Green Worm"],["hole","Black Hole"]];
+const THEMES = [["basic","Basic"],["vine","Ember"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["confetti","Confetti"],["ice","Ice"],["gold","Gold vein"]];
+const CURSOR_COL = {squid:"#7ee8ff",nebula:"#c44bff",comet:"#ffe14a",lotus:"#ff8ad4",void:"#9b8cff",prism:"#ffffff",aurora:"#7cff3a",ember:"#ff7a3a",candy:"#ff5d8f",plasma:"#5ad7ff",worm:"#ff4ad2",shenron:"#3dcf5a",hole:"#d7c7ff"};
+function drawCursorChip(cv, id){
+  const c = cv.getContext("2d");
+  c.clearRect(0,0,cv.width,cv.height);
+  c.fillStyle = CURSOR_COL[id] || "#efe6ff";
+  c.beginPath(); c.arc(26,26,14,0,7); c.fill();
+  if (id === "hole") { c.fillStyle="#07010e"; c.beginPath(); c.arc(26,26,7,0,7); c.fill(); }
+  c.strokeStyle = "rgba(0,0,0,.45)"; c.lineWidth = 2; c.beginPath(); c.arc(26,26,14,0,7); c.stroke();
+}
+function drawThemeChip(cv, id){
+  const c = cv.getContext("2d");
+  c.clearRect(0,0,cv.width,cv.height);
+  const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], confetti:["#ffe14a","#ff5d8f"], ice:["#d7f3ff","#8eb4c9"], gold:["#ffd166","#8a6a3a"], rainbow:["#7cff3a","#c44bff"] };
+  const pair = cols[id] || ["#00c805","#ff5000"];
+  [[16,34,18,1],[28,30,14,0],[38,36,20,1]].forEach(([x,bot,top,up])=>{
+    c.strokeStyle = pair[up?0:1]; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(x,top); c.lineTo(x,bot); c.stroke();
+    c.fillStyle = pair[up?0:1]; c.fillRect(x-3, up?top:bot-6, 6, 6);
+  });
+}
+function paintQuick(){
+  const box = document.getElementById("quickToys");
+  if (!box) return;
+  const ownToys = ownedToys();
+  const ownC = [...new Set(["squid", ...(player.ownedCursorIds||[])])];
+  const ownT = [...new Set(["basic", ...(player.ownedThemeIds||[])])];
+  const eq = player.equippedToyIds || [];
+  const toyBtns = ownToys.map(id => {
+    const label = (TOYS.find(t=>t[0]===id)||[id,id])[1];
+    const on = eq.includes(id);
+    return `<button type="button" class="q-ico${on?" on":""}" data-qtoy="${id}" title="${label}"><canvas width="52" height="52" data-kind="${id}"></canvas></button>`;
+  }).join("");
+  const curBtns = ownC.map(id => {
+    const label = (CURSORS.find(t=>t[0]===id)||[id,id])[1];
+    const on = (player.equippedCursor||"squid")===id;
+    return `<button type="button" class="q-ico${on?" on":""}" data-qcur="${id}" title="${label}"><canvas width="52" height="52" data-cur="${id}"></canvas></button>`;
+  }).join("");
+  const thBtns = ownT.map(id => {
+    const label = (THEMES.find(t=>t[0]===id)||[id,id])[1];
+    const on = (player.equippedTheme||"basic")===id;
+    return `<button type="button" class="q-ico${on?" on":""}" data-qtheme="${id}" title="${label}"><canvas width="52" height="52" data-theme="${id}"></canvas></button>`;
+  }).join("");
+  box.innerHTML = `<div class="q-lab">rain ${eq.filter(id=>ownToys.includes(id)).length}/5</div><div class="q-row">${toyBtns}</div><div class="q-lab">cursor</div><div class="q-row">${curBtns}</div><div class="q-lab">theme</div><div class="q-row">${thBtns}</div>`;
+  box.querySelectorAll("canvas[data-kind]").forEach(cv => drawToy(cv.getContext("2d"), {x:26,y:30,s:30,rot:0,kind:cv.dataset.kind}));
+  box.querySelectorAll("canvas[data-cur]").forEach(cv => drawCursorChip(cv, cv.dataset.cur));
+  box.querySelectorAll("canvas[data-theme]").forEach(cv => drawThemeChip(cv, cv.dataset.theme));
+}
+function paintToys(){ paintQuick(); }
 function paintPass(){
   const on = hasPass();
   const badge = document.getElementById("passBadge");
@@ -1690,7 +1750,37 @@ document.getElementById("legalBtn").addEventListener("click", () => {
 document.getElementById("legalClose").addEventListener("click", () => {
   document.getElementById("legal").classList.remove("open");
 });
-boot(true); loop(); const sideBtn=document.getElementById('sideToggle'); const sideShow=document.getElementById('sideShow'); if(sideBtn) sideBtn.onclick=()=>document.body.classList.add('side-hide'); if(sideShow) sideShow.onclick=()=>document.body.classList.remove('side-hide');
+document.getElementById("quickToys").addEventListener("click", e => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  if (btn.dataset.qtoy) {
+    const id = btn.dataset.qtoy;
+    if (!ownedToys().includes(id)) return;
+    let eq = (player.equippedToyIds || []).filter(x => ownedToys().includes(x));
+    if (eq.includes(id)) eq = eq.filter(x => x !== id);
+    else if (eq.length >= 5) return;
+    else eq.push(id);
+    player.equippedToyIds = eq.slice(0,5);
+  } else if (btn.dataset.qcur) {
+    const id = btn.dataset.qcur;
+    const own = new Set(["squid", ...(player.ownedCursorIds||[])]);
+    if (!own.has(id)) return;
+    player.equippedCursor = (player.equippedCursor === id && id !== "squid") ? "squid" : id;
+    cursorOn = true;
+    localStorage.setItem(CURSOR_KEY, "1");
+    const k = document.getElementById("cursorBtn");
+    if (k){ k.textContent = "on"; k.classList.add("on"); }
+  } else if (btn.dataset.qtheme) {
+    const id = btn.dataset.qtheme;
+    const own = new Set(["basic", ...(player.ownedThemeIds||[])]);
+    if (!own.has(id)) return;
+    player.equippedTheme = (player.equippedTheme === id && id !== "basic") ? "basic" : id;
+  } else return;
+  savePlayer();
+  paintQuick();
+  try { pushCloud(); } catch(err){}
+});
+boot(true); loop(); paintQuick(); const sideBtn=document.getElementById('sideToggle'); const sideShow=document.getElementById('sideShow'); if(sideBtn) sideBtn.onclick=()=>document.body.classList.add('side-hide'); if(sideShow) sideShow.onclick=()=>document.body.classList.remove('side-hide');
 pullCloud();
 
 setInterval(tickLive, 1500);
