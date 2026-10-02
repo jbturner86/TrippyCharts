@@ -194,12 +194,12 @@ body.zen .side { display:none !important; }
       <div class="toys-body">
       <div class="dens-row">
         <label for="density">toys <span id="densityVal">36</span></label>
-        <div class="dens-line"><input type="range" id="density" min="0" max="400" value="36"><button type="button" id="densAdd" title="Drop this many extra toys right now">+</button></div>
+        <div class="dens-line"><input type="range" id="density" min="0" max="200" value="36"><button type="button" id="densAdd" title="Drop this many extra toys right now">+</button></div>
       </div>
       <div class="sound-row">
         <div class="sound-col"><button type="button" class="modeBtn" data-mode="cyclone">off</button><span>cyclone</span></div>
         <div class="sound-col"><button type="button" class="modeBtn" data-mode="wave">off</button><span>wave</span></div>
-        <div class="sound-col"><button type="button" class="modeBtn" data-mode="bounce">off</button><span>bounce</span></div>
+        <div class="sound-col"><button type="button" class="modeBtn" data-mode="fly">off</button><span>fly</span></div>
       </div>
       <div class="sound-row">
         <div class="sound-col"><button type="button" id="soundBtn">on</button><span>sfx</span></div>
@@ -653,13 +653,15 @@ const bg = document.getElementById("bg"), ctx = bg.getContext("2d");
 let bits = [], burst = [], step = 0, jetAng = 0, eaten = player.eatenCycle || 0, squidScale = 0.72, zenMode = false, bosses = [], blobT = 0, playerHp = 100, hurtCool = 0, gameScore = 0, bossKills = 0, pendingScore = 0;
 const SQUID_START = 0.72, SQUID_MAX = 1.55, ARM_N = 16, SEG = 16;
 const squid = Array.from({length: ARM_N}, () => Array.from({length: SEG}, (_,i) => ({ x: innerWidth/2, y: innerHeight/2, r: Math.max(1.2, 5.5 - i*0.28) })));
+var BG_SCALE = 2;
 function resizeBg(){
   const w = innerWidth, h = innerHeight;
   bg.style.width = w + "px";
   bg.style.height = h + "px";
-  bg.width = Math.max(1, Math.floor(w * 2));
-  bg.height = Math.max(1, Math.floor(h * 2));
-  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  BG_SCALE = Math.min(2, Math.max(1, devicePixelRatio || 1));
+  bg.width = Math.max(1, Math.floor(w * BG_SCALE));
+  bg.height = Math.max(1, Math.floor(h * BG_SCALE));
+  ctx.setTransform(BG_SCALE, 0, 0, BG_SCALE, 0, 0);
 }
 addEventListener("wheel", e => { if (e.ctrlKey) e.preventDefault(); }, { passive:false });
 addEventListener("resize", resizeBg); resizeBg();
@@ -822,18 +824,18 @@ function drawToyOutline(ctx, b){
   ctx.drawImage(toyEdge, b.x-size/2, b.y-size/2);
   drawToy(ctx, b);
 }
-function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*innerWidth,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,state:state||"fall",ang:0}; }
+function newBit(x,y,state){ const kinds=activeToys(); if(!kinds.length && state!=="eject") return null; return {kind:kinds.length?pick(kinds):"sparkles",x:x??Math.random()*innerWidth,y:y??-30,v:.45+Math.random()*.7,drift:(Math.random()-.5)*.25,vx:0,vy:0,s:18+Math.random()*16,rot:Math.random()*6.28,spin:(Math.random()-.5)*.03,hue:Math.random()*360,face:1+Math.floor(Math.random()*6),state:state||"fall",ang:0}; }
 function spawnBit(){ const b=newBit(); if(b) bits.push(b); }
-var TOY_CACHE=new Set(["mushrooms","moons","leaves","butterflies","frogs","cats","aliens","skulls","clouds","football","baseball","basketball","soccer","golfballs","controller","cross"]);
+var TOY_CACHE=new Set(["dice","mushrooms","moons","leaves","butterflies","frogs","cats","aliens","skulls","clouds","football","baseball","basketball","soccer","golfballs","controller","cross"]);
 var toySprites=new Map();
 function drawToy(c,b){
   if(!b || !c) return;
   const s0=+b.s||16;
   if(!TOY_CACHE || !TOY_CACHE.has(b.kind) || s0>90 || s0<4) return drawToyRaw(c,b);
   const tr=c.getTransform(); const sc=Math.min(4,Math.max(1,Math.ceil(Math.hypot(tr.a,tr.b))));
-  const S=Math.round(s0), key=b.kind+"|"+S+"|"+sc; if(!toySprites) toySprites=new Map(); let sp=toySprites.get(key);
+  const face=b.kind==="dice"?(b.face||5):0, S=Math.round(s0), key=b.kind+"|"+S+"|"+sc+"|"+face; if(!toySprites) toySprites=new Map(); let sp=toySprites.get(key);
   if(!sp){ const D=Math.ceil(S*1.8); sp=document.createElement("canvas"); sp.width=sp.height=D*sc; const o=sp.getContext("2d"); o.scale(sc,sc);
-    drawToyRaw(o,{kind:b.kind,x:D/2,y:D/2,s:S,rot:0,hue:0}); sp._d=D; if(toySprites.size<4000) toySprites.set(key,sp); }
+    drawToyRaw(o,{kind:b.kind,x:D/2,y:D/2,s:S,rot:0,hue:0,face}); sp._d=D; if(toySprites.size<4000) toySprites.set(key,sp); }
   const d=sp._d*(s0/S);
   c.save(); c.translate(b.x||0,b.y||0); c.rotate(b.rot||0); c.drawImage(sp,-d/2,-d/2,d,d); c.restore();
 }
@@ -940,7 +942,8 @@ function drawToyRaw(c,b){
     c.strokeStyle="#2a1f44"; c.lineWidth=Math.max(1,s*.03); c.beginPath(); c.moveTo(-S,-S); c.lineTo(-S+S*.5,-S-S*.4); c.lineTo(S+S*.5,-S-S*.4); c.lineTo(S+S*.5,S-S*.4); c.lineTo(S,S); c.stroke();
     c.fillStyle=shade(-S*.3,-S*.3,S*1.6,"#ffffff","#e2dcf4"); c.beginPath(); c.roundRect(-S,-S,S*2,S*2,S*.25); c.fill(); c.stroke();
     c.fillStyle="#d81e5b"; const pip=(x,y)=>{ c.beginPath(); c.arc(x*S,y*S,S*.17,0,7); c.fill(); };
-    [[-.5,-.5],[.5,-.5],[0,0],[-.5,.5],[.5,.5]].forEach(([x,y])=>pip(x,y));
+    const PIPS={1:[[0,0]],2:[[-.5,-.5],[.5,.5]],3:[[-.5,-.5],[0,0],[.5,.5]],4:[[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5]],5:[[-.5,-.5],[.5,-.5],[0,0],[-.5,.5],[.5,.5]],6:[[-.5,-.55],[.5,-.55],[-.5,0],[.5,0],[-.5,.55],[.5,.55]]};
+    const fc=Math.min(6,Math.max(1,b.face||5)); if(fc===1){ c.save(); c.scale(1.6,1.6); pip(0,0); c.restore(); } else PIPS[fc].forEach(([x,y])=>pip(x,y));
     c.fillStyle="#2a1f44"; [[.25,-.3],[.75,-.1]].forEach(([x,y])=>{ c.beginPath(); c.ellipse(-S+S*(x*1.6+.35),-S-S*(.18+y*.5),S*.11,S*.06,0,0,7); c.fill(); });
     [[.25,.1],[.25,.6]].forEach(([y,x])=>{ c.beginPath(); c.ellipse(S+S*.25,-S*.2+ y*S*1.2,S*.06,S*.11,0,0,7); c.fill(); });
   } else if(k==="peace"){
@@ -1373,23 +1376,25 @@ function drawSquid(){
 }
 const MOTION_KEY = "trippy_motion_v1";
 let motionOn = (()=>{ try { return JSON.parse(localStorage.getItem(MOTION_KEY)||"{}"); } catch(e){ return {}; } })();
+if (motionOn.bounce) { motionOn.fly = true; delete motionOn.bounce; }
 let gameMotion = "fall", gameWasOn = false;
 function currentMotion(){
   if (zenMode) return gameMotion;
-  const on = ["cyclone","wave","bounce"].filter(m => motionOn[m]);
+  const on = ["cyclone","wave","fly"].filter(m => motionOn[m]);
   if (!on.length) return "fall";
   return on[Math.floor(Date.now()/20000) % on.length];
 }
 function paintModes(){
   document.querySelectorAll(".modeBtn").forEach(b => { const on=!!motionOn[b.dataset.mode]; b.textContent = on?"on":"off"; b.classList.toggle("on", on); });
 }
+const TOY_MAX = 200;
 function addExtraToys(n){
   if (!activeToys().length) return;
-  n = Math.min(n, 600 - bits.filter(b=>b.extra).length);
+  n = Math.min(n, TOY_MAX - bits.length);
   for (let i=0;i<n;i++){ const b=newBit(Math.random()*innerWidth, -30-Math.random()*innerHeight*0.6); if(b){ b.extra=true; bits.push(b); } }
 }
 function gameSpit(){
-  const opts = ["fall","cyclone","wave","bounce"].filter(m => m!==gameMotion);
+  const opts = ["fall","cyclone","wave","fly"].filter(m => m!==gameMotion);
   gameMotion = opts[Math.floor(Math.random()*opts.length)];
   const side = gameMotion==="fall" ? 0 : Math.floor(Math.random()*4), n = 30;
   for (let i=0;i<n;i++){
@@ -1401,13 +1406,24 @@ function gameSpit(){
   }
   sfx("spit");
 }
+function launchFly(b, fromEdge){
+  const W=innerWidth, H=innerHeight, side=Math.floor(Math.random()*4);
+  if (fromEdge) {
+    b.x = side===0 ? Math.random()*W : side===1 ? W+60 : side===2 ? Math.random()*W : -60;
+    b.y = side===0 ? -60 : side===2 ? H+60 : Math.random()*H;
+  }
+  const tx = W*(0.1+Math.random()*0.8), ty = H*(0.1+Math.random()*0.8);
+  let dx = fromEdge ? tx-b.x : Math.cos(side*1.57+Math.random()), dy = fromEdge ? ty-b.y : Math.sin(side*1.57+Math.random());
+  const d = Math.hypot(dx,dy)||1, sp = 2.5+Math.random()*4.5;
+  b.vx2 = dx/d*sp; b.vy2 = dy/d*sp;
+}
 function moveBit(b, mode){
   if (b.m !== mode) {
     b.m = mode;
     const cx=innerWidth/2, cy=innerHeight/2;
     if (mode==="cyclone"){ b.ang=Math.atan2(b.y-cy,b.x-cx); b.rad=Math.max(60,Math.hypot(b.x-cx,b.y-cy)); }
     if (mode==="wave"){ b.wy=innerHeight*(0.15+0.7*Math.random()); b.ph=Math.random()*6; }
-    if (mode==="bounce"){ if(!isFinite(b.vx2)) b.vx2=(Math.random()-.5)*5; if(!isFinite(b.vy2)) b.vy2=0; }
+    if (mode==="fly"){ if(!(isFinite(b.vx2) && isFinite(b.vy2) && Math.hypot(b.vx2,b.vy2)>1.5)) launchFly(b, false); }
   }
   if (mode==="cyclone"){
     const cx=innerWidth/2, cy=innerHeight/2, maxR=Math.hypot(cx,cy);
@@ -1421,13 +1437,9 @@ function moveBit(b, mode){
     const ty = b.wy + Math.sin(b.x*0.011 + performance.now()/700 + b.ph)*innerHeight*0.12;
     b.y += (ty-b.y)*0.08; b.rot += b.spin;
     if (b.x > innerWidth+60) { b.x = -60 - Math.floor(Math.random()*3)*innerWidth*0.4 - Math.random()*80; b.wy=innerHeight*(0.15+0.7*Math.random()); }
-  } else if (mode==="bounce"){
-    b.vy2 += 0.22; b.x += b.vx2; b.y += b.vy2; b.rot += b.vx2*0.03;
-    const r = (b.s||18)*0.9;
-    if (b.y > innerHeight - r) { b.y = innerHeight - r; b.vy2 = -Math.abs(b.vy2)*0.82; if (Math.abs(b.vy2) < 4) b.vy2 = -(7+Math.random()*7); }
-    if (b.x < r) { b.x=r; b.vx2=Math.abs(b.vx2)||2; }
-    if (b.x > innerWidth-r) { b.x=innerWidth-r; b.vx2=-(Math.abs(b.vx2)||2); }
-    if (Math.abs(b.vx2) < 0.6) b.vx2 = (Math.random()<.5?-1:1)*(1+Math.random()*3);
+  } else if (mode==="fly"){
+    b.x += b.vx2; b.y += b.vy2; b.rot += b.spin*3;
+    if (b.x < -90 || b.x > innerWidth+90 || b.y < -90 || b.y > innerHeight+90) launchFly(b, true);
   } else {
     b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
   }
@@ -1435,14 +1447,14 @@ function moveBit(b, mode){
 function tickBits(){
   const densEl = document.getElementById("density");
   const picked = densEl ? Number(densEl.value) : Number(player.toyDensity || 0);
-  if (zenMode && !gameWasOn) { gameWasOn = true; gameMotion = "fall"; }
+  if (zenMode && !gameWasOn) { gameWasOn = true; gameMotion = "fall"; bits = bits.filter(b => !b.extra).slice(0, 60); }
   if (!zenMode && gameWasOn) { gameWasOn = false; }
   if (zenMode) {
     const live = bits.filter(b => !b.spent && !b.homing).length;
     if (!bits.length) { for (let i=0;i<36;i++) spawnBit(); }
-    else if (live < 10) gameSpit();
+    else if (live < 10 && bits.length < TOY_MAX) gameSpit();
   } else {
-    const dens = picked;
+    const dens = Math.min(TOY_MAX, picked);
     const base = bits.filter(b => !b.extra);
     if (dens <= 0 || !activeToys().length) { bits = bits.filter(b => b.extra && activeToys().length); }
     else {
@@ -1490,7 +1502,7 @@ function tickBits(){
         if(dist>150){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
       }
     }
-    const off = b.y>innerHeight+50 || b.y<-innerHeight || (motion==="wave" && b.state==="fall" ? b.x<-innerWidth*1.5 : b.x<-60) || b.x>innerWidth+60;
+    const off = (motion==="fly" && b.state==="fall") ? false : b.y>innerHeight+50 || b.y<-innerHeight || (motion==="wave" && b.state==="fall" ? b.x<-innerWidth*1.5 : b.x<-60) || b.x>innerWidth+60;
     if(!b.spent && !b.homing && off){
       if (b.extra || zenMode) b.spent = true;
       else { Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b); b.m = null; }
@@ -1503,7 +1515,7 @@ function tickBits(){
 (function loopSky(){
   try {
     if (!bg.width || !bg.height) resizeBg();
-    ctx.setTransform(2,0,0,2,0,0); ctx.clearRect(0,0,innerWidth,innerHeight);
+    ctx.setTransform(BG_SCALE,0,0,BG_SCALE,0,0); ctx.clearRect(0,0,innerWidth,innerHeight);
     tickBits();
     tickMusic();
     bits.forEach(b=>{
@@ -2204,7 +2216,8 @@ slots.forEach((_,i)=>{
 document.getElementById("layoutPick").addEventListener("change", e => setLayout(e.target.value));
 const densEl = document.getElementById("density");
 if (densEl) {
-  densEl.value = Number.isFinite(player.toyDensity) ? player.toyDensity : 36;
+  densEl.value = Number.isFinite(player.toyDensity) ? Math.min(200, player.toyDensity) : 36;
+  if (player.toyDensity > 200) player.toyDensity = 200;
   const dv = document.getElementById("densityVal");
   if (dv) dv.textContent = densEl.value;
   densEl.addEventListener("input", e => {
@@ -2298,7 +2311,7 @@ addEventListener("fullscreenchange", () => {
     if (zenMode) endZen();
   }
 });
-function loop(){ sizeCanvases(); slots.forEach(drawChart); requestAnimationFrame(loop); }
+function loop(){ if(!zenMode){ sizeCanvases(); slots.forEach(drawChart); } requestAnimationFrame(loop); }
 document.getElementById("fullscreen").addEventListener("click", async()=>{
   if (!document.fullscreenElement) {
     if (chartsFs) leaveChartsFs();
