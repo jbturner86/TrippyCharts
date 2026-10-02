@@ -17,7 +17,7 @@
       background: radial-gradient(ellipse at 12% 8%, rgba(255,60,180,.16), transparent 40%),
                   linear-gradient(180deg,#12061c 0%,#07010e 60%,#0b0714 100%); }
     #sky canvas { width:100%; height:100%; display:block; }
-    .wrap { position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; padding-left:118px; transition:padding-left .2s ease; }
+    .wrap { position:relative; z-index:1; height:100vh; height:100dvh; display:flex; flex-direction:column; overflow:hidden; padding-left:var(--side-w, 176px); transition:padding-left .2s ease; }
 body.side-hide .wrap { padding-left:8px; }
 body.charts-fs .wrap, body.chart-max .wrap, body.zen .wrap { padding-left:0 !important; }
 body.charts-fs .side, body.chart-max .side, body.charts-fs #sideShow, body.chart-max #sideShow { display:none !important; }
@@ -52,7 +52,7 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
     .density-box.collapsed { width:auto; padding:6px 8px; }
     .density-box.collapsed .toys-body { display:none; }
     #toysToggle { width:auto; margin-bottom:4px; }
-    #quickToys { display:flex; flex-direction:column; gap:3px; max-width:148px; margin-top:2px; }
+    #quickToys { display:flex; flex-direction:column; gap:3px; width:156px; max-height:46vh; overflow:auto; margin-top:2px; }
     .q-lab { font-size:.48rem; letter-spacing:.08em; text-transform:uppercase; color:#9e8cc4; line-height:1; }
     .q-row { display:flex; flex-wrap:wrap; gap:3px; }
     .q-ico { width:24px; height:24px; padding:0; border-radius:6px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.05); overflow:hidden; display:inline-flex; }
@@ -179,7 +179,7 @@ body.zen .side, body.charts-fs .side, body.chart-max .side { display:none !impor
     <aside class="side" id="sideBar">
       <button type="button" id="sideToggle">hide</button>
     <div class="density-box collapsed" id="toysPanel">
-      <button type="button" id="toysToggle">toys</button>
+      <button type="button" id="toysToggle">toy box</button>
       <div id="quickToys"></div>
       <div class="toys-body">
       <label for="density">toy density <span id="densityVal">70</span></label>
@@ -373,8 +373,7 @@ function loadPlayer(){
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return defaultPlayer();
     const p = { ...defaultPlayer(), ...JSON.parse(raw) };
-    if ((p.ownedToyIds || []).length === TOYS.length) p.ownedToyIds = ["mushrooms"];
-    if ((p.equippedToyIds || []).length > 5) p.equippedToyIds = p.equippedToyIds.slice(0,5);
+        if ((p.equippedToyIds || []).length > 5) p.equippedToyIds = p.equippedToyIds.slice(0,5);
     return p;
   } catch(e){ return defaultPlayer(); }
 }
@@ -510,9 +509,9 @@ function drawThemeChip(cv, id){
 function paintQuick(){
   const box = document.getElementById("quickToys");
   if (!box) return;
-  const ownToys = ownedToys();
-  const ownC = [...new Set(["squid", ...(player.ownedCursorIds||[])])];
-  const ownT = [...new Set(["basic", ...(player.ownedThemeIds||[])])];
+  const ownToys = TOYS.map(t => t[0]);
+  const ownC = CURSORS.map(t => t[0]);
+  const ownT = THEMES.map(t => t[0]);
   const eq = player.equippedToyIds || [];
   const toyBtns = ownToys.map(id => {
     const label = (TOYS.find(t=>t[0]===id)||[id,id])[1];
@@ -533,6 +532,7 @@ function paintQuick(){
   box.querySelectorAll("canvas[data-kind]").forEach(cv => drawToy(cv.getContext("2d"), {x:26,y:30,s:30,rot:0,kind:cv.dataset.kind}));
   box.querySelectorAll("canvas[data-cur]").forEach(cv => drawCursorChip(cv, cv.dataset.cur));
   box.querySelectorAll("canvas[data-theme]").forEach(cv => drawThemeChip(cv, cv.dataset.theme));
+  if (typeof fitMenu === "function") requestAnimationFrame(fitMenu);
 }
 function paintToys(){ paintQuick(); }
 function paintPass(){
@@ -1755,16 +1755,15 @@ document.getElementById("quickToys").addEventListener("click", e => {
   if (!btn) return;
   if (btn.dataset.qtoy) {
     const id = btn.dataset.qtoy;
-    if (!ownedToys().includes(id)) return;
-    let eq = (player.equippedToyIds || []).filter(x => ownedToys().includes(x));
+    if (!TOYS.some(t => t[0]===id)) return;
+    let eq = (player.equippedToyIds || []).filter(x => TOYS.some(t => t[0]===x));
     if (eq.includes(id)) eq = eq.filter(x => x !== id);
     else if (eq.length >= 5) return;
     else eq.push(id);
     player.equippedToyIds = eq.slice(0,5);
   } else if (btn.dataset.qcur) {
     const id = btn.dataset.qcur;
-    const own = new Set(["squid", ...(player.ownedCursorIds||[])]);
-    if (!own.has(id)) return;
+    if (!CURSORS.some(t => t[0]===id)) return;
     player.equippedCursor = (player.equippedCursor === id && id !== "squid") ? "squid" : id;
     cursorOn = true;
     localStorage.setItem(CURSOR_KEY, "1");
@@ -1772,15 +1771,26 @@ document.getElementById("quickToys").addEventListener("click", e => {
     if (k){ k.textContent = "on"; k.classList.add("on"); }
   } else if (btn.dataset.qtheme) {
     const id = btn.dataset.qtheme;
-    const own = new Set(["basic", ...(player.ownedThemeIds||[])]);
-    if (!own.has(id)) return;
+    if (!THEMES.some(t => t[0]===id)) return;
     player.equippedTheme = (player.equippedTheme === id && id !== "basic") ? "basic" : id;
   } else return;
   savePlayer();
   paintQuick();
   try { pushCloud(); } catch(err){}
 });
-boot(true); loop(); paintQuick(); const sideBtn=document.getElementById('sideToggle'); const sideShow=document.getElementById('sideShow'); if(sideBtn) sideBtn.onclick=()=>document.body.classList.add('side-hide'); if(sideShow) sideShow.onclick=()=>document.body.classList.remove('side-hide');
+function fitMenu(){
+  const side = document.getElementById("sideBar");
+  if (!side || document.body.classList.contains("side-hide") || document.body.classList.contains("charts-fs") || document.body.classList.contains("zen")) {
+    document.documentElement.style.setProperty("--side-w", "8px");
+    return;
+  }
+  document.documentElement.style.setProperty("--side-w", Math.ceil(side.getBoundingClientRect().width + 12) + "px");
+}
+boot(true); loop(); paintQuick(); fitMenu();
+const sideBtn=document.getElementById('sideToggle'); const sideShow=document.getElementById('sideShow');
+if(sideBtn) sideBtn.onclick=()=>{ document.body.classList.add('side-hide'); fitMenu(); };
+if(sideShow) sideShow.onclick=()=>{ document.body.classList.remove('side-hide'); requestAnimationFrame(fitMenu); };
+addEventListener("resize", fitMenu);
 pullCloud();
 
 setInterval(tickLive, 1500);
