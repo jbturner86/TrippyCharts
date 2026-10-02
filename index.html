@@ -64,7 +64,10 @@ body.zen .side { display:none !important; }
     .sound-row { display:flex; align-items:flex-end; gap:6px; margin-top:6px; width:100%; }
     .sound-col { display:flex; flex-direction:column; align-items:center; gap:2px; }
     .sound-col span { font-size:.48rem; letter-spacing:.06em; text-transform:uppercase; color:#ffd39a; }
-    #soundBtn, #musicBtn, #cursorBtn { padding:3px 6px; font-size:.52rem; letter-spacing:.04em; }
+    #soundBtn, #musicBtn, #cursorBtn, .modeBtn { padding:3px 6px; font-size:.52rem; letter-spacing:.04em; }
+    .dens-line { display:flex; align-items:center; gap:4px; }
+    .dens-line input { width:104px !important; }
+    #densAdd { padding:0 7px; font-size:.8rem; line-height:1.2; font-weight:800; border-radius:999px; }
     .song-nav { display:flex; align-items:center; gap:2px; margin-bottom:10px; }
     .song-nav button { width:auto; min-width:0; padding:0 2px; border:none; background:transparent; border-radius:0; box-shadow:none; font-size:1rem; line-height:1; color:#efe6ff; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
@@ -191,7 +194,12 @@ body.zen .side { display:none !important; }
       <div class="toys-body">
       <div class="dens-row">
         <label for="density">toys <span id="densityVal">36</span></label>
-        <input type="range" id="density" min="0" max="400" value="36">
+        <div class="dens-line"><input type="range" id="density" min="0" max="400" value="36"><button type="button" id="densAdd" title="Drop this many extra toys right now">+</button></div>
+      </div>
+      <div class="sound-row">
+        <div class="sound-col"><button type="button" class="modeBtn" data-mode="cyclone">off</button><span>cyclone</span></div>
+        <div class="sound-col"><button type="button" class="modeBtn" data-mode="wave">off</button><span>wave</span></div>
+        <div class="sound-col"><button type="button" class="modeBtn" data-mode="bounce">off</button><span>bounce</span></div>
       </div>
       <div class="sound-row">
         <div class="sound-col"><button type="button" id="soundBtn">on</button><span>sfx</span></div>
@@ -1230,22 +1238,93 @@ function drawSquid(){
   }
   ctx.restore();
 }
+const MOTION_KEY = "trippy_motion_v1";
+let motionOn = (()=>{ try { return JSON.parse(localStorage.getItem(MOTION_KEY)||"{}"); } catch(e){ return {}; } })();
+let gameMotion = "fall", gameWasOn = false;
+function currentMotion(){
+  if (zenMode) return gameMotion;
+  const on = ["cyclone","wave","bounce"].filter(m => motionOn[m]);
+  if (!on.length) return "fall";
+  return on[Math.floor(Date.now()/20000) % on.length];
+}
+function paintModes(){
+  document.querySelectorAll(".modeBtn").forEach(b => { const on=!!motionOn[b.dataset.mode]; b.textContent = on?"on":"off"; b.classList.toggle("on", on); });
+}
+function addExtraToys(n){
+  if (!activeToys().length) return;
+  n = Math.min(n, 600 - bits.filter(b=>b.extra).length);
+  for (let i=0;i<n;i++){ const b=newBit(Math.random()*innerWidth, -30-Math.random()*innerHeight*0.6); if(b){ b.extra=true; bits.push(b); } }
+}
+function gameSpit(){
+  const opts = ["fall","cyclone","wave","bounce"].filter(m => m!==gameMotion);
+  gameMotion = opts[Math.floor(Math.random()*opts.length)];
+  const side = gameMotion==="fall" ? 0 : Math.floor(Math.random()*4), n = 30;
+  for (let i=0;i<n;i++){
+    const x = side===0 ? Math.random()*innerWidth : side===1 ? innerWidth+20 : side===2 ? Math.random()*innerWidth : -20;
+    const y = side===0 ? -20 : side===2 ? innerHeight+20 : Math.random()*innerHeight;
+    const b = newBit(x, y); if (!b) continue;
+    b.vx2 = (innerWidth/2 - x)*0.012 + (Math.random()-.5)*3; b.vy2 = (innerHeight/2 - y)*0.012 + (Math.random()-.5)*3;
+    bits.push(b);
+  }
+  sfx("spit");
+}
+function moveBit(b, mode){
+  if (b.m !== mode) {
+    b.m = mode;
+    const cx=innerWidth/2, cy=innerHeight/2;
+    if (mode==="cyclone"){ b.ang=Math.atan2(b.y-cy,b.x-cx); b.rad=Math.max(60,Math.hypot(b.x-cx,b.y-cy)); }
+    if (mode==="wave"){ b.wy=innerHeight*(0.15+0.7*Math.random()); b.ph=Math.random()*6; }
+    if (mode==="bounce"){ if(!isFinite(b.vx2)) b.vx2=(Math.random()-.5)*5; if(!isFinite(b.vy2)) b.vy2=0; }
+  }
+  if (mode==="cyclone"){
+    const cx=innerWidth/2, cy=innerHeight/2, maxR=Math.hypot(cx,cy);
+    b.ang += (6+b.v*4)/Math.max(40,b.rad);
+    b.rad -= 0.35*b.v;
+    if (b.rad < 24) { b.rad = maxR*(0.75+Math.random()*0.3); b.ang = Math.random()*7; }
+    const tx=cx+Math.cos(b.ang)*b.rad, ty=cy+Math.sin(b.ang)*b.rad*0.8;
+    b.x += (tx-b.x)*0.1; b.y += (ty-b.y)*0.1; b.rot += b.spin*2;
+  } else if (mode==="wave"){
+    b.x += 1.3 + b.v*1.4;
+    const ty = b.wy + Math.sin(b.x*0.011 + performance.now()/700 + b.ph)*innerHeight*0.12;
+    b.y += (ty-b.y)*0.08; b.rot += b.spin;
+    if (b.x > innerWidth+60) { b.x = -60 - Math.floor(Math.random()*3)*innerWidth*0.4 - Math.random()*80; b.wy=innerHeight*(0.15+0.7*Math.random()); }
+  } else if (mode==="bounce"){
+    b.vy2 += 0.22; b.x += b.vx2; b.y += b.vy2; b.rot += b.vx2*0.03;
+    const r = (b.s||18)*0.9;
+    if (b.y > innerHeight - r) { b.y = innerHeight - r; b.vy2 = -Math.abs(b.vy2)*0.82; if (Math.abs(b.vy2) < 4) b.vy2 = -(7+Math.random()*7); }
+    if (b.x < r) { b.x=r; b.vx2=Math.abs(b.vx2)||2; }
+    if (b.x > innerWidth-r) { b.x=innerWidth-r; b.vx2=-(Math.abs(b.vx2)||2); }
+    if (Math.abs(b.vx2) < 0.6) b.vx2 = (Math.random()<.5?-1:1)*(1+Math.random()*3);
+  } else {
+    b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
+  }
+}
 function tickBits(){
   const densEl = document.getElementById("density");
   const picked = densEl ? Number(densEl.value) : Number(player.toyDensity || 0);
-  const dens = zenMode ? 36 : picked;
-  if (dens <= 0 || !activeToys().length) { bits = []; }
-  else if (activeToys().length) {
-    if (bits.length > dens) bits.length = dens;
-    const need = dens - bits.length;
-    const burstN = Math.min(80, Math.max(0, need));
-    for (let i=0;i<burstN;i++) spawnBit();
+  if (zenMode && !gameWasOn) { gameWasOn = true; gameMotion = "fall"; }
+  if (!zenMode && gameWasOn) { gameWasOn = false; }
+  if (zenMode) {
+    const live = bits.filter(b => !b.spent && !b.homing).length;
+    if (!bits.length) { for (let i=0;i<36;i++) spawnBit(); }
+    else if (live < 10) gameSpit();
+  } else {
+    const dens = picked;
+    const base = bits.filter(b => !b.extra);
+    if (dens <= 0 || !activeToys().length) { bits = bits.filter(b => b.extra && activeToys().length); }
+    else {
+      if (base.length > dens) { let cut = base.length - dens; bits = bits.filter(b => b.extra || cut-- <= 0); }
+      const need = dens - bits.filter(b => !b.extra).length;
+      const burstN = Math.min(80, Math.max(0, need));
+      for (let i=0;i<burstN;i++) spawnBit();
+    }
   }
+  const motion = currentMotion();
   const capture=48+18*squidScale;
   bits.forEach(b=>{
     const dx=b.x-mouse.x, dy=b.y-mouse.y, dist=Math.hypot(dx,dy);
     if(b.state==="fall"){
-      b.y+=b.v; b.x+=b.drift; b.rot+=b.spin;
+      moveBit(b, motion);
       if((cursorOn || zenMode) && dist<capture) b.state="suck";
     } else if(b.state==="suck"){
       b.x += (mouse.x - b.x) * 0.28;
@@ -1278,8 +1357,10 @@ function tickBits(){
         if(dist>150){ b.state="fall"; b.v=.5+Math.random()*.4; b.drift=b.vx*0.05; }
       }
     }
-    if(!b.spent && !b.homing && (b.y>innerHeight+50||b.x<-60||b.x>innerWidth+60)){
-      Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b);
+    const off = b.y>innerHeight+50 || b.y<-innerHeight || (motion==="wave" && b.state==="fall" ? b.x<-innerWidth*1.5 : b.x<-60) || b.x>innerWidth+60;
+    if(!b.spent && !b.homing && off){
+      if (b.extra || zenMode) b.spent = true;
+      else { Object.assign(b,newBit(Math.random()*innerWidth,-30,"fall")||b); b.m = null; }
     }
   });
   bits = bits.filter(b => !b.spent);
@@ -2000,6 +2081,15 @@ if (densEl) {
     savePlayer();
   });
 }
+document.getElementById("densAdd").addEventListener("click", () => {
+  const n = Number(document.getElementById("density").value) || 36;
+  addExtraToys(n); sfx("spit");
+});
+document.querySelectorAll(".modeBtn").forEach(btn => btn.addEventListener("click", () => {
+  const m = btn.dataset.mode; motionOn[m] = !motionOn[m];
+  localStorage.setItem(MOTION_KEY, JSON.stringify(motionOn)); paintModes();
+}));
+paintModes();
 function paintSound(){
   const s = document.getElementById("soundBtn");
   const k = document.getElementById("cursorBtn");
