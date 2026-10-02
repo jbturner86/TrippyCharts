@@ -257,7 +257,8 @@ function drawToy(c,b){
     c.strokeStyle="#2a1f44"; c.lineWidth=Math.max(1,s*.03); c.beginPath(); c.moveTo(-S,-S); c.lineTo(-S+S*.5,-S-S*.4); c.lineTo(S+S*.5,-S-S*.4); c.lineTo(S+S*.5,S-S*.4); c.lineTo(S,S); c.stroke();
     c.fillStyle=shade(-S*.3,-S*.3,S*1.6,"#ffffff","#e2dcf4"); c.beginPath(); c.roundRect(-S,-S,S*2,S*2,S*.25); c.fill(); c.stroke();
     c.fillStyle="#d81e5b"; const pip=(x,y)=>{ c.beginPath(); c.arc(x*S,y*S,S*.17,0,7); c.fill(); };
-    [[-.5,-.5],[.5,-.5],[0,0],[-.5,.5],[.5,.5]].forEach(([x,y])=>pip(x,y));
+    const PIPS={1:[[0,0]],2:[[-.5,-.5],[.5,.5]],3:[[-.5,-.5],[0,0],[.5,.5]],4:[[-.5,-.5],[.5,-.5],[-.5,.5],[.5,.5]],5:[[-.5,-.5],[.5,-.5],[0,0],[-.5,.5],[.5,.5]],6:[[-.5,-.55],[.5,-.55],[-.5,0],[.5,0],[-.5,.55],[.5,.55]]};
+    const fc=Math.min(6,Math.max(1,b.face||5)); if(fc===1){ c.save(); c.scale(1.6,1.6); pip(0,0); c.restore(); } else PIPS[fc].forEach(([x,y])=>pip(x,y));
     c.fillStyle="#2a1f44"; [[.25,-.3],[.75,-.1]].forEach(([x,y])=>{ c.beginPath(); c.ellipse(-S+S*(x*1.6+.35),-S-S*(.18+y*.5),S*.11,S*.06,0,0,7); c.fill(); });
     [[.25,.1],[.25,.6]].forEach(([y,x])=>{ c.beginPath(); c.ellipse(S+S*.25,-S*.2+ y*S*1.2,S*.06,S*.11,0,0,7); c.fill(); });
   } else if(k==="peace"){
