@@ -72,6 +72,18 @@ body.zen .side { display:none !important; }
     #densAdd { padding:0 7px; font-size:.8rem; line-height:1.2; font-weight:800; border-radius:999px; }
     .song-nav { display:flex; align-items:center; gap:2px; margin-bottom:10px; }
     .song-nav button { width:auto; min-width:0; padding:0 2px; border:none; background:transparent; border-radius:0; box-shadow:none; font-size:1rem; line-height:1; color:#efe6ff; }
+    .tkdd { position:fixed; z-index:60; display:none; min-width:150px; max-height:236px; overflow-y:auto; overscroll-behavior:contain; padding:4px; border-radius:12px; border:1px solid rgba(196,75,255,.55); background:rgba(14,4,26,.97); box-shadow:0 0 14px rgba(196,75,255,.45), 0 8px 24px rgba(0,0,0,.6); font-size:.75rem; scrollbar-width:thin; scrollbar-color:#9b3dff rgba(255,255,255,.06); }
+    .tkdd.open { display:block; }
+    .tkdd::-webkit-scrollbar { width:7px; }
+    .tkdd::-webkit-scrollbar-thumb { background:linear-gradient(#ff4fd8,#9b3dff); border-radius:6px; }
+    .tkdd::-webkit-scrollbar-track { background:rgba(255,255,255,.04); }
+    .tkdd-h { padding:4px 8px 2px; font-size:.56rem; letter-spacing:.1em; text-transform:uppercase; color:#ffd39a; }
+    .tkdd-i { display:flex; align-items:center; justify-content:space-between; gap:6px; height:24px; padding:0 4px 0 8px; border-radius:8px; color:#f4ecff; cursor:pointer; letter-spacing:.04em; }
+    .tkdd-i:hover, .tkdd-i.hl { background:rgba(155,61,255,.38); box-shadow:inset 0 0 0 1px rgba(217,168,255,.5); }
+    .tkdd-i b { font-weight:700; color:#ff9af0; }
+    .tkdd-x { flex:0 0 auto; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; border-radius:50%; font-size:.62rem; color:#c9b4ec; opacity:.7; }
+    .tkdd-x:hover { opacity:1; color:#fff; background:rgba(255,79,216,.45); }
+    .tkdd-e { padding:6px 8px; color:#9e8cc4; font-size:.66rem; }
     input.sym { width:88px; padding:5px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:rgba(18,8,28,.92); color:#fff; font-size:.75rem; text-transform:uppercase; }
     .density-box label { display:block; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#ffd39a; margin-bottom:4px; }
     .density-box input { width:100%; accent-color:#ff9a3a; }
@@ -1665,12 +1677,12 @@ function fmtAxisTime(t, tf){
   return d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
 }
 const slots = savedSlots.map((s,id) => ({id, symbol:s.symbol, tf:s.tf||"30m", vol:!!s.vol, lines:!!s.lines, offset:0, allBars:[], price:0, prev:0, live:false, view:70, key:"", hover:null, layout:null, showPx:0, state:""}));
-document.getElementById("grid").innerHTML = `<datalist id="tickers">${SUGGESTS.map(s=>`<option value="${s}">`).join("")}</datalist>` + slots.map(s=>`
+document.getElementById("grid").innerHTML = slots.map(s=>`
   <section class="card" id="card-${s.id}">
     <div class="chart-head">
       <div class="pickers">
         ${s.id===0 ? '<button type="button" id="sideShow">menu</button>' : ''}
-        <input class="sym" id="sym-${s.id}" list="tickers" value="${s.symbol}" maxlength="12" spellcheck="false" placeholder="TICKER" />
+        <input class="sym" id="sym-${s.id}" value="${s.symbol}" maxlength="12" spellcheck="false" autocomplete="off" placeholder="TICKER" title="Type a ticker + Enter. Tickers you load are saved to your list." />
         <select id="tf-${s.id}">${TFS.map(t=>`<option value="${t.id}" ${t.id===s.tf?"selected":""}>${t.id}</option>`).join("")}</select>
         <label class="volchk" title="Show volume"><input type="checkbox" id="vol-${s.id}" ${s.vol?"checked":""}>vol</label>
         <label class="volchk" title="EMA 9/20, SMA 50 (daily), VWAP + prior-day levels (intraday)"><input type="checkbox" id="lines-${s.id}" ${s.lines?"checked":""}>lines</label>
@@ -2342,29 +2354,103 @@ function setLayout(name){
 function saveSlotPrefs(){
   localStorage.setItem(SLOT_KEY, JSON.stringify(slots.map(s=>({symbol:s.symbol, tf:s.tf, vol:!!s.vol, lines:!!s.lines}))));
 }
-const USED_KEY = "trippy_used_tickers";
-function loadUsedTickers(){
-  try {
-    const raw = JSON.parse(localStorage.getItem(USED_KEY)||"[]");
-    if (Array.isArray(raw)) return raw.map(s=>String(s).toUpperCase()).filter(Boolean).slice(0,30);
-  } catch(e){}
+const SAVED_KEY = "tc_saved_tickers", OLD_USED_KEY = "trippy_used_tickers", SAVED_CAP = 200;
+const normTicker = sym => (sym||"").toString().trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12);
+function loadSavedTickers(){
+  for (const k of [SAVED_KEY, OLD_USED_KEY]) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(k)||"null");
+      if (Array.isArray(raw)) {
+        const seen = new Set();
+        return raw.map(normTicker).filter(t => t && !seen.has(t) && seen.add(t)).slice(0,SAVED_CAP);
+      }
+    } catch(e){}
+  }
   return [];
 }
-let usedTickers = loadUsedTickers();
-function paintTickerList(){
-  const box = document.getElementById("tickers");
-  if (!box) return;
-  const seen = new Set();
-  const all = [...usedTickers, ...SUGGESTS].filter(s => { if(seen.has(s)) return false; seen.add(s); return true; });
-  box.innerHTML = all.map(s=>`<option value="${s}">`).join("");
+let savedTickers = loadSavedTickers(), tickerBoot = true;
+function storeSavedTickers(){
+  try { localStorage.setItem(SAVED_KEY, JSON.stringify(savedTickers)); } catch(e){}
 }
-function rememberTicker(sym){
-  const s = (sym||"").toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12);
-  if (!s) return;
-  usedTickers = [s, ...usedTickers.filter(x=>x!==s)].slice(0,30);
-  localStorage.setItem(USED_KEY, JSON.stringify(usedTickers));
+function rememberTicker(sym, keepOrder=false){
+  const t = normTicker(sym);
+  if (!t || (keepOrder && savedTickers.includes(t))) return; // page boot: don't reshuffle
+  savedTickers = [t, ...savedTickers.filter(x=>x!==t)].slice(0,SAVED_CAP);
+  storeSavedTickers();
+  if (tkdd.slot != null) paintTickerList();
+}
+function forgetTicker(sym){
+  const t = normTicker(sym);
+  savedTickers = savedTickers.filter(x=>x!==t);
+  storeSavedTickers();
+}
+// Custom ticker dropdown (shared by all charts): saved tickers on top, suggestions below.
+const tkdd = { el:null, slot:null, items:[], hl:-1, filter:"" };
+function tkddEl(){
+  if (tkdd.el) return tkdd.el;
+  const el = document.createElement("div");
+  el.className = "tkdd"; el.id = "tickerDrop"; el.setAttribute("role","listbox");
+  el.addEventListener("mousedown", e => {
+    e.preventDefault(); // keep focus in the input
+    if (tkdd.slot == null) return;
+    const x = e.target.closest(".tkdd-x");
+    if (x) { e.stopPropagation(); forgetTicker(x.dataset.t); paintTickerList(); return; }
+    const row = e.target.closest(".tkdd-i");
+    if (row) pickTicker(tkdd.slot, row.dataset.t);
+  });
+  document.body.appendChild(el);
+  return tkdd.el = el;
+}
+function placeTickerList(){
+  if (tkdd.slot == null) return;
+  const inp = document.getElementById("sym-"+tkdd.slot), el = tkddEl();
+  const r = inp.getBoundingClientRect();
+  const h = Math.min(el.scrollHeight, 236);
+  const below = window.innerHeight - r.bottom - 8;
+  el.style.left = Math.max(4, Math.min(r.left, window.innerWidth - el.offsetWidth - 4)) + "px";
+  el.style.top = (below < h && r.top > below ? Math.max(4, r.top - h - 4) : r.bottom + 4) + "px";
+}
+function paintTickerList(){
+  if (tkdd.slot == null) return;
+  const el = tkddEl(), f = tkdd.filter;
+  const match = t => !f || t.includes(f);
+  const rank = list => f ? [...list.filter(t=>t.startsWith(f)), ...list.filter(t=>!t.startsWith(f))] : list;
+  const saved = rank(savedTickers.filter(match));
+  const savedSet = new Set(savedTickers);
+  const sugg = rank(SUGGESTS.filter(t => !savedSet.has(t) && match(t)));
+  const hi = t => f ? t.replace(f, `<b>${f}</b>`) : t;
+  tkdd.items = [...saved, ...sugg];
+  if (tkdd.hl >= tkdd.items.length) tkdd.hl = tkdd.items.length - 1;
+  let n = 0, html = "";
+  const row = (t, del) => `<div class="tkdd-i${n===tkdd.hl?" hl":""}" data-t="${t}" data-n="${n++}" role="option"><span>${hi(t)}</span>${del?`<span class="tkdd-x" data-t="${t}" title="Remove ${t} from saved">&#x2715;</span>`:""}</div>`;
+  if (saved.length) html += `<div class="tkdd-h">Saved (${savedTickers.length})</div>` + saved.map(t=>row(t,true)).join("");
+  if (sugg.length) html += `<div class="tkdd-h">Suggested</div>` + sugg.map(t=>row(t,false)).join("");
+  if (!html) html = `<div class="tkdd-e">Press Enter to load ${f}</div>`;
+  el.innerHTML = html;
+  el.classList.add("open");
+  placeTickerList();
+  const h = el.querySelector(".tkdd-i.hl");
+  if (h) h.scrollIntoView({ block:"nearest" });
+}
+function openTickerList(i, filter=""){
+  tkdd.slot = i; tkdd.filter = normTicker(filter); tkdd.hl = -1;
+  tkddEl().scrollTop = 0;
   paintTickerList();
 }
+function closeTickerList(){
+  tkdd.slot = null; tkdd.hl = -1;
+  if (tkdd.el) tkdd.el.classList.remove("open");
+}
+const lastSymReq = {};
+function pickTicker(i, t){
+  const inp = document.getElementById("sym-"+i);
+  inp.value = t;
+  closeTickerList();
+  lastSymReq[i] = { t, at: Date.now() };
+  loadSlot(i,true);
+}
+window.addEventListener("resize", placeTickerList);
+document.addEventListener("scroll", placeTickerList, true);
 function slotSymbol(i){
   return (document.getElementById("sym-"+i).value||"SPY").trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,"").slice(0,12) || "SPY";
 }
@@ -2372,6 +2458,7 @@ async function loadSlot(i, forceReset=false){
   const symbol=slotSymbol(i), tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
   try{
     const data=await fetchBars(symbol,tf);
+    const prevSym = slots[i].key.split("|")[0], userLoad = forceReset || prevSym!==symbol, firstLoad = !prevSym;
     if (forceReset || slots[i].key!==key) { slots[i].liveBar = null; slots[i].offset = 0; slots[i].srcLen = 0; }
     const start = bucketStart(tf, Date.now());
     slots[i].allBars = data.bars.filter(b => b.t < start);
@@ -2380,7 +2467,7 @@ async function loadSlot(i, forceReset=false){
       slots[i].liveBar = { t: start, open: yahooNow.open, high: yahooNow.high, low: yahooNow.low, close: yahooNow.close, live: true };
     }
     Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true,state:data.state||""});
-    ensureLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); rememberTicker(symbol);
+    ensureLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); if (userLoad) rememberTicker(symbol, tickerBoot && firstLoad);
   }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
 }
 async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
@@ -2394,11 +2481,36 @@ async function boot(reset=false){
     setTimeout(()=>{ tip.textContent=""; localStorage.setItem(TIP_KEY,"1"); }, 8000);
   }
   await Promise.all(slots.map((_,i)=>loadSlot(i,reset)));
-  paintTickerList();
+  tickerBoot = false;
 }
 slots.forEach((_,i)=>{
-  document.getElementById("sym-"+i).addEventListener("change",()=>loadSlot(i,true));
-  document.getElementById("sym-"+i).addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); loadSlot(i,true); } });
+  const symIn = document.getElementById("sym-"+i);
+  symIn.addEventListener("change",()=>{
+    const r = lastSymReq[i];
+    if (r && r.t===slotSymbol(i) && Date.now()-r.at < 2000) return; // already loaded via Enter / click
+    lastSymReq[i] = { t: slotSymbol(i), at: Date.now() };
+    loadSlot(i,true);
+  });
+  symIn.addEventListener("focus",()=>{ openTickerList(i, ""); symIn.select(); });
+  symIn.addEventListener("click",()=>{ if (tkdd.slot!==i) openTickerList(i, ""); });
+  symIn.addEventListener("blur",()=>{ if (tkdd.slot===i) closeTickerList(); });
+  symIn.addEventListener("input",()=>{ tkdd.slot = i; tkdd.filter = normTicker(symIn.value); tkdd.hl = -1; tkddEl().scrollTop = 0; paintTickerList(); });
+  symIn.addEventListener("keydown",e=>{
+    const open = tkdd.slot===i && tkdd.el && tkdd.el.classList.contains("open");
+    if (e.key==="ArrowDown" || e.key==="ArrowUp") {
+      e.preventDefault();
+      if (!open) { openTickerList(i, ""); return; }
+      const n = tkdd.items.length; if (!n) return;
+      tkdd.hl = e.key==="ArrowDown" ? (tkdd.hl+1) % n : (tkdd.hl<=0 ? n-1 : tkdd.hl-1);
+      paintTickerList();
+    } else if (e.key==="Escape") {
+      if (open) { e.preventDefault(); closeTickerList(); }
+    } else if (e.key==="Enter") {
+      e.preventDefault();
+      if (open && tkdd.hl>=0 && tkdd.items[tkdd.hl]) pickTicker(i, tkdd.items[tkdd.hl]);
+      else pickTicker(i, slotSymbol(i));
+    }
+  });
   document.getElementById("tf-"+i).addEventListener("change",()=>loadSlot(i,true));
   document.getElementById("vol-"+i).addEventListener("change",e=>{ slots[i].vol=e.target.checked; saveSlotPrefs(); });
   document.getElementById("lines-"+i).addEventListener("change",e=>{ slots[i].lines=e.target.checked; saveSlotPrefs(); });
