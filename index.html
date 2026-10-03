@@ -2237,7 +2237,7 @@ function drawChart(slot){
   const liveBars = bars;
   slot.nBars = bars.length*(slot.vol?2:1);
   const dpr=pxRatio();
-  const padL=10*dpr, padR=62*dpr, padT=8*dpr, padB=22*dpr, volH=slot.vol?Math.round((h-8*dpr-22*dpr)*0.2):0;
+  const padL=10*dpr, padR=(slot.price>0&&slot.price<1?80:62)*dpr, padT=8*dpr, padB=22*dpr, volH=slot.vol?Math.round((h-8*dpr-22*dpr)*0.2):0;
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
   const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
   const yOf=px=>padT+(max-px)/span*plotH;
@@ -2401,7 +2401,7 @@ function paintMeta(slot){
   const change=slot.price-slot.prev, pct=slot.prev?(change/slot.prev)*100:0;
   setTxt(document.getElementById("px-"+slot.id), `${slot.symbol}  ${fmt(slot.price||0)}`);
   const chg=document.getElementById("chg-"+slot.id), sign=change>=0?"+":"";
-  setTxt(chg, slot.price?`${sign}${Math.abs(slot.price)<1&&change?change.toPrecision(3):change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"", "chg "+(pct>0.01?"up":pct<-0.01?"down":"flat"));
+  setTxt(chg, slot.price?`${sign}${Math.abs(slot.price)<1&&change?change.toLocaleString("en-US",{maximumSignificantDigits:3}):change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"", "chg "+(pct>0.01?"up":pct<-0.01?"down":"flat"));
   setTxt(document.getElementById("note-"+slot.id), slot.live?`${slot.tf} • ${sessionLabel(slot.state)}`: `${slot.tf} • no live feed`);
 }
 function clock(){}
@@ -2629,7 +2629,7 @@ slots.forEach((_,i)=>{
     const {x,y}=d.pt, L=s.layout, b=s.liveBtn;
     if (b && x>=b.x && x<=b.x+b.w && y>=b.y && y<=b.y+b.h) { s.offset=0; return; }
     if (x > L.w-L.padR && y>=L.padT && y<=L.padT+L.plotH) {
-      const raw=L.max-(y-L.padT)/L.plotH*L.span, px=Number(raw.toFixed(raw<10?4:2));
+      const raw=L.max-(y-L.padT)/L.plotH*L.span, px=Number(Math.abs(raw)<1?raw.toPrecision(4):raw.toFixed(raw<10?4:2));
       levels[s.symbol]=[...symLevels(s.symbol), px].slice(-30); saveLevels();
     }
   });
