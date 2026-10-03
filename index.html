@@ -525,18 +525,31 @@ async function pullCloud(){
     paintQuick();
   } catch(e){}
 }
-async function pushCloud(){
+// Cloud save, lighter on the server: skipped when nothing changed since the last successful save
+// (re-sent every 5 min anyway); when only the xp/eaten counters moved it's batched to every 2 min.
+// Anything else (equip, density) saves right away, and hiding/closing the tab always saves.
+let lastPush = { body: "", at: 0, key: "" };
+function pushKey(o){ const { xp, eaten, eatenCycle, ...rest } = o || {}; return JSON.stringify(rest); }
+async function pushCloud(force){
   try {
-    await fetch(API + "/save", {
+    const body = JSON.stringify(player), key = pushKey(player), age = Date.now() - lastPush.at;
+    if (body === lastPush.body && age < 300000) return;
+    if (force !== true && key === lastPush.key && age < 120000) return;
+    const r = await fetch(API + "/save", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Player-Id": PLAYER_ID },
-      body: JSON.stringify(player)
+      body
     });
+    if (r.ok) lastPush = { body, at: Date.now(), key };
   } catch(e){}
 }
 window.addEventListener("visibilitychange", () => {
-  if (document.hidden) pushCloud();
-  else syncFromLocal();
+  if (document.hidden) pushCloud(true);
+  else {
+    syncFromLocal();
+    // Charts don't poll while the tab is hidden; catch up right away when it's shown again.
+    if (Date.now() - lastTick >= 12000) tickLive();
+  }
 });
 window.addEventListener("pageshow", syncFromLocal);
 window.addEventListener("focus", syncFromLocal);
@@ -2476,7 +2489,12 @@ async function loadSlot(i, forceReset=false){
     ensureLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); if (userLoad) rememberTicker(symbol, tickerBoot && firstLoad);
   }catch{ if (slots[i].wantKey !== key) return; Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset){ slots[i].allBars=[]; slots[i].liveBar=null; slots[i].showPx=0; } paintMeta(slots[i]); }
 }
-async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
+let lastTick = 0;
+async function tickLive(){
+  if (document.hidden) return; // no quote polling while the tab is in the background
+  lastTick = Date.now();
+  await Promise.all(slots.map((_,i)=>loadSlot(i,false)));
+}
 async function boot(reset=false){
   clock();
   setLayout(localStorage.getItem(LAYOUT_KEY) || "2x2");
