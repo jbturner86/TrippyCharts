@@ -1744,7 +1744,8 @@ function tickBits(){
   } catch(e) {}
   requestAnimationFrame(loopSky);
 })();
-const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD"});
+const pxOpts = n => Math.abs(n) > 0 && Math.abs(n) < 1 ? {maximumSignificantDigits:4} : {minimumFractionDigits:2,maximumFractionDigits:2}; // sub-$1 coins (DOGE, SHIB, PEPE) keep their digits
+const fmt = n => n.toLocaleString("en-US",{style:"currency",currency:"USD",...pxOpts(n)});
 function fmtAxisTime(t, tf){
   const d = new Date(t);
   if (tf==="1d" || tf==="1w") return d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
@@ -1863,7 +1864,7 @@ function visibleBars(slot){
   slot.visStart = Math.max(0, src.length-n-slot.offset);
   return src.slice(slot.visStart, src.length-slot.offset);
 }
-function fmtPx(n){ return (n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtPx(n){ return (n||0).toLocaleString("en-US",pxOpts(n||0)); }
 function fmtVol(n){
   n = n||0;
   if (n>=1e6) return (n/1e6).toFixed(2)+"M";
@@ -2400,7 +2401,7 @@ function paintMeta(slot){
   const change=slot.price-slot.prev, pct=slot.prev?(change/slot.prev)*100:0;
   setTxt(document.getElementById("px-"+slot.id), `${slot.symbol}  ${fmt(slot.price||0)}`);
   const chg=document.getElementById("chg-"+slot.id), sign=change>=0?"+":"";
-  setTxt(chg, slot.price?`${sign}${change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"", "chg "+(pct>0.01?"up":pct<-0.01?"down":"flat"));
+  setTxt(chg, slot.price?`${sign}${Math.abs(slot.price)<1&&change?change.toPrecision(3):change.toFixed(2)}  (${sign}${pct.toFixed(2)}%)`:"", "chg "+(pct>0.01?"up":pct<-0.01?"down":"flat"));
   setTxt(document.getElementById("note-"+slot.id), slot.live?`${slot.tf} • ${sessionLabel(slot.state)}`: `${slot.tf} • no live feed`);
 }
 function clock(){}
