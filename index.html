@@ -2456,10 +2456,14 @@ function slotSymbol(i){
 }
 async function loadSlot(i, forceReset=false){
   const symbol=slotSymbol(i), tf=document.getElementById("tf-"+i).value, key=symbol+"|"+tf;
+  slots[i].wantKey = key;
   try{
     const data=await fetchBars(symbol,tf);
+    if (slots[i].wantKey !== key) return; // a newer ticker/tf was requested for this chart while this fetch was in flight
     const prevSym = slots[i].key.split("|")[0], userLoad = forceReset || prevSym!==symbol, firstLoad = !prevSym;
-    if (forceReset || slots[i].key!==key) { slots[i].liveBar = null; slots[i].offset = 0; slots[i].srcLen = 0; }
+    // new ticker/tf: drop the old live candle AND the animated price, otherwise drawChart eases showPx from the
+    // previous ticker's price and stretches the new live candle's wick (and the price scale) back to it
+    if (forceReset || slots[i].key!==key) { slots[i].liveBar = null; slots[i].offset = 0; slots[i].srcLen = 0; slots[i].showPx = 0; }
     const start = bucketStart(tf, Date.now());
     slots[i].allBars = data.bars.filter(b => b.t < start);
     const yahooNow = data.bars.find(b => b.t >= start);
@@ -2468,7 +2472,7 @@ async function loadSlot(i, forceReset=false){
     }
     Object.assign(slots[i],{symbol,tf,key,price:data.price,prev:data.prev,live:true,state:data.state||""});
     ensureLive(slots[i], data.price); paintMeta(slots[i]); saveSlotPrefs(); if (userLoad) rememberTicker(symbol, tickerBoot && firstLoad);
-  }catch{ Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset) slots[i].allBars=[]; paintMeta(slots[i]); }
+  }catch{ if (slots[i].wantKey !== key) return; Object.assign(slots[i],{symbol,tf,live:false}); if(forceReset){ slots[i].allBars=[]; slots[i].liveBar=null; slots[i].showPx=0; } paintMeta(slots[i]); }
 }
 async function tickLive(){ await Promise.all(slots.map((_,i)=>loadSlot(i,false))); }
 async function boot(reset=false){
