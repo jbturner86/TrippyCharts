@@ -698,7 +698,7 @@ function drawCursorChip(cv, id){
 function drawThemeChip(cv, id){
   const c = cv.getContext("2d");
   c.clearRect(0,0,cv.width,cv.height);
-  const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], rainbow:["#7cff3a","#c44bff"], disco:["#f3ecff","#ff4ad2"] };
+  const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], rainbow:["#7cff3a","#c44bff"], disco:["#ffd34a","#ff3cc8"] };
   const pair = cols[id] || ["#00c805","#ff5000"];
   [[16,34,18,1],[28,30,14,0],[38,36,20,1]].forEach(([x,bot,top,up])=>{
     c.strokeStyle = pair[up?0:1]; c.lineWidth = 2;
@@ -1440,7 +1440,8 @@ function drawSquid(){
     const ast = (window.cursorArtSt ||= {}); const st = (ast[skin] ||= {});
     const mdx = st.mx==null ? 0 : mouse.x-st.mx, mdy = st.my==null ? 0 : mouse.y-st.my; st.mx = mouse.x; st.my = mouse.y;
     trail.length = 1;
-    CursorArt.draw(ctx, skin, mouse.x, mouse.y, sc*1.25, st, {dx:mdx, dy:mdy});
+    if (skin==="ufo" && (st.hf=(st.hf||0)+1)%3===0) st.overCandle = cursorOverCandle(); // cheap: every 3rd frame
+    CursorArt.draw(ctx, skin, mouse.x, mouse.y, sc*1.25, st, {dx:mdx, dy:mdy, hover: skin==="ufo" && !!st.overCandle});
     ctx.restore();
     return;
   }
@@ -1810,6 +1811,18 @@ function visibleBars(slot){
   slot.visStart = Math.max(0, src.length-n-slot.offset);
   return src.slice(slot.visStart, src.length-slot.offset);
 }
+function cursorOverCandle(){ // is the pointer over a candle (wick range +/- a few px) in any visible chart?
+  for (const s of slots){
+    if (s.hidden || !s.layout || !s.lbars) continue;
+    const cv=document.getElementById("cv-"+s.id); if(!cv) continue;
+    const r=cv.getBoundingClientRect(); if (mouse.x<r.left || mouse.x>r.right || mouse.y<r.top || mouse.y>r.bottom) continue;
+    const L=s.layout, k=cv.width/(r.width||1), px=(mouse.x-r.left)*k, py=(mouse.y-r.top)*k;
+    const b=s.lbars[Math.floor((px-L.padL)/L.gap)]; if(!b) return false;
+    const yOf=v=>L.padT+(L.max-v)/L.span*L.plotH;
+    return py>=yOf(b.high)-56*k && py<=yOf(b.low)+16*k; // wick inside the beam (below the saucer) or under the pointer
+  }
+  return false;
+}
 function sizeCanvases(){ sizeTick=0; slots.forEach(s=>{ const c=document.getElementById("cv-"+s.id); if(!c) return; const r=c.getBoundingClientRect(); s.hidden = r.width<2 || r.height<2;
   const w=Math.max(240,Math.floor(r.width*pxRatio())), h=Math.max(140,Math.floor(r.height*pxRatio()));
   if(c.width!==w||c.height!==h){ c.width=w; c.height=h; } }); }
@@ -1960,7 +1973,7 @@ function candleSkin(){
   if (use==="toxic") return { id:"toxic", up:"#243018", dn:"#241438" };
   if (use==="plasma") return { id:"plasma", up:"#1a2040", dn:"#2a1030" };
   if (use==="lava") return { id:"lava", up:"#ffb08a", dn:"#8a2458" };
-  if (use==="disco") return { id:"disco", up:"#f3ecff", dn:"#ff4ad2" };
+  if (use==="disco") return { id:"disco", up:"#ffd34a", dn:"#ff3cc8" };
   if (use==="confetti" || use==="ice" || use==="gold" || use==="void" || use==="ghost" || use==="ink") return { id:"basic", up:"#00c805", dn:"#ff5000" };
   if (use==="rainbow") return { id:"rainbow", up:"#7af0ff", dn:"#ff5ad0" };
   if (use==="drip") return { id:"drip", up:"#f4ecff", dn:"#d0122a" };
@@ -2206,13 +2219,37 @@ function paintAura(c, x, top, h, body, color, dpr){
   c.strokeRect(x-body/2-1.5*dpr, top-1.5*dpr, body+3*dpr, Math.max(4*dpr, h)+3*dpr);
   c.restore();
 }
+// Disco Fever extras: a spinning mirror ball hanging in the plot corner + star twinkles on candle wicks.
+function discoStar(c, x, y, r, a){ c.globalAlpha=a; c.beginPath(); c.moveTo(x-r,y); c.quadraticCurveTo(x,y,x,y-r); c.quadraticCurveTo(x,y,x+r,y); c.quadraticCurveTo(x,y,x,y+r); c.quadraticCurveTo(x,y,x-r,y); c.fill(); }
+function paintDiscoBall(c, bars, padL, padT, gap, yOf, dpr){
+  const t=performance.now()/1000, R=12*dpr, bx=padL+R+10*dpr, by=padT+R+12*dpr;
+  c.save();
+  c.strokeStyle="rgba(230,220,255,.6)"; c.lineWidth=dpr; c.beginPath(); c.moveTo(bx,padT); c.lineTo(bx,by-R); c.stroke();
+  const halo=c.createRadialGradient(bx,by,R*.6,bx,by,R*2.6); halo.addColorStop(0,"rgba(255,230,140,.28)"); halo.addColorStop(1,"rgba(255,60,200,0)");
+  c.fillStyle=halo; c.beginPath(); c.arc(bx,by,R*2.6,0,7); c.fill();
+  c.beginPath(); c.arc(bx,by,R,0,7); c.clip();
+  c.fillStyle="#3a2f52"; c.fillRect(bx-R,by-R,2*R,2*R);
+  const rows=7, cols=8, spin=t*0.8;
+  for (let r=0;r<rows;r++){ const v=-1+(r+.5)*2/rows, yy=by+v*R, half=Math.sqrt(1-v*v)*R;
+    for (let k=0;k<cols;k++){ const u=((k/cols+spin/6.283)%1), xx=bx+Math.cos(u*6.283)*half; if (Math.sin(u*6.283)<0) continue;
+      const f=0.5+0.5*Math.sin(t*4+r*1.9+k*2.7);
+      c.fillStyle="hsla("+(k%2?45:300)+",100%,"+(70+25*f)+"%,"+(0.55+0.45*f)+")";
+      c.fillRect(xx-1.4*dpr, yy-1.3*dpr, 2.8*dpr, 2.6*dpr); } }
+  c.restore();
+  c.save(); c.fillStyle="#fff";
+  discoStar(c, bx-R*.35, by-R*.4, (3+2*Math.abs(Math.sin(t*3)))*dpr, .95);
+  for (let n=0;n<4;n++){ const a=t*0.7+n*1.57; discoStar(c, bx+Math.cos(a)*R*2.1, by+Math.sin(a)*R*1.5, 3*dpr, .35+.35*Math.abs(Math.sin(t*2+n))); }
+  bars.forEach((b,i)=>{ if ((i*7)%5) return; const a=Math.sin(t*2.2+i*1.3); if (a<0.2) return;
+    c.fillStyle=b.close>=b.open?"#fff6c8":"#ffc2f2"; discoStar(c, padL+i*gap+gap/2, yOf(b.high)-2*dpr, (2.5+3*a)*dpr, .4+.55*a); });
+  c.restore(); c.globalAlpha=1;
+}
 // Disco Fever (Trippy Pass theme, Oct 2026): mirror-ball facets that shimmer across each candle body, plus a glint.
 function paintDisco(c, x, top, bot, body, up, dpr, i){
   const t=performance.now()/1000, h=Math.max(2*dpr, bot-top), cell=Math.max(2*dpr, Math.min(4*dpr, body/2.5)), x0=x-body/2;
   c.save(); c.beginPath(); c.rect(x0, top, body, h); c.clip();
   for (let yy=top, r=0; yy<top+h; yy+=cell, r++) for (let xx=x0, k=0; xx<x0+body; xx+=cell, k++){
     const f=0.5+0.5*Math.sin(t*3 + i*1.7 + r*1.3 + k*2.1);
-    c.fillStyle="hsla("+((i*37 + r*20 + k*50 + t*60)%360)+",100%,"+(up?82:70)+"%,"+(0.12+0.6*f*f)+")";
+    c.fillStyle="hsla("+((up?40:312) + ((i*37 + r*20 + k*50 + t*40)%50) - 25)+",100%,"+(up?86:80)+"%,"+(0.1+0.55*f*f)+")";
     c.fillRect(xx+0.5*dpr, yy+0.5*dpr, cell-dpr, cell-dpr);
   }
   c.restore();
@@ -2268,12 +2305,12 @@ function drawChart(slot){
   let min=Math.min(...liveBars.map(b=>b.low)), max=Math.max(...liveBars.map(b=>b.high)); if(max===min){max+=1;min-=1;}
   const span=max-min, plotH=h-padT-padB-volH, gap=(w-padL-padR)/liveBars.length, bodyW=Math.max(2.5*dpr,gap*.58);
   const yOf=px=>padT+(max-px)/span*plotH;
-  slot.layout={padL,padR,gap,plotH,padT,volH,min,max,span,w};
+  slot.layout={padL,padR,gap,plotH,padT,volH,min,max,span,w}; slot.lbars=liveBars;
   const panned = slot.offset>0;
   const last=liveBars.at(-1);
   const skin = candleSkin();
   const upCol=skin.up, dnCol=skin.dn;
-  const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="disco" ? (up?"#fff6d0":"#ff8af0") : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
+  const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="disco" ? (up?"#fff2b0":"#ff8af0") : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
   if (volH) {
     const vmax=Math.max(1,...liveBars.map(b=>b.vol||0)), vBase=h-padB, vw=Math.max(1.5*dpr,gap*.58), fx={};
     const VOL_UP={toxic:"#8ee03a"}, VOL_DN={bolt:"#b3a6dd", snow:"#c4d4ea", bubbles:"#6fa3d0", toxic:"#9a6cff"};
@@ -2341,6 +2378,7 @@ function drawChart(slot){
     if (skin.id==="disco") paintDisco(c, x, top, bot, body, up, dpr, i);
     if (skin.id==="drip" && !up) paintDrip(c, slot, x, bot, body, bh, dpr, i);
   });
+  if (skin.id==="disco") paintDiscoBall(c, liveBars, padL, padT, gap, yOf, dpr);
   if (skin.id==="drip") { slot.dripN = liveBars.filter(b=>b.close<b.open).length; stepDrips(slot, c, h, dpr); } else slot.drips = [];
   if (skin.id==="bolt") stepBolts(slot, c); else slot.bolts = [];
   if (skin.id==="snow") stepSnow(slot, c, h, dpr); else slot.flakes = [];

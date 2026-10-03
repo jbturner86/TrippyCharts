@@ -168,11 +168,15 @@ const ART = {
     const tilt=Math.max(-0.35,Math.min(0.35,(dx||0)*0.06)); st.tl=(st.tl||0)*0.85+tilt*0.15;
     c.save(); c.rotate(st.tl);
     c.globalCompositeOperation="lighter";
-    const pulse=0.6+0.4*Math.sin(t*4);
-    const g=c.createLinearGradient(0,4,0,42); g.addColorStop(0,"rgba(140,255,200,"+(0.6*pulse)+")"); g.addColorStop(1,"rgba(140,255,200,0)");
-    c.fillStyle=g; c.beginPath(); c.moveTo(-6,5); c.lineTo(6,5); c.lineTo(19,42); c.lineTo(-19,42); c.closePath(); c.fill();
-    const ps=parts(st,"ufo"); if (ps.length<14 && Math.random()<0.5) ps.push({x:rnd(-14,14), y:40, vx:0, vy:-rnd(.6,1.3), life:1, decay:.03});
-    stepParts(c, ps, 0, 0, p=>{ p.x*=0.97; c.fillStyle="rgba(200,255,225,"+p.life+")"; c.beginPath(); c.arc(p.x,p.y,1.3,0,TAU); c.fill(); });
+    st.hv=(st.hv||0)*0.85+(st.hover?1:0)*0.15; const hv=st.hv; // eases in when hovering a candle
+    const pulse=0.55+0.45*Math.sin(t*(3+6*hv)), spread=19+6*hv;
+    const soft=c.createLinearGradient(0,4,0,46); soft.addColorStop(0,"rgba(60,255,140,"+(0.22+0.25*hv)*pulse+")"); soft.addColorStop(1,"rgba(60,255,140,0)");
+    c.fillStyle=soft; c.beginPath(); c.moveTo(-9,4); c.lineTo(9,4); c.lineTo(spread+7,46); c.lineTo(-spread-7,46); c.closePath(); c.fill();
+    const g=c.createLinearGradient(0,4,0,42); g.addColorStop(0,"rgba(90,255,150,"+(0.5+0.4*hv)*pulse+")"); g.addColorStop(1,"rgba(90,255,150,0)");
+    c.fillStyle=g; c.beginPath(); c.moveTo(-6,5); c.lineTo(6,5); c.lineTo(spread,42); c.lineTo(-spread,42); c.closePath(); c.fill();
+    if (hv>0.05){ const pool=c.createRadialGradient(0,42,0,0,42,16+6*hv); pool.addColorStop(0,"rgba(170,255,210,"+(0.5*hv*pulse)+")"); pool.addColorStop(1,"rgba(170,255,210,0)"); c.fillStyle=pool; c.beginPath(); c.ellipse(0,42,22,8,0,0,TAU); c.fill(); }
+    const ps=parts(st,"ufo"); if (ps.length<(14+10*hv) && Math.random()<0.45+0.45*hv) ps.push({x:rnd(-spread+4,spread-4), y:40, vx:0, vy:-rnd(.6,1.3)*(1+hv), life:1, decay:.03});
+    stepParts(c, ps, 0, 0, p=>{ p.x*=0.96; c.fillStyle="rgba(120,255,170,"+p.life+")"; c.beginPath(); c.arc(p.x,p.y,1.3+0.6*hv,0,TAU); c.fill(); });
     c.globalCompositeOperation="source-over";
     const hull=c.createLinearGradient(0,-4,0,7); hull.addColorStop(0,"#eef0ff"); hull.addColorStop(1,"#5d6290");
     c.fillStyle=hull; c.beginPath(); c.ellipse(0,1,20,6.5,0,0,TAU); c.fill();
@@ -188,6 +192,7 @@ function draw(c, skin, x, y, s, st, opts){
   const fn=ART[skin]; if(!fn) return false;
   opts=opts||{}; const t=(opts.t!=null?opts.t:performance.now()/1000);
   const dx=(opts.dx||0)/s, dy=(opts.dy||0)/s;
+  if (st) st.hover = !!opts.hover;
   c.save(); c.translate(x,y); c.scale(s,s); fn(c,t,st,dx,dy); c.restore(); return true;
 }
 window.CursorArt = { draw, has: k => !!ART[k] };

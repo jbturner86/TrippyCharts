@@ -86,6 +86,9 @@
     #pickCard .pc-foot { display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap; }
     #pickSave { border:2px solid #fff; border-radius:999px; padding:8px 18px; background:#b7ffd2; color:#04140a; font-family:"Baloo 2", sans-serif; font-weight:800; font-size:1rem; cursor:pointer; }
     #pickSave:disabled { opacity:.55; cursor:wait; }
+    #pickCard .pc-new { font-size:.68rem; font-weight:700; color:#12001f; background:linear-gradient(90deg,#ffd34a,#ff8af0); border-radius:999px; padding:2px 9px; }
+    #dropPill { display:inline-block; margin-top:6px; padding:3px 12px; border-radius:999px; background:rgba(18,0,31,.82); color:#ffe9a8; font-family:"Baloo 2", sans-serif; font-weight:700; font-size:.85rem; letter-spacing:.02em; border:1px solid rgba(255,255,255,.55); }
+    #dropPill[hidden] { display:none; }
     #pickMsg { font-size:.82rem; color:#ffd39a; } #pickMsg.ok { color:#b7ffd2; }
     .card button.unlock { background:#ffe46b; color:#2a1400; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; margin-top:6px; }
     .card button.buynow { margin-top:6px; background:#ff3cc8; color:#fff; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; }
@@ -109,7 +112,7 @@
     <a class="back" href="index.html">← back to charts</a>
   </header>
   <div id="passSign">
-    <div class="signText"><b id="signTitle">✨ Trippy Pass, $5/mo ✨</b><span id="signSub">5 new toys + a new theme &amp; cursor every month. Pick any theme &amp; cursor to keep while you're subscribed. Plus 5 free unlocks (a $5 value), so month one pays for itself.</span></div>
+    <div class="signText"><b id="signTitle">✨ Trippy Pass, $5/mo ✨</b><span id="signSub">5 new toys + a new theme &amp; cursor every month. Pick any theme &amp; cursor to keep while you're subscribed. Plus 5 free unlocks (a $5 value), so month one pays for itself.</span><span id="dropPill">🪩 october drop: disco fever + ufo beam 🛸</span></div>
     <button type="button" id="signBtn">Get Trippy Pass, $5/mo</button>
     <button type="button" id="restoreBtn" title="Get your purchases back after clearing your browser or switching computers">Restore purchases</button>
   </div>
@@ -117,8 +120,8 @@
     <h3 id="pickTitle">✨ Your Pass picks</h3>
     <p class="pc-sub">Pick 1 store theme and 1 store cursor to use while your Pass is on. You can change them once every 30 days.</p>
     <div class="pc-row">
-      <div class="pc-item"><label for="pickTheme">Theme</label><select id="pickTheme"></select><canvas id="pickThemeCv" width="180" height="120"></canvas></div>
-      <div class="pc-item"><label for="pickCursor">Cursor</label><select id="pickCursor"></select><canvas id="pickCursorCv" width="120" height="120"></canvas></div>
+      <div class="pc-item"><label for="pickTheme">Theme</label><span class="pc-new" id="newTheme" hidden></span><select id="pickTheme"></select><canvas id="pickThemeCv" width="180" height="120"></canvas></div>
+      <div class="pc-item"><label for="pickCursor">Cursor</label><span class="pc-new" id="newCursor" hidden></span><select id="pickCursor"></select><canvas id="pickCursorCv" width="120" height="120"></canvas></div>
     </div>
     <div class="pc-foot"><button type="button" id="pickSave">Save picks</button><span id="pickMsg" role="status"></span></div>
   </section>
@@ -790,12 +793,26 @@ function pickPreview(){
   if (th) previewTheme(document.getElementById("pickThemeCv"), th);
   if (cu) previewCursor(document.getElementById("pickCursorCv"), cu);
 }
+function paintDropPill(){ // "🪩 <month> drop: <theme> + <cursor> 🛸" from pass-drops.json for the current month
+  const el = document.getElementById("dropPill"); if (!el) return;
+  const d = PASS_DROPS[currentMonth()];
+  const th = d && d.theme && THEMES.find(t => t[0] === d.theme), cu = d && d.cursor && CURSORS.find(t => t[0] === d.cursor);
+  el.hidden = !(th || cu); if (el.hidden) return;
+  const month = new Date().toLocaleString("en-US", { month: "long" }).toLowerCase();
+  el.textContent = "🪩 " + month + " drop: " + [th && th[1], cu && cu[1]].filter(Boolean).join(" + ").toLowerCase() + " 🛸";
+}
 function paintPickCard(){
   const card = document.getElementById("pickCard"); if (!card) return;
   card.hidden = !hasPass(); if (card.hidden) return;
   [["theme","pickTheme"],["cursor","pickCursor"]].forEach(([kind, el]) => {
     const sel = document.getElementById(el), keep = sel.value || passPick(kind) || "";
-    sel.innerHTML = pickOptions(kind).map(([id,label]) => `<option value="${id}">${label}${passPick(kind)===id?" (current pick)":""}</option>`).join("");
+    const list = kind === "theme" ? THEMES : CURSORS, nowDrop = (PASS_DROPS[currentMonth()] || {})[kind];
+    const nd = nowDrop && list.find(t => t[0] === nowDrop);
+    const badge = document.getElementById(kind === "theme" ? "newTheme" : "newCursor");
+    if (badge) { badge.hidden = !nd; if (nd) badge.textContent = "🆕 NEW this month: " + nd[1] + " (included)"; }
+    sel.innerHTML = (nd ? `<option value="" disabled>🆕 ${nd[1]}: NEW this month, already included</option>` : "") +
+      pickOptions(kind).map(([id,label]) => `<option value="${id}">${label}${passPick(kind)===id?" (current pick)":""}</option>`).join("");
+    if (!sel.value || sel.selectedOptions[0].disabled) { const first = [...sel.options].find(o => !o.disabled); if (first) sel.value = first.value; }
     if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
   });
   const msg = document.getElementById("pickMsg"), at = Number(player.passPicksAt || 0);
@@ -981,7 +998,7 @@ function previewTheme(cv, id){
   const bars = [[40,70,1],[58,52,0],[70,64,1],[84,46,1],[96,78,0],[112,60,1]];
   bars.forEach((b,i)=>{
     const x = 22 + i*24, up = b[2], top = b[1], bot = b[0];
-    const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], disco:["#f3ecff","#ff4ad2"] };
+    const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], disco:["#ffd34a","#ff3cc8"] };
     const pair = cols[id] || ["#00c805","#ff5000"];
     const col = up ? pair[0] : pair[1];
     c.strokeStyle = id==="rainbow" ? "#fff" : col;
@@ -1009,10 +1026,16 @@ function previewTheme(cv, id){
       const hh=Math.max(4, bot-top);
       for (let yy=0, r=0; yy<hh; yy+=4, r++) for (let k=0; k<3; k++) {
         const f=0.5+0.5*Math.sin(t/300 + i*1.7 + r*1.3 + k*2.1);
-        c.fillStyle="hsla("+((i*37+r*20+k*50+t/16)%360)+",100%,"+(up?82:70)+"%,"+(0.15+0.6*f*f)+")";
+        c.fillStyle="hsla("+((up?40:312)+((i*37+r*20+k*50+t/24)%50)-25)+",100%,"+(up?86:80)+"%,"+(0.12+0.55*f*f)+")";
         c.fillRect(x-6+k*4+0.5, top+yy+0.5, 3, Math.min(3, hh-yy-0.5));
       }
-      if ((i*7 + Math.floor(t/500)) % 5 === 0) { c.strokeStyle="#fff"; c.beginPath(); c.moveTo(x-4,top-4); c.lineTo(x+4,top-4); c.moveTo(x,top-8); c.lineTo(x,top); c.stroke(); }
+      if ((i*7 + Math.floor(t/500)) % 5 === 0) { c.strokeStyle="#fff"; c.beginPath(); c.moveTo(x-4,top-14); c.lineTo(x+4,top-14); c.moveTo(x,top-18); c.lineTo(x,top-10); c.stroke(); }
+      if (i===0) { // mini mirror ball
+        const bx=w-22, by=20, R=11; c.save(); c.strokeStyle="rgba(230,220,255,.6)"; c.beginPath(); c.moveTo(bx,0); c.lineTo(bx,by-R); c.stroke();
+        c.beginPath(); c.arc(bx,by,R,0,7); c.clip(); c.fillStyle="#3a2f52"; c.fillRect(bx-R,by-R,2*R,2*R);
+        for (let yy=-R; yy<R; yy+=4) for (let xx=-R; xx<R; xx+=4){ const f=0.5+0.5*Math.sin(t/250+xx*.7+yy*1.3); c.fillStyle="hsla("+((xx+yy)%8?45:300)+",100%,"+(70+25*f)+"%,"+(0.5+0.5*f)+")"; c.fillRect(bx+xx+.5,by+yy+.5,3,3); }
+        c.restore(); c.fillStyle="#fff"; c.beginPath(); c.arc(bx-4,by-4,1.6+Math.abs(Math.sin(t/300)),0,7); c.fill();
+      }
     }
     if (id==="neon") { const p=0.35+0.65*Math.abs(Math.sin(t/70+i)); c.strokeStyle = up?"rgba(124,255,58,"+p+")":"rgba(255,74,210,"+p+")"; c.lineWidth=2; c.strokeRect(x-8, top-2, 16, Math.max(6, bot-top)+4); }
     if (id==="toxic") {
@@ -1242,7 +1265,8 @@ paintThemes();
 paintSign();
 paintPickCard();
 pullCloud().then(() => { paint(); paintCursors(); paintThemes(); paintSign(); paintPickCard(); });
-loadPassDrops(() => { cleanEquipped(); paintCursors(); paintThemes(); paintPickCard(); });
+paintDropPill();
+loadPassDrops(() => { cleanEquipped(); paintCursors(); paintThemes(); paintPickCard(); paintDropPill(); });
 (function twinkle(){
   document.querySelectorAll("#grid canvas[data-kind]").forEach(cv => {
     previewToy(cv, cv.dataset.kind, (+cv.dataset.hue + Date.now()/40)%360);
