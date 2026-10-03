@@ -4,6 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Toy Store — TrippyCharts</title>
+  <meta name="description" content="The TrippyCharts Toy Store: falling toys for $1, cursors and candle themes for $3, and the $5/month Trippy Pass with 5 new toys and 5 free unlocks." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TrippyCharts" />
+  <meta property="og:title" content="TrippyCharts Toy Store: toys, cursors &amp; candle themes" />
+  <meta property="og:description" content="Make your charts rain toys. $1 falling toys, $3 cursors and candle themes, or the Trippy Pass: 5 new toys a month plus 5 free unlocks." />
+  <meta property="og:url" content="https://trippycharts.com/toys.html" />
+  <meta property="og:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trippycharts" />
+  <meta name="twitter:title" content="TrippyCharts Toy Store" />
+  <meta name="twitter:description" content="Falling toys, cursors and candle themes for your trippy charts. Trippy Pass: 5 new toys a month + 5 free unlocks." />
+  <meta name="twitter:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="apple-touch-icon" href="favicon-180.png" />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
   <style>
     * { box-sizing:border-box; margin:0; padding:0; }
@@ -59,6 +75,19 @@
     .rm-msg.ok { color:#b7ffd2 !important; }
     .rm-done { font-family:"Baloo 2", sans-serif; font-size:1.1rem; color:#b7ffd2 !important; }
     .card button.unlock { background:#ffe46b; color:#2a1400; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; margin-top:6px; }
+    .card button.buynow { margin-top:6px; background:#ff3cc8; color:#fff; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; }
+    @media (max-width:600px) {
+      #grid, .grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:8px 10px 14px; }
+      .card { padding:8px; border-radius:14px; }
+      .card canvas { width:100%; max-width:120px; height:auto; aspect-ratio:1/1; }
+      .card .name { font-size:.95rem; }
+      .card button, .card label { padding:8px 6px; font-size:.7rem; }
+      #cart { left:8px; right:8px; bottom:8px; width:auto; padding:10px; border-radius:14px; }
+      #cart ul { max-height:110px; }
+      #passSign { padding:10px 12px; position:static; }
+      body { padding-bottom:160px; }
+      a.back { top:auto; bottom:auto; position:static; display:inline-block; }
+    }
   </style>
 </head>
 <body>
@@ -67,7 +96,7 @@
     <a class="back" href="index.html">← back to charts</a>
   </header>
   <div id="passSign">
-    <div class="signText"><b id="signTitle">✨ Trippy Pass: $5 a month ✨</b><span id="signSub">5 new subscriber-only toys every month, plus 5 free unlocks for any store toy when you subscribe.</span></div>
+    <div class="signText"><b id="signTitle">✨ Trippy Pass: $5 a month ✨</b><span id="signSub">5 free unlocks (a $5 value), so month one pays for itself. Plus 5 new subscriber-only toys every month.</span></div>
     <button type="button" id="signBtn">Subscribe</button>
     <button type="button" id="restoreBtn" title="Get your purchases back after clearing your browser or switching computers">Restore purchases</button>
   </div>
@@ -646,7 +675,7 @@ function paint(){
     const action = own
       ? `<label><input type="checkbox" data-eq="${id}" ${on?"checked":""}></label>`
       : isPassToy(id) ? `<button class="buy" data-pass="1">Get pass $5/mo</button>`
-      : `<button class="buy" data-buy="${id}">Add $1</button>${(player.unlockCredits||0)>0?`<button class="unlock" data-unlock="${id}">Use free unlock (${player.unlockCredits} left)</button>`:""}`;
+      : `<button class="buy" data-buy="${id}">Add $1</button><button class="buynow" data-buynow="${id}">Buy now $1</button>${(player.unlockCredits||0)>0?`<button class="unlock" data-unlock="${id}">Use free unlock (${player.unlockCredits} left)</button>`:""}`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-kind="${id}" data-hue="${(i*47)%360}"></canvas>
       <div class="name">${label}</div>
@@ -725,7 +754,7 @@ function paintSign(){
     btn.textContent = "Manage pass";
   } else {
     t.textContent = "✨ Trippy Pass: $5 a month ✨";
-    s.textContent = "5 new subscriber-only toys every month, plus 5 free unlocks for any store toy when you subscribe.";
+    s.textContent = "5 free unlocks (a $5 value), so month one pays for itself. Plus 5 new subscriber-only toys every month.";
     btn.textContent = "Subscribe";
   }
 }
@@ -745,6 +774,7 @@ async function useUnlock(id){
 document.getElementById("grid").addEventListener("click", e => {
   if (e.target.dataset.pass) { startPass(); return; }
   if (e.target.dataset.unlock) { useUnlock(e.target.dataset.unlock); return; }
+  if (e.target.dataset.buynow) { const bid = e.target.dataset.buynow; buyNow({ sku: bid, type: "toy", name: (TOYS.find(t => t[0]===bid) || [bid,bid])[1], amount: 100 }); return; }
   const id = e.target.dataset.buy;
   if (!id) return;
   const label = (TOYS.find(t => t[0]===id) || [id,id])[1];
@@ -817,7 +847,7 @@ function paintCursors(){
     const on = own && player.equippedCursor === id;
     const action = own
       ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buycur="${id}">Add $3</button>`;
+      : `<button class="buy" data-buycur="${id}">Add $3</button><button class="buynow" data-buynowcur="${id}">Buy now $3</button>`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-cur="${id}"></canvas>
       <div class="name">${label}</div>
@@ -835,6 +865,7 @@ document.getElementById("cursors").addEventListener("change", e => {
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
 document.getElementById("cursors").addEventListener("click", e => {
+  if (e.target.dataset.buynowcur) { const bid = e.target.dataset.buynowcur; buyNow({ sku: "cursor_"+bid, type: "cursor", name: (CURSORS.find(t => t[0]===bid) || [bid,bid])[1], amount: 300 }); return; }
   const id = e.target.dataset.buycur;
   if (!id) return;
   const label = (CURSORS.find(t => t[0]===id) || [id,id])[1];
@@ -914,7 +945,7 @@ function paintThemes(){
     const on = own && player.equippedTheme === id;
     const action = own
       ? `<label><input type="radio" name="theme" data-theme="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buytheme="${id}">Add $3</button>`;
+      : `<button class="buy" data-buytheme="${id}">Add $3</button><button class="buynow" data-buynowtheme="${id}">Buy now $3</button>`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="120" data-theme="${id}"></canvas>
       <div class="name">${label}</div>
@@ -1007,9 +1038,8 @@ document.getElementById("cartList").addEventListener("click", e => {
   if (!sku) return;
   saveCart(loadCart().filter(it => it.sku !== sku));
 });
-document.getElementById("cartCheckout").addEventListener("click", async () => {
-  const items = loadCart();
-  if (!items.length) return;
+async function checkoutItems(items){ // shared by the cart and the per-card "Buy now" buttons
+  if (!items || !items.length) return;
   const first = items[0];
   try {
     const r = await fetch(API + "/buy", {
@@ -1019,11 +1049,14 @@ document.getElementById("cartCheckout").addEventListener("click", async () => {
     });
     const data = await r.json();
     if (data.url) { rememberPending(items); location.href = data.url; }
-    else alert(data.error || "Worker needs a cart checkout. It still only sells one price id.");
-  } catch(err){ alert("checkout failed"); }
-});
+    else { console.error("checkout: no url from /buy", data); alert("Checkout hiccup, please try again."); }
+  } catch(err){ console.error("checkout failed", err); alert("Checkout hiccup, please try again."); }
+}
+function buyNow(item){ return checkoutItems([item]); } // single-item checkout, same request shape as the cart
+document.getElementById("cartCheckout").addEventListener("click", () => checkoutItems(loadCart()));
 paintCart();
 document.getElementById("themes").addEventListener("click", e => {
+  if (e.target.dataset.buynowtheme) { const bid = e.target.dataset.buynowtheme; buyNow({ sku: "theme_"+bid, type: "theme", name: (THEMES.find(t => t[0]===bid) || [bid,bid])[1], amount: 300 }); return; }
   const id = e.target.dataset.buytheme;
   if (!id) return;
   const label = (THEMES.find(t => t[0]===id) || [id,id])[1];

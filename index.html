@@ -5,6 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TrippyCharts — psychedelic charts + toy rain</title>
   <meta name="description" content="TrippyCharts is a desktop toy: live-ish candlestick charts with falling trinkets and a squid cursor. Not a broker. Not financial advice." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TrippyCharts" />
+  <meta property="og:title" content="TrippyCharts: psychedelic candlestick charts + toy rain" />
+  <meta property="og:description" content="Live-ish candlestick charts with trippy candle themes, falling toy rain, cursor toys and a boss game. A desktop toy, not a broker." />
+  <meta property="og:url" content="https://trippycharts.com/" />
+  <meta property="og:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@trippycharts" />
+  <meta name="twitter:title" content="TrippyCharts: psychedelic charts + toy rain" />
+  <meta name="twitter:description" content="Trippy candlestick charts with falling toys, cursor toys and a boss game. Not financial advice." />
+  <meta name="twitter:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="apple-touch-icon" href="favicon-180.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -159,10 +172,20 @@ body.zen .side { display:none !important; }
     .note { font-size:.62rem; color:#b9a6dd; }
     .zoom { display:none; }
     #buyPass {
-      position:static; display:block; width:100%; max-width:170px; height:auto; aspect-ratio:128/86; margin:6px auto 0; padding:0;
-      border:none !important; background:transparent !important; box-shadow:none !important; filter:drop-shadow(0 0 10px rgba(255,60,200,.45)); cursor:pointer;
+      position:static; display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; max-width:190px; height:auto; margin:6px auto 0; padding:6px 10px 9px;
+      border:2px solid #fff !important; border-radius:16px !important; background:linear-gradient(135deg,#ff3cc8,#b56cff 55%,#3cf0ff) !important;
+      box-shadow:0 0 14px rgba(255,60,200,.55) !important; cursor:pointer; text-transform:none; letter-spacing:.02em;
     }
-    #buyPass img { width:100%; height:100%; object-fit:contain; display:block; pointer-events:none; }
+    #buyPass:hover { filter:brightness(1.12); transform:translateY(-1px); }
+    #buyPass img { width:100%; max-width:120px; height:auto; aspect-ratio:128/86; object-fit:contain; display:block; pointer-events:none; }
+    #buyPass .passTxt { display:block; color:#12001f; font-family:"Baloo 2", Impact, sans-serif; font-weight:800; font-size:.82rem; line-height:1.15; text-align:center; pointer-events:none; }
+    #buyPass .passTxt small { display:block; font-size:.68rem; font-weight:700; }
+    #mobileBanner { display:none; }
+    @media (max-width:600px) {
+      #mobileBanner { display:block; position:relative; z-index:40; margin:0; padding:10px 14px; text-align:center; font-family:"Baloo 2", Impact, sans-serif; font-weight:800; font-size:.95rem;
+        color:#12001f; background:linear-gradient(90deg,#ff3cc8,#ffb43c,#7cff3a,#3cf0ff); text-decoration:none; border-bottom:2px solid #fff; }
+      #mobileBanner u { text-underline-offset:2px; }
+    }
     @keyframes passGlow {
       0%,100% { box-shadow:0 0 8px #b7ffd2, 0 0 16px rgba(180,255,210,.55); }
       50% { box-shadow:0 0 16px #fff, 0 0 28px #b7ffd2, 0 0 48px rgba(255,255,255,.35); }
@@ -199,6 +222,7 @@ body.zen .side { display:none !important; }
   </style>
 </head>
 <body>
+  <a id="mobileBanner" href="toys.html">📱 Best on desktop, or <u>grab toys now</u> →</a>
   <div id="sky"><canvas id="bg"></canvas></div>
   <div class="wrap">
     <aside class="side" id="sideBar">
@@ -240,7 +264,7 @@ body.zen .side { display:none !important; }
       <button type="button" id="fullscreen">play game</button>
       <button type="button" id="legalBtn">disclaimer</button>
       <a href="wiki.html" id="wikiBtn" class="page-link" title="How TrippyCharts works: charts, themes, toys, cursors, game, store">wiki / guide</a>
-      <button type="button" id="buyPass" title="Trippy Pass: $5/month, 5 subscriber-only toys every month"><img src="pass-blob.png" alt="Trippy Pass $5 a month"></button>
+      <button type="button" id="buyPass" title="Trippy Pass: $5/month, 5 subscriber-only toys every month"><img src="pass-blob.png" alt=""><span class="passTxt">Buy Trippy Pass $5/mo<small>5 new toys + 5 free unlocks</small></span></button>
       <span id="passBadge">pass on</span>
       <button type="button" id="cancelBtn">manage pass</button>
       <a href="toys.html#restore" id="restoreLink" class="page-link" title="Lost your purchases after clearing your browser or switching computers? Restore them with your checkout email">restore purchases</a>
