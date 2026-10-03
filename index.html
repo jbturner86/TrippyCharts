@@ -1592,7 +1592,10 @@ function launchFly(b, fromEdge){
   const d = Math.hypot(dx,dy)||1, sp = 2.5+Math.random()*4.5;
   b.vx2 = dx/d*sp; b.vy2 = dy/d*sp;
 }
+// Ambient motion speed multipliers (1 = original). Applied outside the game only, so game difficulty is unchanged.
+const CYCLONE_SPEED = 0.5, WAVE_SPEED = 0.65, FLY_SPEED = 0.65;
 function moveBit(b, mode){
+  const kc = zenMode ? 1 : CYCLONE_SPEED, kw = zenMode ? 1 : WAVE_SPEED, kf = zenMode ? 1 : FLY_SPEED;
   if (b.m !== mode) {
     b.m = mode;
     const cx=innerWidth/2, cy=innerHeight/2;
@@ -1602,18 +1605,18 @@ function moveBit(b, mode){
   }
   if (mode==="cyclone"){
     const cx=innerWidth/2, cy=innerHeight/2, maxR=Math.hypot(cx,cy);
-    b.ang += (6+b.v*4)/Math.max(40,b.rad);
-    b.rad -= 0.35*b.v;
+    b.ang += (6+b.v*4)/Math.max(40,b.rad)*kc;
+    b.rad -= 0.35*b.v*kc;
     if (b.rad < 24) { b.rad = maxR*(0.75+Math.random()*0.3); b.ang = Math.random()*7; rekind(b); }
     const tx=cx+Math.cos(b.ang)*b.rad, ty=cy+Math.sin(b.ang)*b.rad*0.8;
-    b.x += (tx-b.x)*0.1; b.y += (ty-b.y)*0.1; b.rot += b.spin*2;
+    b.x += (tx-b.x)*0.1; b.y += (ty-b.y)*0.1; b.rot += b.spin*2*kc;
   } else if (mode==="wave"){
-    b.x += 1.3 + b.v*1.4;
-    const ty = b.wy + Math.sin(b.x*0.011 + performance.now()/700 + b.ph)*innerHeight*0.12;
-    b.y += (ty-b.y)*0.08; b.rot += b.spin;
+    b.x += (1.3 + b.v*1.4)*kw;
+    const ty = b.wy + Math.sin(b.x*0.011 + performance.now()/700*kw + b.ph)*innerHeight*0.12;
+    b.y += (ty-b.y)*0.08; b.rot += b.spin*kw;
     if (b.x > innerWidth+60) { b.x = -60 - Math.floor(Math.random()*3)*innerWidth*0.4 - Math.random()*80; b.wy=innerHeight*(0.15+0.7*Math.random()); rekind(b); }
   } else if (mode==="fly"){
-    b.x += b.vx2; b.y += b.vy2; b.rot += b.spin*3;
+    b.x += b.vx2*kf; b.y += b.vy2*kf; b.rot += b.spin*3*kf;
     if (b.x < -90 || b.x > innerWidth+90 || b.y < -90 || b.y > innerHeight+90) { rekind(b); launchFly(b, true); }
   } else {
     b.y+=b.v*1.1; b.x+=b.drift; b.rot+=b.spin;
