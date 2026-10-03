@@ -1,0 +1,6 @@
+{
+  "note": "Monthly Trippy Pass theme + cursor drops. Key = month (YYYY-MM). Ids must already have drawing code in index.html/toys.html (themes) or cursorart.js (cursors). Drops accumulate: a live Pass unlocks every drop up to the current month.",
+  "drops": {
+    "2026-10": { "theme": "disco", "cursor": "ufo" }
+  }
+}

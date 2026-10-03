@@ -4,11 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Toy Store — TrippyCharts</title>
-  <meta name="description" content="The TrippyCharts Toy Store: falling toys for $1, cursors and candle themes for $3, and the $5/month Trippy Pass with 5 new toys and 5 free unlocks." />
+  <meta name="description" content="The TrippyCharts Toy Store: falling toys for $1, cursors and candle themes for $3, and the $5/month Trippy Pass: 5 new toys plus a new theme &amp; cursor every month, your pick of any theme &amp; cursor, and 5 free unlocks." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="TrippyCharts" />
   <meta property="og:title" content="TrippyCharts Toy Store: toys, cursors &amp; candle themes" />
-  <meta property="og:description" content="Make your charts rain toys. $1 falling toys, $3 cursors and candle themes, or the Trippy Pass: 5 new toys a month plus 5 free unlocks." />
+  <meta property="og:description" content="Make your charts rain toys. $1 falling toys, $3 cursors and candle themes, or the Trippy Pass: 5 new toys + a new theme &amp; cursor every month, plus your pick of any theme &amp; cursor and 5 free unlocks." />
   <meta property="og:url" content="https://trippycharts.com/toys.html" />
   <meta property="og:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
   <meta property="og:image:width" content="1200" />
@@ -16,7 +16,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@trippycharts" />
   <meta name="twitter:title" content="TrippyCharts Toy Store" />
-  <meta name="twitter:description" content="Falling toys, cursors and candle themes for your trippy charts. Trippy Pass: 5 new toys a month + 5 free unlocks." />
+  <meta name="twitter:description" content="Falling toys, cursors and candle themes for your trippy charts. Trippy Pass: 5 new toys + a theme &amp; cursor every month, pick any theme &amp; cursor, 5 free unlocks." />
   <meta name="twitter:image" content="https://trippycharts.com/assets/wiki/og-charts.jpg" />
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="apple-touch-icon" href="favicon-180.png" />
@@ -74,6 +74,19 @@
     .rm-msg { min-height:1.2em; margin:10px 0 0 !important; font-size:.82rem !important; color:#ffd39a !important; }
     .rm-msg.ok { color:#b7ffd2 !important; }
     .rm-done { font-family:"Baloo 2", sans-serif; font-size:1.1rem; color:#b7ffd2 !important; }
+    #pickCard { margin:0 16px 14px; padding:14px 16px; border-radius:16px; background:radial-gradient(ellipse at 50% 0%, rgba(140,60,255,.25), transparent 65%), linear-gradient(180deg,#1a0b2e,#0b0414); border:1px solid rgba(196,120,255,.75); box-shadow:0 0 12px rgba(180,90,255,.4); max-width:760px; }
+    #pickCard[hidden] { display:none; }
+    #pickCard h3 { font-family:"Baloo 2", Impact, sans-serif; font-size:1.25rem; letter-spacing:.03em; }
+    #pickCard .pc-sub { font-size:.82rem; color:#cbb6ff; margin:2px 0 10px; }
+    #pickCard .pc-row { display:flex; gap:14px; flex-wrap:wrap; }
+    #pickCard .pc-item { flex:1 1 200px; display:flex; flex-direction:column; align-items:center; gap:6px; background:rgba(255,255,255,.04); border-radius:12px; padding:10px; }
+    #pickCard label { font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; color:#b9a6dd; }
+    #pickCard select { width:100%; max-width:220px; padding:7px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:#140c22; color:#fff; font-size:.85rem; }
+    #pickCard canvas { width:120px; height:auto; margin:0; }
+    #pickCard .pc-foot { display:flex; align-items:center; gap:12px; margin-top:10px; flex-wrap:wrap; }
+    #pickSave { border:2px solid #fff; border-radius:999px; padding:8px 18px; background:#b7ffd2; color:#04140a; font-family:"Baloo 2", sans-serif; font-weight:800; font-size:1rem; cursor:pointer; }
+    #pickSave:disabled { opacity:.55; cursor:wait; }
+    #pickMsg { font-size:.82rem; color:#ffd39a; } #pickMsg.ok { color:#b7ffd2; }
     .card button.unlock { background:#ffe46b; color:#2a1400; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; margin-top:6px; }
     .card button.buynow { margin-top:6px; background:#ff3cc8; color:#fff; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; }
     @media (max-width:600px) {
@@ -96,10 +109,19 @@
     <a class="back" href="index.html">← back to charts</a>
   </header>
   <div id="passSign">
-    <div class="signText"><b id="signTitle">✨ Trippy Pass: $5 a month ✨</b><span id="signSub">5 free unlocks (a $5 value), so month one pays for itself. Plus 5 new subscriber-only toys every month.</span></div>
-    <button type="button" id="signBtn">Subscribe</button>
+    <div class="signText"><b id="signTitle">✨ Trippy Pass, $5/mo ✨</b><span id="signSub">5 new toys + a new theme &amp; cursor every month. Pick any theme &amp; cursor to keep while you're subscribed. Plus 5 free unlocks (a $5 value), so month one pays for itself.</span></div>
+    <button type="button" id="signBtn">Get Trippy Pass, $5/mo</button>
     <button type="button" id="restoreBtn" title="Get your purchases back after clearing your browser or switching computers">Restore purchases</button>
   </div>
+  <section id="pickCard" hidden aria-labelledby="pickTitle">
+    <h3 id="pickTitle">✨ Your Pass picks</h3>
+    <p class="pc-sub">Pick 1 store theme and 1 store cursor to use while your Pass is on. You can change them once every 30 days.</p>
+    <div class="pc-row">
+      <div class="pc-item"><label for="pickTheme">Theme</label><select id="pickTheme"></select><canvas id="pickThemeCv" width="180" height="120"></canvas></div>
+      <div class="pc-item"><label for="pickCursor">Cursor</label><select id="pickCursor"></select><canvas id="pickCursorCv" width="120" height="120"></canvas></div>
+    </div>
+    <div class="pc-foot"><button type="button" id="pickSave">Save picks</button><span id="pickMsg" role="status"></span></div>
+  </section>
   <div id="restoreModal" hidden role="dialog" aria-modal="true" aria-labelledby="restoreTitle">
     <div class="rm-card">
       <button type="button" class="rm-x" id="rmClose" aria-label="Close">✕</button>
@@ -129,7 +151,7 @@
     <div id="cartTotal"></div>
     <button type="button" id="cartCheckout">Checkout</button>
   </aside>
-  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Regular toys are $1 and cursors and candle themes are $3 each. <a href="#" id="passLink">Trippy Pass</a> ($5/month) gets 5 brand-new subscriber-only toys every month, plus 5 free toy unlocks when you subscribe. <b id="rainCount">Raining 1 / 5</b></p>
+  <p class="lead">Pick up to 5 toys to rain. Mushrooms are free. Regular toys are $1 and cursors and candle themes are $3 each. <a href="#" id="passLink">Trippy Pass</a> ($5/month) gets 5 brand-new subscriber-only toys plus a new theme &amp; cursor every month, your pick of any theme &amp; cursor while you're subscribed, and 5 free toy unlocks when you subscribe. <b id="rainCount">Raining 1 / 5</b></p>
   <h2>Falling toys</h2>
   <div class="grid" id="grid"></div>
   <h2>Cursors</h2>
@@ -176,7 +198,8 @@ const CURSORS = [
   ["plasma","Plasma Lash",0],
   ["worm","Color Snake",0],
   ["shenron","Green Worm",0],
-  ["hole","Black Hole",0]
+  ["hole","Black Hole",0],
+  ["ufo","UFO Beam",0]
 ];
 // Ownership is server-authoritative (/me owned_json). OWN_VER bumps wipe the local
 // cache of test-era unlocks so nobody keeps free-while-testing items after launch.
@@ -231,8 +254,15 @@ function ownedToys(){
 }
 const TESTING_FREE = false; // live: regular toys must be bought ($1) or unlocked with a pass credit
 function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return TESTING_FREE || ownedToys().includes(id); }
-function ownsCursor(id){ return id === "squid" || (player.ownedCursorIds || []).includes(id); }
-function ownsTheme(id){ return id === "basic" || (player.ownedThemeIds || []).includes(id); }
+function ownsCursor(id){ return id === "squid" || (player.ownedCursorIds || []).includes(id) || passHas("cursor", id); }
+function ownsTheme(id){ return id === "basic" || (player.ownedThemeIds || []).includes(id) || passHas("theme", id); }
+// ---- Pass perk: monthly theme/cursor drops + the holder's own picks (only while the Pass is live) ----
+let PASS_DROPS = { "2026-10": { theme: "disco", cursor: "ufo" } }; // fallback; pass-drops.json is the source of truth
+function passDropIds(kind){ const m = currentMonth(); return Object.keys(PASS_DROPS).filter(k => k <= m).map(k => PASS_DROPS[k] && PASS_DROPS[k][kind]).filter(Boolean); }
+function isPassDrop(kind, id){ return Object.keys(PASS_DROPS).some(k => PASS_DROPS[k] && PASS_DROPS[k][kind] === id); }
+function passPick(kind){ return hasPass() && player.passPicks ? (player.passPicks[kind] || null) : null; }
+function passHas(kind, id){ return hasPass() && (passDropIds(kind).includes(id) || passPick(kind) === id); }
+function loadPassDrops(after){ try { fetch("pass-drops.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).then(d => { if (d && d.drops && typeof d.drops === "object") { PASS_DROPS = d.drops; if (after) after(); } }).catch(() => {}); } catch(e){} }
 // Drop anything equipped that isn't owned (testers' free items, expired pass toys);
 // fall back to mushrooms / squid / basic so the page never breaks.
 function cleanEquipped(){
@@ -694,6 +724,8 @@ async function pullCloud(){
     if (!row || !row.id) return;
     player.passActive = !!row.pass_active;
     player.passExpiresAt = row.pass_expires_at;
+    player.passPicks = row.pass_picks || null;
+    player.passPicksAt = row.pass_picks_at || null;
     player.unlockCredits = Number(row.unlock_credits || 0);
     let rawOwn = [];
     try { rawOwn = JSON.parse(row.owned_json || "[]"); } catch(e){}
@@ -745,18 +777,74 @@ document.getElementById("grid").addEventListener("change", e => {
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
 document.getElementById("passLink").addEventListener("click", e => { e.preventDefault(); startPass(); });
+const PASS_SUB = "5 new toys + a new theme & cursor every month. Pick any theme & cursor to keep while you're subscribed. Plus 5 free unlocks (a $5 value), so month one pays for itself.";
+// ---- Pass picks card (only for active Pass holders; the worker enforces Pass + 30-day rule) ----
+const PICK_WAIT = 30*24*60*60*1000;
+function pickOptions(kind){
+  const list = kind === "theme" ? THEMES : CURSORS, free = kind === "theme" ? "basic" : "squid";
+  const mine = kind === "theme" ? (player.ownedThemeIds || []) : (player.ownedCursorIds || []);
+  return list.filter(([id]) => id !== free && !isPassDrop(kind, id) && !mine.includes(id));
+}
+function pickPreview(){
+  const th = document.getElementById("pickTheme").value, cu = document.getElementById("pickCursor").value;
+  if (th) previewTheme(document.getElementById("pickThemeCv"), th);
+  if (cu) previewCursor(document.getElementById("pickCursorCv"), cu);
+}
+function paintPickCard(){
+  const card = document.getElementById("pickCard"); if (!card) return;
+  card.hidden = !hasPass(); if (card.hidden) return;
+  [["theme","pickTheme"],["cursor","pickCursor"]].forEach(([kind, el]) => {
+    const sel = document.getElementById(el), keep = sel.value || passPick(kind) || "";
+    sel.innerHTML = pickOptions(kind).map(([id,label]) => `<option value="${id}">${label}${passPick(kind)===id?" (current pick)":""}</option>`).join("");
+    if (keep && [...sel.options].some(o => o.value === keep)) sel.value = keep;
+  });
+  const msg = document.getElementById("pickMsg"), at = Number(player.passPicksAt || 0);
+  if (player.passPicks && at && Date.now() - at < PICK_WAIT) { msg.className = ""; msg.textContent = "Next change on " + new Date(at + PICK_WAIT).toLocaleDateString() + "."; }
+  else if (!player.passPicks) { msg.className = ""; msg.textContent = "No picks yet. Choose and save."; }
+  else msg.textContent = "";
+  pickPreview();
+}
+function choosePick(kind, id){
+  if (!hasPass()) { startPass(); return; }
+  const sel = document.getElementById(kind === "theme" ? "pickTheme" : "pickCursor");
+  if (![...sel.options].some(o => o.value === id)) return;
+  sel.value = id; pickPreview();
+  const msg = document.getElementById("pickMsg"); msg.className = ""; msg.textContent = "Press Save picks to confirm.";
+  document.getElementById("pickCard").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+async function savePicks(){
+  const btn = document.getElementById("pickSave"), msg = document.getElementById("pickMsg");
+  const theme = document.getElementById("pickTheme").value, cursor = document.getElementById("pickCursor").value;
+  if (!theme || !cursor) return;
+  btn.disabled = true;
+  try {
+    const r = await fetch(API + "/pass/pick", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify({ playerId: PLAYER_ID, theme, cursor }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.ok) {
+      player.passPicks = d.pass_picks; player.passPicksAt = d.pass_picks_at; savePlayer();
+      paintCursors(); paintThemes(); paintPickCard();
+      msg.className = "ok"; msg.textContent = "Saved! Equip them below or on the charts.";
+    } else {
+      msg.className = ""; msg.textContent = (d.error || "Could not save picks. Try again in a minute.") + (d.next_change_at ? " Next change on " + new Date(d.next_change_at).toLocaleDateString() + "." : "");
+    }
+  } catch(e){ console.error("pass picks", e); msg.className = ""; msg.textContent = "Could not save picks. Try again in a minute."; }
+  btn.disabled = false;
+}
+document.getElementById("pickTheme").addEventListener("change", pickPreview);
+document.getElementById("pickCursor").addEventListener("change", pickPreview);
+document.getElementById("pickSave").addEventListener("click", savePicks);
 function paintSign(){
   const t=document.getElementById("signTitle"), s=document.getElementById("signSub"), btn=document.getElementById("signBtn");
   if (!t) return;
   if (hasPass()) {
     const n = player.unlockCredits||0;
     t.textContent = "✨ Trippy Pass is on ✨";
-    s.textContent = "Your subscriber toys are unlocked. " + (n ? `You have ${n} free toy unlock${n===1?"":"s"} left.` : "No free unlocks left.");
+    s.textContent = "Your subscriber toys, this month's theme & cursor and your Pass picks are unlocked. " + (n ? `You have ${n} free toy unlock${n===1?"":"s"} left.` : "No free unlocks left.");
     btn.textContent = "Manage pass";
   } else {
-    t.textContent = "✨ Trippy Pass: $5 a month ✨";
-    s.textContent = "5 free unlocks (a $5 value), so month one pays for itself. Plus 5 new subscriber-only toys every month.";
-    btn.textContent = "Subscribe";
+    t.textContent = "✨ Trippy Pass, $5/mo ✨";
+    s.textContent = PASS_SUB;
+    btn.textContent = "Get Trippy Pass, $5/mo";
   }
 }
 document.getElementById("signBtn").addEventListener("click", () => hasPass() ? managePass() : startPass());
@@ -846,13 +934,15 @@ function paintCursors(){
   box.innerHTML = CURSORS.map(([id,label]) => {
     const own = ownsCursor(id);
     const on = own && player.equippedCursor === id;
+    const drop = isPassDrop("cursor", id), picked = passPick("cursor") === id;
     const action = own
       ? `<label><input type="radio" name="cur" data-cur="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buycur="${id}">Add $3</button><button class="buynow" data-buynowcur="${id}">Buy now $3</button>`;
+      : drop ? `<button class="buy" data-pass="1">Get pass $5/mo</button>`
+      : `<button class="buy" data-buycur="${id}">Add $3</button><button class="buynow" data-buynowcur="${id}">Buy now $3</button>${hasPass()?`<button class="unlock" data-pickcur="${id}">Use my Pass pick</button>`:""}`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="180" data-cur="${id}"></canvas>
       <div class="name">${label}</div>
-      <span class="tag">${id==="squid"?"free": own ? (on?"equipped":"unlocked") : "$3"}</span>
+      <span class="tag">${id==="squid"?"free": drop ? (own ? (on?"pass: equipped":"pass: unlocked") : "pass only") : picked ? (on?"pass pick: equipped":"your pass pick") : own ? (on?"equipped":"unlocked") : "$3"}</span>
       ${action}
     </article>`;
   }).join("");
@@ -866,6 +956,8 @@ document.getElementById("cursors").addEventListener("change", e => {
   try { fetch(API + "/save", { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(player) }); } catch(e){}
 });
 document.getElementById("cursors").addEventListener("click", e => {
+  if (e.target.dataset.pass) { startPass(); return; }
+  if (e.target.dataset.pickcur) { choosePick("cursor", e.target.dataset.pickcur); return; }
   if (e.target.dataset.buynowcur) { const bid = e.target.dataset.buynowcur; buyNow({ sku: "cursor_"+bid, type: "cursor", name: (CURSORS.find(t => t[0]===bid) || [bid,bid])[1], amount: 300 }); return; }
   const id = e.target.dataset.buycur;
   if (!id) return;
@@ -873,7 +965,7 @@ document.getElementById("cursors").addEventListener("click", e => {
   addToCart({ sku: "cursor_"+id, type: "cursor", name: label, amount: 300 });
 });
 
-const THEMES = [["basic","Basic"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"]];
+const THEMES = [["basic","Basic"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"],["disco","Disco Fever"]];
 function previewTheme(cv, id){
   const c = cv.getContext("2d");
   const w = cv.width, h = cv.height;
@@ -889,7 +981,7 @@ function previewTheme(cv, id){
   const bars = [[40,70,1],[58,52,0],[70,64,1],[84,46,1],[96,78,0],[112,60,1]];
   bars.forEach((b,i)=>{
     const x = 22 + i*24, up = b[2], top = b[1], bot = b[0];
-    const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"] };
+    const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], disco:["#f3ecff","#ff4ad2"] };
     const pair = cols[id] || ["#00c805","#ff5000"];
     const col = up ? pair[0] : pair[1];
     c.strokeStyle = id==="rainbow" ? "#fff" : col;
@@ -913,6 +1005,15 @@ function previewTheme(cv, id){
     }
     if (id==="snow" && !up) { c.fillStyle="#fff"; c.beginPath(); c.arc(x, bot+4+((t/120+i*9)%22), 1.7, 0, 7); c.fill(); }
     if (id==="bubbles" && up) { c.strokeStyle="#baf0ff"; c.beginPath(); c.arc(x, top-((t/90+i*6)%16), 2.4, 0, 7); c.stroke(); }
+    if (id==="disco") { // mirror-ball facets
+      const hh=Math.max(4, bot-top);
+      for (let yy=0, r=0; yy<hh; yy+=4, r++) for (let k=0; k<3; k++) {
+        const f=0.5+0.5*Math.sin(t/300 + i*1.7 + r*1.3 + k*2.1);
+        c.fillStyle="hsla("+((i*37+r*20+k*50+t/16)%360)+",100%,"+(up?82:70)+"%,"+(0.15+0.6*f*f)+")";
+        c.fillRect(x-6+k*4+0.5, top+yy+0.5, 3, Math.min(3, hh-yy-0.5));
+      }
+      if ((i*7 + Math.floor(t/500)) % 5 === 0) { c.strokeStyle="#fff"; c.beginPath(); c.moveTo(x-4,top-4); c.lineTo(x+4,top-4); c.moveTo(x,top-8); c.lineTo(x,top); c.stroke(); }
+    }
     if (id==="neon") { const p=0.35+0.65*Math.abs(Math.sin(t/70+i)); c.strokeStyle = up?"rgba(124,255,58,"+p+")":"rgba(255,74,210,"+p+")"; c.lineWidth=2; c.strokeRect(x-8, top-2, 16, Math.max(6, bot-top)+4); }
     if (id==="toxic") {
       c.save(); c.beginPath(); c.rect(x-6, top, 12, Math.max(4, bot-top)); c.clip();
@@ -944,13 +1045,15 @@ function paintThemes(){
   box.innerHTML = THEMES.map(([id,label]) => {
     const own = ownsTheme(id);
     const on = own && player.equippedTheme === id;
+    const drop = isPassDrop("theme", id), picked = passPick("theme") === id;
     const action = own
       ? `<label><input type="radio" name="theme" data-theme="${id}" ${on?"checked":""}></label>`
-      : `<button class="buy" data-buytheme="${id}">Add $3</button><button class="buynow" data-buynowtheme="${id}">Buy now $3</button>`;
+      : drop ? `<button class="buy" data-pass="1">Get pass $5/mo</button>`
+      : `<button class="buy" data-buytheme="${id}">Add $3</button><button class="buynow" data-buynowtheme="${id}">Buy now $3</button>${hasPass()?`<button class="unlock" data-picktheme="${id}">Use my Pass pick</button>`:""}`;
     return `<article class="card${own?"":" locked"}">
       <canvas width="180" height="120" data-theme="${id}"></canvas>
       <div class="name">${label}</div>
-      <span class="tag">${id==="basic"?"free": own ? (on?"equipped":"unlocked") : "$3"}</span>
+      <span class="tag">${id==="basic"?"free": drop ? (own ? (on?"pass: equipped":"pass: unlocked") : "pass only") : picked ? (on?"pass pick: equipped":"your pass pick") : own ? (on?"equipped":"unlocked") : "$3"}</span>
       ${action}
     </article>`;
   }).join("");
@@ -1057,6 +1160,8 @@ function buyNow(item){ return checkoutItems([item]); } // single-item checkout, 
 document.getElementById("cartCheckout").addEventListener("click", () => checkoutItems(loadCart()));
 paintCart();
 document.getElementById("themes").addEventListener("click", e => {
+  if (e.target.dataset.pass) { startPass(); return; }
+  if (e.target.dataset.picktheme) { choosePick("theme", e.target.dataset.picktheme); return; }
   if (e.target.dataset.buynowtheme) { const bid = e.target.dataset.buynowtheme; buyNow({ sku: "theme_"+bid, type: "theme", name: (THEMES.find(t => t[0]===bid) || [bid,bid])[1], amount: 300 }); return; }
   const id = e.target.dataset.buytheme;
   if (!id) return;
@@ -1135,7 +1240,9 @@ paint();
 paintCursors();
 paintThemes();
 paintSign();
-pullCloud().then(() => { paint(); paintCursors(); paintThemes(); });
+paintPickCard();
+pullCloud().then(() => { paint(); paintCursors(); paintThemes(); paintSign(); paintPickCard(); });
+loadPassDrops(() => { cleanEquipped(); paintCursors(); paintThemes(); paintPickCard(); });
 (function twinkle(){
   document.querySelectorAll("#grid canvas[data-kind]").forEach(cv => {
     previewToy(cv, cv.dataset.kind, (+cv.dataset.hue + Date.now()/40)%360);

@@ -163,6 +163,25 @@ const ART = {
     c.globalCompositeOperation="source-over";
     c.strokeStyle="rgba(200,220,255,.55)"; c.lineWidth=1.3; c.beginPath(); c.arc(0,0,23,0,TAU); c.stroke();
     c.strokeStyle="rgba(255,255,255,.5)"; c.lineWidth=1.6; c.beginPath(); c.arc(0,0,20,3.6,4.4); c.stroke();
+  },
+  ufo(c, t, st, dx, dy){ // UFO Beam (Trippy Pass, Oct 2026): saucer with chasing rim lights and a pulsing tractor beam
+    const tilt=Math.max(-0.35,Math.min(0.35,(dx||0)*0.06)); st.tl=(st.tl||0)*0.85+tilt*0.15;
+    c.save(); c.rotate(st.tl);
+    c.globalCompositeOperation="lighter";
+    const pulse=0.6+0.4*Math.sin(t*4);
+    const g=c.createLinearGradient(0,4,0,42); g.addColorStop(0,"rgba(140,255,200,"+(0.6*pulse)+")"); g.addColorStop(1,"rgba(140,255,200,0)");
+    c.fillStyle=g; c.beginPath(); c.moveTo(-6,5); c.lineTo(6,5); c.lineTo(19,42); c.lineTo(-19,42); c.closePath(); c.fill();
+    const ps=parts(st,"ufo"); if (ps.length<14 && Math.random()<0.5) ps.push({x:rnd(-14,14), y:40, vx:0, vy:-rnd(.6,1.3), life:1, decay:.03});
+    stepParts(c, ps, 0, 0, p=>{ p.x*=0.97; c.fillStyle="rgba(200,255,225,"+p.life+")"; c.beginPath(); c.arc(p.x,p.y,1.3,0,TAU); c.fill(); });
+    c.globalCompositeOperation="source-over";
+    const hull=c.createLinearGradient(0,-4,0,7); hull.addColorStop(0,"#eef0ff"); hull.addColorStop(1,"#5d6290");
+    c.fillStyle=hull; c.beginPath(); c.ellipse(0,1,20,6.5,0,0,TAU); c.fill();
+    c.strokeStyle="#1b1430"; c.lineWidth=1.2; c.stroke();
+    const dome=c.createRadialGradient(-2,-6,1,0,-3,9); dome.addColorStop(0,"rgba(225,255,250,.95)"); dome.addColorStop(1,"rgba(80,200,255,.6)");
+    c.fillStyle=dome; c.beginPath(); c.ellipse(0,-2,9,7.5,0,Math.PI,TAU); c.closePath(); c.fill(); c.stroke();
+    for (let k=0;k<8;k++){ const a=t*2.2+k*TAU/8; if (Math.sin(a)<-0.15) continue;
+      c.fillStyle="hsl("+((k*45+t*140)%360)+",100%,65%)"; c.beginPath(); c.arc(Math.cos(a)*16, 1.5+Math.sin(a)*4.4, 1.8, 0, TAU); c.fill(); }
+    c.restore();
   }
 };
 function draw(c, skin, x, y, s, st, opts){

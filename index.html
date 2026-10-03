@@ -283,7 +283,7 @@ body.zen .side { display:none !important; }
       <button type="button" id="fullscreen">play game</button>
       <button type="button" id="legalBtn">disclaimer</button>
       <a href="wiki.html" id="wikiBtn" class="page-link" title="How TrippyCharts works: charts, themes, toys, cursors, game, store">wiki / guide</a>
-      <button type="button" id="buyPass" aria-label="Buy Trippy Pass, $5 a month: 5 new toys every month plus 5 free unlocks" title="Trippy Pass: 5 new subscriber-only toys every month + 5 free unlocks"><span class="passToys" aria-hidden="true"></span><span class="passHead">Trippy Pass, $5/mo</span><span class="passSub">5 new toys every month +&nbsp;5&nbsp;free&nbsp;unlocks</span><span class="passCta">Buy Pass</span></button>
+      <button type="button" id="buyPass" aria-label="Buy Trippy Pass, $5 a month: 5 new toys, a theme and a cursor every month, plus your pick of any theme and cursor" title="Trippy Pass: 5 new toys, a theme & cursor every month + your pick of any theme & cursor, plus 5 free unlocks"><span class="passToys" aria-hidden="true"></span><span class="passHead">Trippy Pass, $5/mo</span><span class="passSub">5 new toys + a theme &amp; cursor every month<br>Pick any theme &amp; cursor</span><span class="passCta">Buy Pass</span></button>
       <span id="passBadge">pass on</span>
       <button type="button" id="cancelBtn">manage pass</button>
       <a href="toys.html#restore" id="restoreLink" class="page-link" title="Lost your purchases after clearing your browser or switching computers? Restore them with your checkout email">restore purchases</a>
@@ -308,9 +308,10 @@ body.zen .side { display:none !important; }
       <p>Payments are for cosmetic toys, cursor skins, and candle skins, not market data. Regular toys are $1 each, and extra cursors and candle themes are $3 each. Mushrooms, the squid cursor, and the basic candle theme are always free. Everything else must be bought (or, for regular toys, unlocked with a Trippy Pass free unlock). One-off unlocks are not refundable.</p>
       <h3>Trippy Pass</h3>
       <p>The Trippy Pass is an optional subscription for $5 a month. It renews automatically every month until you cancel.</p>
-      <p>Each month, 5 new subscriber-only toys are released. Subscribers can use every pass toy released so far while the pass is active. Pass toys are never sold separately.</p>
+      <p>Each month, 5 new subscriber-only toys plus one new candle theme and one new cursor are released. Subscribers can use every pass toy, theme and cursor released so far while the pass is active. These pass items are never sold separately.</p>
+      <p>Subscribers also pick one store theme and one store cursor to use while the pass is active. Picks can be changed once every 30 days. Picks are not purchases: they stop working when the pass ends and come back if you subscribe again.</p>
       <p>When you subscribe you get 5 free unlocks. Each one permanently unlocks one regular store toy you don't already own, and toys you unlock this way stay yours even after you cancel. Unlocks can't be used on pass toys, cursors, or themes, and they have no cash value.</p>
-      <p>Cancel anytime with "manage pass". You keep the pass until the end of the month you already paid for, then pass toys lock again. There are no refunds or credits for partial months.</p>
+      <p>Cancel anytime with "manage pass". You keep the pass until the end of the month you already paid for, then pass toys, pass themes and cursors, and your picks lock again. There are no refunds or credits for partial months.</p>
       <p>There are no accounts or logins. Your pass, unlocks, and toys are tied to this browser on this computer. If you clear your browser data or switch browsers or computers, use "Restore purchases" in the Toy Store: enter the email you used at checkout and we'll email you a 6-digit code that moves your purchases to the new browser.</p>
       <h3>As-is</h3>
       <p>The site is provided as-is, no warranties. To the fullest extent allowed by law, we are not liable for trading losses, data errors, or incidental damages. If a court requires a cap, liability is limited to what you paid us in the prior 30 days.</p>
@@ -336,7 +337,7 @@ body.zen .side { display:none !important; }
     <div class="hud-score" id="hudScore">0</div>
     <aside id="store">
       <h2>Charm store</h2>
-      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Other toys are $1 each in the <a href="toys.html" style="color:#ff8af0">Toy Store</a>. Trippy Pass ($5/month) unlocks 5 brand-new subscriber-only toys every month. Cancel anytime.</p>
+      <p class="tag" style="margin-bottom:10px">Mushrooms are free. Other toys are $1 each in the <a href="toys.html" style="color:#ff8af0">Toy Store</a>. Trippy Pass ($5/month) unlocks 5 brand-new subscriber-only toys plus a new theme &amp; cursor every month, and lets you pick any theme &amp; cursor while subscribed. Cancel anytime.</p>
       <div id="storeList"></div>
     </aside>
     <div class="board center" id="board">
@@ -497,6 +498,8 @@ function applyOwned(row){
   player.ownedThemeIds = [...themes];
   player.passActive = !!row.pass_active;
   player.passExpiresAt = row.pass_expires_at;
+  player.passPicks = row.pass_picks || null;
+  player.passPicksAt = row.pass_picks_at || null;
   player.unlockCredits = Number(row.unlock_credits || 0);
   player.ownVer = OWN_VER;
 }
@@ -657,8 +660,15 @@ function ownedToys(){
   return [...new Set([...FREE_TOYS, ...own])];
 }
 function canUse(id){ if (isPassToy(id)) return hasPass() && dropLive(id); return ownedToys().includes(id); }
-function ownsCursor(id){ return id === "squid" || (player.ownedCursorIds || []).includes(id); }
-function ownsTheme(id){ return id === "basic" || (player.ownedThemeIds || []).includes(id); }
+function ownsCursor(id){ return id === "squid" || (player.ownedCursorIds || []).includes(id) || passHas("cursor", id); }
+function ownsTheme(id){ return id === "basic" || (player.ownedThemeIds || []).includes(id) || passHas("theme", id); }
+// ---- Pass perk: monthly theme/cursor drops + the holder's own picks (only while the Pass is live) ----
+let PASS_DROPS = { "2026-10": { theme: "disco", cursor: "ufo" } }; // fallback; pass-drops.json is the source of truth
+function passDropIds(kind){ const m = currentMonth(); return Object.keys(PASS_DROPS).filter(k => k <= m).map(k => PASS_DROPS[k] && PASS_DROPS[k][kind]).filter(Boolean); }
+function isPassDrop(kind, id){ return Object.keys(PASS_DROPS).some(k => PASS_DROPS[k] && PASS_DROPS[k][kind] === id); }
+function passPick(kind){ return hasPass() && player.passPicks ? (player.passPicks[kind] || null) : null; }
+function passHas(kind, id){ return hasPass() && (passDropIds(kind).includes(id) || passPick(kind) === id); }
+function loadPassDrops(after){ try { fetch("pass-drops.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).then(d => { if (d && d.drops && typeof d.drops === "object") { PASS_DROPS = d.drops; if (after) after(); } }).catch(() => {}); } catch(e){} }
 // Drop anything equipped that isn't owned (e.g. testers who had free items equipped, or an
 // expired pass). If that empties the toy list, fall back to the free mushrooms.
 function cleanEquipped(){
@@ -673,9 +683,9 @@ function toyChecked(id){
   if (player.equippedToyIds && player.equippedToyIds.length) return player.equippedToyIds.includes(id);
   return id === "mushrooms";
 }
-const CURSORS = [["squid","Aqua Squid"],["nebula","Nebula Bloom"],["comet","Comet Tail"],["lotus","Spin Lotus"],["void","Void Ring"],["prism","Prism Shard"],["aurora","Aurora Trail"],["ember","Ember Drift"],["candy","Candy Orbit"],["plasma","Plasma Lash"],["worm","Color Snake"],["shenron","Green Worm"],["hole","Black Hole"]];
-const THEMES = [["basic","Basic"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"]];
-const CURSOR_COL = {squid:"#7ee8ff",nebula:"#c44bff",comet:"#ffe14a",lotus:"#ff8ad4",void:"#9b8cff",prism:"#ffffff",aurora:"#7cff3a",ember:"#ff7a3a",candy:"#ff5d8f",plasma:"#5ad7ff",worm:"#ff4ad2",shenron:"#3dcf5a",hole:"#d7c7ff"};
+const CURSORS = [["squid","Aqua Squid"],["nebula","Nebula Bloom"],["comet","Comet Tail"],["lotus","Spin Lotus"],["void","Void Ring"],["prism","Prism Shard"],["aurora","Aurora Trail"],["ember","Ember Drift"],["candy","Candy Orbit"],["plasma","Plasma Lash"],["worm","Color Snake"],["shenron","Green Worm"],["hole","Black Hole"],["ufo","UFO Beam"]];
+const THEMES = [["basic","Basic"],["rainbow","Rainbow"],["drip","Blood drip"],["bolt","Lightning"],["snow","Snow"],["bubbles","Bubbles"],["neon","Neon"],["toxic","Toxic"],["plasma","Plasma"],["lava","Lava lamp"],["disco","Disco Fever"]];
+const CURSOR_COL = {squid:"#7ee8ff",nebula:"#c44bff",comet:"#ffe14a",lotus:"#ff8ad4",void:"#9b8cff",prism:"#ffffff",aurora:"#7cff3a",ember:"#ff7a3a",candy:"#ff5d8f",plasma:"#5ad7ff",worm:"#ff4ad2",shenron:"#3dcf5a",hole:"#d7c7ff",ufo:"#8cffc8"};
 function drawCursorChip(cv, id){
   const c = cv.getContext("2d");
   c.clearRect(0,0,cv.width,cv.height);
@@ -688,7 +698,7 @@ function drawCursorChip(cv, id){
 function drawThemeChip(cv, id){
   const c = cv.getContext("2d");
   c.clearRect(0,0,cv.width,cv.height);
-  const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], rainbow:["#7cff3a","#c44bff"] };
+  const cols = { vine:["#ffb703","#8a4b2a"], drip:["#f4ecff","#d0122a"], bolt:["#f4ecff","#6d6288"], snow:["#eef7ff","#7f93ad"], bubbles:["#7ad7ff","#3a5a78"], neon:["#7cff3a","#ff4ad2"], toxic:["#b6ff4a","#7a3cff"], plasma:["#7af0ff","#ff4ad2"], lava:["#ff8a5a","#6a1b4a"], rainbow:["#7cff3a","#c44bff"], disco:["#f3ecff","#ff4ad2"] };
   const pair = cols[id] || ["#00c805","#ff5000"];
   [[16,34,18,1],[28,30,14,0],[38,36,20,1]].forEach(([x,bot,top,up])=>{
     c.strokeStyle = pair[up?0:1]; c.lineWidth = 2;
@@ -763,6 +773,7 @@ function paintPassPreview(){ // real renders of this month's Pass toys (falls ba
 }
 setTimeout(paintPassPreview, 0);
 document.getElementById("buyPass").addEventListener("click", startPass);
+loadPassDrops(() => { cleanEquipped(); paintQuick(); });
 document.getElementById("cancelBtn").addEventListener("click", managePass);
 if (/[?&]pass=ok/.test(location.search)) {
   [2500, 6000, 12000].forEach(ms => setTimeout(pullCloud, ms));
@@ -1949,6 +1960,7 @@ function candleSkin(){
   if (use==="toxic") return { id:"toxic", up:"#243018", dn:"#241438" };
   if (use==="plasma") return { id:"plasma", up:"#1a2040", dn:"#2a1030" };
   if (use==="lava") return { id:"lava", up:"#ffb08a", dn:"#8a2458" };
+  if (use==="disco") return { id:"disco", up:"#f3ecff", dn:"#ff4ad2" };
   if (use==="confetti" || use==="ice" || use==="gold" || use==="void" || use==="ghost" || use==="ink") return { id:"basic", up:"#00c805", dn:"#ff5000" };
   if (use==="rainbow") return { id:"rainbow", up:"#7af0ff", dn:"#ff5ad0" };
   if (use==="drip") return { id:"drip", up:"#f4ecff", dn:"#d0122a" };
@@ -2194,6 +2206,21 @@ function paintAura(c, x, top, h, body, color, dpr){
   c.strokeRect(x-body/2-1.5*dpr, top-1.5*dpr, body+3*dpr, Math.max(4*dpr, h)+3*dpr);
   c.restore();
 }
+// Disco Fever (Trippy Pass theme, Oct 2026): mirror-ball facets that shimmer across each candle body, plus a glint.
+function paintDisco(c, x, top, bot, body, up, dpr, i){
+  const t=performance.now()/1000, h=Math.max(2*dpr, bot-top), cell=Math.max(2*dpr, Math.min(4*dpr, body/2.5)), x0=x-body/2;
+  c.save(); c.beginPath(); c.rect(x0, top, body, h); c.clip();
+  for (let yy=top, r=0; yy<top+h; yy+=cell, r++) for (let xx=x0, k=0; xx<x0+body; xx+=cell, k++){
+    const f=0.5+0.5*Math.sin(t*3 + i*1.7 + r*1.3 + k*2.1);
+    c.fillStyle="hsla("+((i*37 + r*20 + k*50 + t*60)%360)+",100%,"+(up?82:70)+"%,"+(0.12+0.6*f*f)+")";
+    c.fillRect(xx+0.5*dpr, yy+0.5*dpr, cell-dpr, cell-dpr);
+  }
+  c.restore();
+  if ((i*7 + Math.floor(t*2)) % 9 === 0){
+    const gx=x+body*0.25, gy=top+Math.min(h,6*dpr), r=4*dpr;
+    c.save(); c.strokeStyle="rgba(255,255,255,.9)"; c.lineWidth=dpr; c.beginPath(); c.moveTo(gx-r,gy); c.lineTo(gx+r,gy); c.moveTo(gx,gy-r); c.lineTo(gx,gy+r); c.stroke(); c.restore();
+  }
+}
 function paintLava(c, x, top, bot, body, up, dpr, i){
   const t = performance.now()/260 + i;
   const h = Math.max(8*dpr, bot-top);
@@ -2246,7 +2273,7 @@ function drawChart(slot){
   const last=liveBars.at(-1);
   const skin = candleSkin();
   const upCol=skin.up, dnCol=skin.dn;
-  const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
+  const auraOf = up => (skin.id==="lava" ? "#fff4dc" : skin.id==="disco" ? (up?"#fff6d0":"#ff8af0") : skin.id==="plasma" ? "#7af0ff" : skin.id==="toxic" ? (up?"#b6ff4a":"#9a5cff") : skin.id==="neon" ? (up?"#7cff3a":"#ff4ad2") : skin.id==="bubbles" ? "#7ad7ff" : skin.id==="snow" ? "#eef7ff" : skin.id==="bolt" ? "#fff6aa" : skin.id==="drip" ? (up?"#f4ecff":"#ff4a62") : col);
   if (volH) {
     const vmax=Math.max(1,...liveBars.map(b=>b.vol||0)), vBase=h-padB, vw=Math.max(1.5*dpr,gap*.58), fx={};
     const VOL_UP={toxic:"#8ee03a"}, VOL_DN={bolt:"#b3a6dd", snow:"#c4d4ea", bubbles:"#6fa3d0", toxic:"#9a6cff"};
@@ -2311,6 +2338,7 @@ function drawChart(slot){
     if (skin.id==="toxic") paintToxic(c, slot, x, top, bot, body, up, dpr, i);
     if (skin.id==="plasma") paintPlasma(c, slot, x, top, bot, body, up, dpr, i);
     if (skin.id==="lava") paintLava(c, x, top, bot, body, up, dpr, i);
+    if (skin.id==="disco") paintDisco(c, x, top, bot, body, up, dpr, i);
     if (skin.id==="drip" && !up) paintDrip(c, slot, x, bot, body, bh, dpr, i);
   });
   if (skin.id==="drip") { slot.dripN = liveBars.filter(b=>b.close<b.open).length; stepDrips(slot, c, h, dpr); } else slot.drips = [];
