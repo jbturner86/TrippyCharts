@@ -42,6 +42,22 @@
     #passSign button { border:2px solid #fff; border-radius:999px; padding:9px 18px; background:#12001f; color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 0 16px rgba(255,255,255,.6); }
     #passSign button:hover { background:#2a0646; }
     #passLink { color:#ff8af0; font-weight:700; }
+    #passSign #restoreBtn { background:rgba(18,0,31,.55); box-shadow:none; font-size:.85rem; padding:7px 14px; }
+    #restoreModal { position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(4,0,10,.72); backdrop-filter:blur(3px); }
+    #restoreModal[hidden] { display:none; }
+    .rm-card { position:relative; width:min(400px,100%); background:radial-gradient(ellipse at 20% 0%, rgba(255,60,180,.22), transparent 55%), rgba(12,6,22,.98); border:1px solid rgba(196,75,255,.55); border-radius:20px; padding:20px 20px 16px; box-shadow:0 0 34px rgba(196,75,255,.35), 0 18px 40px rgba(0,0,0,.5); }
+    .rm-card h3 { font-family:"Baloo 2", Impact, sans-serif; font-size:1.45rem; letter-spacing:.03em; margin-bottom:6px; }
+    .rm-card p { font-size:.86rem; line-height:1.4; color:#cbb6ff; margin-bottom:12px; }
+    .rm-card input { width:100%; border-radius:999px; border:1px solid rgba(255,255,255,.28); background:rgba(255,255,255,.07); color:#fff; padding:10px 14px; font-size:1rem; margin-bottom:10px; outline:none; }
+    .rm-card input:focus { border-color:#c44bff; box-shadow:0 0 0 2px rgba(196,75,255,.35); }
+    #rmCode { font-family:"Baloo 2", monospace; font-size:1.6rem; letter-spacing:.45em; text-align:center; padding:6px 14px; }
+    .rm-go { width:100%; border-radius:999px; border:2px solid #fff; background:#b7ffd2; color:#04140a; padding:9px 14px; font-family:"Baloo 2", sans-serif; font-weight:800; font-size:1.05rem; cursor:pointer; }
+    .rm-go:disabled { opacity:.55; cursor:wait; }
+    .rm-link { display:block; margin:10px auto 0; background:none; border:none; color:#ff8af0; font-size:.8rem; text-decoration:underline; cursor:pointer; }
+    .rm-x { position:absolute; top:10px; right:12px; width:32px; height:32px; border-radius:50%; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.06); color:#efe6ff; font-size:1.1rem; cursor:pointer; }
+    .rm-msg { min-height:1.2em; margin:10px 0 0 !important; font-size:.82rem !important; color:#ffd39a !important; }
+    .rm-msg.ok { color:#b7ffd2 !important; }
+    .rm-done { font-family:"Baloo 2", sans-serif; font-size:1.1rem; color:#b7ffd2 !important; }
     .card button.unlock { background:#ffe46b; color:#2a1400; border-color:#fff; font-family:"Baloo 2", sans-serif; font-weight:800; text-transform:none; font-size:.85rem; margin-top:6px; }
   </style>
 </head>
@@ -53,6 +69,30 @@
   <div id="passSign">
     <div class="signText"><b id="signTitle">✨ Trippy Pass: $5 a month ✨</b><span id="signSub">5 new subscriber-only toys every month, plus 5 free unlocks for any store toy when you subscribe.</span></div>
     <button type="button" id="signBtn">Subscribe</button>
+    <button type="button" id="restoreBtn" title="Get your purchases back after clearing your browser or switching computers">Restore purchases</button>
+  </div>
+  <div id="restoreModal" hidden role="dialog" aria-modal="true" aria-labelledby="restoreTitle">
+    <div class="rm-card">
+      <button type="button" class="rm-x" id="rmClose" aria-label="Close">✕</button>
+      <h3 id="restoreTitle">✨ Restore purchases</h3>
+      <div id="rmStep1">
+        <p>Cleared your browser or switched computers? Enter the email you used at Stripe checkout and we'll send you a 6-digit code.</p>
+        <input type="email" id="rmEmail" placeholder="you@example.com" autocomplete="email" maxlength="254">
+        <button type="button" class="rm-go" id="rmSend">Send code</button>
+      </div>
+      <div id="rmStep2" hidden>
+        <p id="rmSent">If that email has purchases, we sent a code. It expires in 15 minutes.</p>
+        <input type="text" id="rmCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="6-digit code">
+        <button type="button" class="rm-go" id="rmVerify">Restore</button>
+        <button type="button" class="rm-link" id="rmBack">Wrong email or no code? Go back</button>
+      </div>
+      <div id="rmStep3" hidden>
+        <p class="rm-done" id="rmDoneText">Restored!</p>
+        <p>Your purchases now belong to this browser too.</p>
+        <button type="button" class="rm-go" id="rmDone">Done</button>
+      </div>
+      <p class="rm-msg" id="rmMsg" role="status" aria-live="polite"></p>
+    </div>
   </div>
   <aside id="cart" hidden>
     <h3>Cart</h3>
@@ -989,6 +1029,72 @@ document.getElementById("themes").addEventListener("click", e => {
   const label = (THEMES.find(t => t[0]===id) || [id,id])[1];
   addToCart({ sku: "theme_"+id, type: "theme", name: label, amount: 300 });
 });
+
+// ---- Restore purchases (email + 6-digit code). The server decides what you own. ----
+(function(){
+  const $ = id => document.getElementById(id);
+  const modal = $("restoreModal");
+  const steps = n => { ["rmStep1","rmStep2","rmStep3"].forEach((id,i) => $(id).hidden = i !== n-1); };
+  const msg = (t, ok) => { const m = $("rmMsg"); m.textContent = t || ""; m.classList.toggle("ok", !!ok); };
+  const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.textContent = label; };
+  function open(){
+    modal.hidden = false; msg(""); steps(1);
+    setTimeout(() => $("rmEmail").focus(), 30);
+  }
+  function close(){
+    modal.hidden = true;
+    if (location.hash === "#restore") history.replaceState(null, "", location.pathname + location.search);
+  }
+  async function post(path, body){
+    const r = await fetch(API + path, { method:"POST", headers:{ "Content-Type":"application/json", "X-Player-Id": PLAYER_ID }, body: JSON.stringify(body) });
+    let d = {}; try { d = await r.json(); } catch(e){}
+    return { ok: r.ok, status: r.status, d };
+  }
+  async function send(){
+    const email = $("rmEmail").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { msg("Enter the email you used at checkout."); return; }
+    busy($("rmSend"), true, "Sending…"); msg("");
+    try {
+      const { ok, d } = await post("/restore/start", { email });
+      if (!ok) { msg(d.error || "Couldn't send a code. Try again in a minute."); return; }
+      $("rmSent").textContent = d.message || "If that email has purchases, we sent a code. It expires in 15 minutes.";
+      $("rmCode").value = ""; steps(2); setTimeout(() => $("rmCode").focus(), 30);
+    } catch(e){ msg("Couldn't reach the server. Try again in a minute."); }
+    finally { busy($("rmSend"), false, "Send code"); }
+  }
+  async function verify(){
+    const code = $("rmCode").value.replace(/\D/g, "");
+    if (code.length !== 6) { msg("Enter the 6-digit code from the email."); return; }
+    busy($("rmVerify"), true, "Restoring…"); msg("");
+    try {
+      const { ok, d } = await post("/restore/verify", { email: $("rmEmail").value.trim(), code, browserId: PLAYER_ID });
+      if (!ok || !d.ok) { msg(d.error || "That didn't work. Try again."); return; }
+      const n = (d.owned || []).filter(x => x !== "mushrooms").length;
+      const bits = [];
+      if (n) bits.push(n + " item" + (n === 1 ? "" : "s"));
+      if (d.pass_active) bits.push("your Trippy Pass");
+      if (d.unlock_credits) bits.push(d.unlock_credits + " free unlock" + (d.unlock_credits === 1 ? "" : "s"));
+      $("rmDoneText").textContent = bits.length ? "Restored " + bits.join(", ").replace(/, ([^,]*)$/, " and $1") + "! ✨" : "Code accepted, but there was nothing to restore.";
+      steps(3);
+      await pullCloud();
+      paint(); paintCursors(); paintThemes(); paintSign();
+    } catch(e){ msg("Couldn't reach the server. Try again in a minute."); }
+    finally { busy($("rmVerify"), false, "Restore"); }
+  }
+  $("restoreBtn").addEventListener("click", open);
+  $("rmClose").addEventListener("click", close);
+  $("rmDone").addEventListener("click", close);
+  $("rmBack").addEventListener("click", () => { msg(""); steps(1); $("rmEmail").focus(); });
+  $("rmSend").addEventListener("click", send);
+  $("rmVerify").addEventListener("click", verify);
+  $("rmEmail").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+  $("rmCode").addEventListener("keydown", e => { if (e.key === "Enter") verify(); });
+  $("rmCode").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6); msg(""); });
+  modal.addEventListener("click", e => { if (e.target === modal) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) close(); });
+  if (location.hash === "#restore") open();
+  window.addEventListener("hashchange", () => { if (location.hash === "#restore") open(); });
+})();
 
 const claimed = claimPending();
 paint();
