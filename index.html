@@ -172,15 +172,34 @@ body.zen .side { display:none !important; }
     .note { font-size:.62rem; color:#b9a6dd; }
     .zoom { display:none; }
     #buyPass {
-      position:static; display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; max-width:190px; height:auto; margin:6px auto 0; padding:6px 10px 9px;
-      border:2px solid #fff !important; border-radius:16px !important; background:linear-gradient(135deg,#ff3cc8,#b56cff 55%,#3cf0ff) !important;
-      box-shadow:0 0 14px rgba(255,60,200,.55) !important; cursor:pointer; text-transform:none; letter-spacing:.02em;
+      position:static; display:flex; flex-direction:column; align-items:center; gap:5px; width:100%; max-width:200px; height:auto; margin:8px auto 0; padding:10px 10px 10px;
+      border:1px solid rgba(196,120,255,.75) !important; border-radius:14px !important;
+      background:radial-gradient(ellipse at 50% 0%, rgba(140,60,255,.28), transparent 65%), linear-gradient(180deg,#1a0b2e,#0b0414) !important;
+      box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 0 12px rgba(180,90,255,.45), inset 0 1px 0 rgba(255,255,255,.08) !important;
+      cursor:pointer; text-transform:none; letter-spacing:normal; color:#f4ecff; transition:box-shadow .2s, transform .2s;
     }
-    #buyPass:hover { filter:brightness(1.12); transform:translateY(-1px); }
-    #buyPass img { width:100%; max-width:120px; height:auto; aspect-ratio:128/86; object-fit:contain; display:block; pointer-events:none; }
-    #buyPass .passTxt { display:block; color:#12001f; font-family:"Baloo 2", Impact, sans-serif; font-weight:800; font-size:.82rem; line-height:1.15; text-align:center; pointer-events:none; }
-    #buyPass .passTxt small { display:block; font-size:.68rem; font-weight:700; }
+    #buyPass:hover, #buyPass:focus-visible { box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 0 20px rgba(200,120,255,.75), inset 0 1px 0 rgba(255,255,255,.1) !important; transform:translateY(-1px); }
+    #buyPass > * { pointer-events:none; }
+    #buyPass .passToys { display:flex; justify-content:center; gap:3px; width:100%; padding:4px 0 2px; }
+    #buyPass .passToys canvas { flex:1 1 0; min-width:0; max-width:34px; width:auto; height:auto; aspect-ratio:1/1; display:block; filter:drop-shadow(0 0 5px rgba(190,120,255,.55)); animation:passFloat 3.2s ease-in-out infinite; }
+    #buyPass .passToys canvas:nth-child(2) { animation-delay:-.6s; } #buyPass .passToys canvas:nth-child(3) { animation-delay:-1.2s; }
+    #buyPass .passToys canvas:nth-child(4) { animation-delay:-1.8s; } #buyPass .passToys canvas:nth-child(5) { animation-delay:-2.4s; }
+    @keyframes passFloat { 0%,100% { transform:translateY(0) rotate(-4deg); } 50% { transform:translateY(-4px) rotate(4deg); } }
+    @media (prefers-reduced-motion: reduce) { #buyPass .passToys canvas { animation:none; } #buyPass, #buyPass:hover { transition:none; transform:none; } }
+    #buyPass .passHead { display:block; font-family:"Baloo 2", Impact, sans-serif; font-weight:800; font-size:1.02rem; line-height:1.1; letter-spacing:.02em; color:#fff; text-shadow:0 0 10px rgba(196,120,255,.6); }
+    #buyPass .passSub { display:block; font-size:.7rem; line-height:1.25; color:#cdb8f2; text-align:center; }
+    #buyPass .passCta { display:inline-block; margin-top:3px; padding:4px 14px; border-radius:999px; background:#b7ffd2; color:#04140a; font-family:"Baloo 2", sans-serif; font-weight:800; font-size:.78rem; letter-spacing:.04em; }
+    @media (max-width:600px) { #buyPass { max-width:240px; } #buyPass .passHead { font-size:1.1rem; } #buyPass .passSub { font-size:.78rem; } #buyPass .passToys canvas { max-width:38px; } }
     #mobileBanner { display:none; }
+    @media (max-width:600px) {
+      html, body { max-width:100%; overflow-x:hidden; }
+      .wrap { padding-left:0 !important; width:100%; max-width:100vw; }
+      .side { position:static; width:auto; max-width:100%; max-height:none; margin:8px; border-radius:14px; transform:none !important; }
+      .board { padding:0 8px 8px; min-width:0; }
+      .stage, .stage[class*="layout-"] { grid-template-columns:minmax(0,1fr) !important; grid-template-rows:auto !important; min-width:0; }
+      .stage > *, .card { min-width:0; max-width:100%; }
+      .card canvas { max-width:100%; }
+    }
     @media (max-width:600px) {
       #mobileBanner { display:block; position:relative; z-index:40; margin:0; padding:10px 14px; text-align:center; font-family:"Baloo 2", Impact, sans-serif; font-weight:800; font-size:.95rem;
         color:#12001f; background:linear-gradient(90deg,#ff3cc8,#ffb43c,#7cff3a,#3cf0ff); text-decoration:none; border-bottom:2px solid #fff; }
@@ -264,7 +283,7 @@ body.zen .side { display:none !important; }
       <button type="button" id="fullscreen">play game</button>
       <button type="button" id="legalBtn">disclaimer</button>
       <a href="wiki.html" id="wikiBtn" class="page-link" title="How TrippyCharts works: charts, themes, toys, cursors, game, store">wiki / guide</a>
-      <button type="button" id="buyPass" title="Trippy Pass: $5/month, 5 subscriber-only toys every month"><img src="pass-blob.png" alt=""><span class="passTxt">Buy Trippy Pass $5/mo<small>5 new toys + 5 free unlocks</small></span></button>
+      <button type="button" id="buyPass" aria-label="Buy Trippy Pass, $5 a month: 5 new toys every month plus 5 free unlocks" title="Trippy Pass: 5 new subscriber-only toys every month + 5 free unlocks"><span class="passToys" aria-hidden="true"></span><span class="passHead">Trippy Pass, $5/mo</span><span class="passSub">5 new toys every month +&nbsp;5&nbsp;free&nbsp;unlocks</span><span class="passCta">Buy Pass</span></button>
       <span id="passBadge">pass on</span>
       <button type="button" id="cancelBtn">manage pass</button>
       <a href="toys.html#restore" id="restoreLink" class="page-link" title="Lost your purchases after clearing your browser or switching computers? Restore them with your checkout email">restore purchases</a>
@@ -729,6 +748,19 @@ function paintStore(){
     return `<div class="row"><span>${label}</span><span class="tag">${tag}</span></div>`;
   }).join("");
 }
+function paintPassPreview(){ // real renders of this month's Pass toys (falls back to the newest drop)
+  const box = document.querySelector("#buyPass .passToys");
+  if (!box) return;
+  const months = Object.keys(PASS_BY_MONTH).sort();
+  const order = ["discoballs","ufos","rainbows","smileys","clocks"];
+  const list = (passToys().length ? passToys() : PASS_BY_MONTH[months[months.length-1]] || []).slice().sort((a,b)=>(order.indexOf(a)+99)%99-(order.indexOf(b)+99)%99);
+  const dpr = Math.min(3, window.devicePixelRatio || 1), D = 36;
+  box.innerHTML = list.map(k => `<canvas width="${D*dpr}" height="${D*dpr}" data-ptoy="${k}"></canvas>`).join("");
+  box.querySelectorAll("canvas").forEach(cv => {
+    try { const c = cv.getContext("2d"); c.scale(dpr,dpr); drawToyRaw(c, {kind:cv.dataset.ptoy, x:D/2, y:D/2, s:29, rot:0, hue:0}); } catch(e){ console.error("pass preview", e); }
+  });
+}
+setTimeout(paintPassPreview, 0);
 document.getElementById("buyPass").addEventListener("click", startPass);
 document.getElementById("cancelBtn").addEventListener("click", managePass);
 if (/[?&]pass=ok/.test(location.search)) {
